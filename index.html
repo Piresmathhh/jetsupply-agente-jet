@@ -744,7 +744,7 @@ async function send() {
   }
 
   // Claude API
-  const key = document.getElementById('claude-key').value.trim();
+  const key = document.getElementById('claude-key').value.trim() || localStorage.getItem('jet_claude_key') || '';
   if (!key.startsWith('sk-ant-')){
     addAgentMsg('Configure a <strong>chave API Claude</strong> para perguntas livres.');
     document.getElementById('send-btn').disabled=false; return;
@@ -805,7 +805,9 @@ function toggleVis(id){ const i=document.getElementById(id); i.type=i.type==='pa
 function checkKeys() {
   const tok = ghToken();
   const rep = ghRepo();
+  const claudeKey = document.getElementById('claude-key').value.trim();
   if (tok) localStorage.setItem('jet_gh_token', tok);
+  if (claudeKey) localStorage.setItem('jet_claude_key', claudeKey);
   if (tok && rep) {
     setGhStatus('warn','Conectando...');
     clearTimeout(window._ghTimer);
@@ -814,17 +816,17 @@ function checkKeys() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────
-// Restaurar token salvo no browser (não precisa digitar toda vez)
+// Restaurar tokens salvos no browser (não precisa digitar toda vez)
 const _saved = localStorage.getItem('jet_gh_token');
-if (_saved) {
-  document.getElementById('gh-token').value = _saved;
-  setTimeout(loadKB, 600);
-}
+const _savedClaude = localStorage.getItem('jet_claude_key');
+if (_saved) document.getElementById('gh-token').value = _saved;
+if (_savedClaude) document.getElementById('claude-key').value = _savedClaude;
+if (_saved) setTimeout(loadKB, 600);
 
 addAgentMsg(
   `Olá! Sou o <strong>Agente Jet</strong> — curadoria de produtos da Jet Supply.<br><br>
   Meu fluxo: processo o lote do Signus, aplico o que sei, e pergunto o que não sei. Cada resposta fica salva na base compartilhada para toda a equipe.<br><br>
-  ${_saved ? 'Token detectado — conectando à base...' : 'Cole o <strong>GitHub Token</strong> na barra lateral para conectar. Na primeira vez só — o browser salva automaticamente.'}`,
+  ${(_saved && _savedClaude) ? 'Tokens detectados — conectando...' : 'Cole o <strong>GitHub Token</strong> e a <strong>Chave API Claude</strong> na barra lateral. Na primeira vez só — o browser salva automaticamente.'}`,
   `<div class="act-row">
     <button class="act-btn" onclick="sendQuick('Base de conhecimento')">Ver base atual</button>
     <button class="act-btn" onclick="sendQuick('Como funciona a curadoria?')">Como funciona?</button>
