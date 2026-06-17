@@ -203,19 +203,19 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </div>
     </div>
     <div class="cfg-row">
-      <label class="cfg-lbl">GitHub Token (repo write)</label>
+      <label class="cfg-lbl">GitHub Token <span style="color:var(--orange)">*</span></label>
       <div class="cfg-2">
         <input type="password" id="gh-token" class="cfg-inp" placeholder="ghp_..." oninput="checkKeys()">
         <button class="cfg-btn" onclick="toggleVis('gh-token')">ver</button>
       </div>
+      <div style="font-size:10px;color:var(--t5);margin-top:3px;line-height:1.4">Peça o token com o Matheus.<br>Salvo só no seu browser.</div>
     </div>
-    <div class="cfg-row">
-      <label class="cfg-lbl">Repositório GitHub</label>
-      <input type="text" id="gh-repo" class="cfg-inp" placeholder="usuario/jetsupply-agente-jet" oninput="checkKeys()">
+    <div class="cfg-row" style="display:none">
+      <input type="text" id="gh-repo" class="cfg-inp" value="Piresmathhh/jetsupply-agente-jet">
     </div>
     <div class="cfg-row">
       <label class="cfg-lbl">Seu nome (para histórico)</label>
-      <input type="text" id="user-name" class="cfg-inp" placeholder="Matheus" value="Matheus">
+      <input type="text" id="user-name" class="cfg-inp" placeholder="Seu nome">
     </div>
     <div class="cfg-row">
       <label class="cfg-lbl">URL base imagens (R2)</label>
@@ -255,10 +255,16 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 </div>
 
 <script>
+// ── Configuração ─────────────────────────────────────────────────────
+const CONFIG = {
+  GH_TOKEN: '',  // cada usuário preenche na primeira vez
+  GH_REPO:  'Piresmathhh/jetsupply-agente-jet',
+};
+
 // ── Estado global ────────────────────────────────────────────────────
 let products = [];
-let kb = null; // knowledge base
-let kbSha = null; // SHA do arquivo no GitHub (necessário pra atualizar)
+let kb = null;
+let kbSha = null;
 let pendentes = [];
 
 // ── Formatação de nome ────────────────────────────────────────────────
@@ -321,15 +327,31 @@ function formatName(raw, marcaNome) {
   return result;
 }
 
+function limparPlanilha() {
+  products = [];
+  pendentes = [];
+  document.getElementById('upload-area').innerHTML =
+    `<label class="upload-z" for="file-in">
+      <input type="file" id="file-in" accept=".xlsx,.xls">
+      <strong>Selecionar arquivo</strong>
+      <p>Exportação do Signus (.xlsx)</p>
+    </label>`;
+  document.getElementById('file-in').addEventListener('change', handleFileUpload);
+  document.getElementById('dl-bar').classList.remove('show');
+  renderPendentes();
+  addAgentMsg('Planilha removida. Faça o upload de uma nova quando quiser.');
+}
+
 // ── GitHub API ────────────────────────────────────────────────────────
+function ghToken() { return CONFIG.GH_TOKEN || document.getElementById('gh-token')?.value.trim() || ''; }
+function ghRepo()  { return CONFIG.GH_REPO  || document.getElementById('gh-repo')?.value.trim()  || ''; }
 function ghHeaders() {
   return {
-    'Authorization': `token ${document.getElementById('gh-token').value.trim()}`,
+    'Authorization': `token ${ghToken()}`,
     'Accept': 'application/vnd.github.v3+json',
     'Content-Type': 'application/json'
   };
 }
-function ghRepo() { return document.getElementById('gh-repo').value.trim(); }
 
 async function loadKB() {
   const repo = ghRepo();
@@ -421,7 +443,7 @@ function analisarProduto(p) {
 }
 
 // ── Upload ────────────────────────────────────────────────────────────
-document.getElementById('file-in').addEventListener('change', async function(e) {
+function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -429,11 +451,20 @@ document.getElementById('file-in').addEventListener('change', async function(e) 
     const wb = XLSX.read(ev.target.result, { type:'array' });
     products = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     document.getElementById('upload-area').innerHTML =
-      `<div class="file-ok"><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${products.length} produtos</div></div>`;
+      `<div class="file-ok">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="file-ok-name">${file.name}</div>
+            <div class="file-ok-sub">${products.length} produtos</div>
+          </div>
+          <button onclick="limparPlanilha()" title="Remover planilha" style="background:none;border:none;cursor:pointer;color:#1A7A4A;font-size:18px;padding:2px 4px;line-height:1" >×</button>
+        </div>
+      </div>`;
     await processarLote();
   };
   reader.readAsArrayBuffer(file);
-});
+}
+document.getElementById('file-in').addEventListener('change', handleFileUpload);
 
 async function processarLote() {
   if (!products.length) return;
@@ -513,66 +544,94 @@ function renderPendentes() {
 
   // Agrupar por marca desconhecida
   const porMarca = {};
+  const porCat = {};
   pendentes.forEach(p => {
     p.issues.forEach(issue => {
       if (issue.tipo === 'marca') {
         if (!porMarca[issue.valor]) porMarca[issue.valor] = [];
         porMarca[issue.valor].push(p);
       }
+      if (issue.tipo === 'categoria') {
+        if (!porCat[issue.valor]) porCat[issue.valor] = [];
+        porCat[issue.valor].push(p);
+      }
     });
   });
 
   let html = '';
+
+  // Pendências de marca
   Object.entries(porMarca).forEach(([marca, prods]) => {
+    const marcaId = marca.replace(/[^a-zA-Z0-9]/g,'_');
     html += `<div class="pend-item">
       <div class="pend-head">
-        <div class="pend-head-txt">Marca desconhecida: ${marca} (${prods.length} produto${prods.length>1?'s':''})</div>
+        <div class="pend-head-txt">⚠ Marca nova: ${marca} (${prods.length} prod.)</div>
       </div>
       <div class="pend-body">
         <div class="pend-q">Como escrever o nome desta marca?</div>
-        <input class="pend-inp" id="pend-nome-${marca}" placeholder="Ex: Schneider Electric" value="${marca}">
-        <div class="pend-q" style="margin-top:6px">Siglas de modelo que ficam maiúsculas (separadas por vírgula):</div>
-        <input class="pend-inp" id="pend-siglas-${marca}" placeholder="Ex: NSX, IC60, A9, XE...">
-        <button class="pend-save" onclick="salvarMarca('${marca}')">Salvar e aplicar</button>
-        <button class="pend-skip" onclick="pularMarca('${marca}')">Pular por agora</button>
+        <input class="pend-inp" id="pend-nome-${marcaId}" placeholder="Ex: Schneider Electric" value="${marca}">
+        <div class="pend-q" style="margin-top:6px">Siglas maiúsculas (vírgula):</div>
+        <input class="pend-inp" id="pend-siglas-${marcaId}" placeholder="Ex: NSX, IC60, A9...">
+        <button class="pend-save" onclick="salvarMarca('${marca}','${marcaId}')">Salvar e aplicar</button>
+        <button class="pend-skip" onclick="pularMarca('${marca}')">Pular</button>
       </div>
     </div>`;
   });
 
-  area.innerHTML = html || '<div class="pend-empty">Sem pendências de marca.</div>';
+  // Pendências de categoria
+  Object.entries(porCat).forEach(([cat, prods]) => {
+    const catId = cat.replace(/[^a-zA-Z0-9]/g,'_');
+    html += `<div class="pend-item">
+      <div class="pend-head">
+        <div class="pend-head-txt">📂 Categoria nova: ${cat.length>28?cat.slice(0,28)+'…':cat} (${prods.length} prod.)</div>
+      </div>
+      <div class="pend-body">
+        <div class="pend-q">Como chamar esta categoria na Zydon?</div>
+        <input class="pend-inp" id="pend-cat-${catId}" placeholder="Ex: Disjuntores Miniatura" value="${cat}">
+        <button class="pend-save" onclick="salvarCategoria('${cat}','${catId}')">Salvar</button>
+        <button class="pend-skip" onclick="pularCategoria('${cat}')">Pular</button>
+      </div>
+    </div>`;
+  });
+
+  area.innerHTML = html || '<div class="pend-empty">Sem pendências.<br>Tudo processado!</div>';
 }
 
-async function salvarMarca(marcaOriginal) {
-  const nomeExib = document.getElementById(`pend-nome-${marcaOriginal}`)?.value.trim() || marcaOriginal;
-  const siglasRaw = document.getElementById(`pend-siglas-${marcaOriginal}`)?.value.trim() || '';
+async function salvarMarca(marcaOriginal, marcaId) {
+  const id = marcaId || marcaOriginal.replace(/[^a-zA-Z0-9]/g,'_');
+  const nomeExib = document.getElementById(`pend-nome-${id}`)?.value.trim() || marcaOriginal;
+  const siglasRaw = document.getElementById(`pend-siglas-${id}`)?.value.trim() || '';
   const siglas = siglasRaw.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
-
   if (!kb) kb = defaultKB();
   kb.marcas = kb.marcas || {};
-  kb.marcas[nomeExib] = {
-    nome_exibicao: nomeExib,
-    siglas_modelos: siglas,
-    unidades_upper: [],
-    regras_nome: []
-  };
-
+  kb.marcas[nomeExib] = { nome_exibicao:nomeExib, siglas_modelos:siglas, unidades_upper:[], regras_nome:[] };
   const ok = await learnAndSave(kb, `Adicionou marca: ${nomeExib}`);
-
-  // Remover pendências dessa marca
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marcaOriginal));
   renderPendentes();
-
-  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length ? ` com ${siglas.length} sigla(s): ${siglas.join(', ')}` : ''}. ${ok ? 'Base sincronizada no GitHub.' : 'Erro ao sincronizar — tente novamente.'}`);
-
-  // Reprocessar se não há mais pendências
-  if (!pendentes.length) {
-    setTimeout(() => addAgentMsg('Todas as dúvidas respondidas! Agora você pode gerar a planilha.',
-      `<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button></div>`), 400);
-  }
+  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${ok?' Base sincronizada no GitHub.':' Erro ao sincronizar.'}`);
+  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo certo! Pode gerar a planilha.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button></div>`),400);
 }
 
 function pularMarca(marca) {
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca));
+  renderPendentes();
+}
+
+async function salvarCategoria(catOriginal, catId) {
+  const id = catId || catOriginal.replace(/[^a-zA-Z0-9]/g,'_');
+  const nomeZydon = document.getElementById(`pend-cat-${id}`)?.value.trim() || catOriginal;
+  if (!kb) kb = defaultKB();
+  kb.categorias = kb.categorias || {};
+  kb.categorias[catOriginal] = nomeZydon;
+  const ok = await learnAndSave(kb, `Mapeou categoria: "${catOriginal}" → "${nomeZydon}"`);
+  pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===catOriginal));
+  renderPendentes();
+  addAgentMsg(`Categoria <strong>"${catOriginal}"</strong> → <strong>"${nomeZydon}"</strong> salva.${ok?' GitHub sincronizado.':''}`);
+  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo certo! Pode gerar a planilha.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button></div>`),400);
+}
+
+function pularCategoria(cat) {
+  pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===cat));
   renderPendentes();
 }
 
@@ -744,8 +803,9 @@ function removeTyping(){ const t=document.getElementById('typ'); if(t)t.remove()
 function toggleVis(id){ const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; }
 
 function checkKeys() {
-  const tok = document.getElementById('gh-token').value.trim();
-  const rep = document.getElementById('gh-repo').value.trim();
+  const tok = ghToken();
+  const rep = ghRepo();
+  if (tok) localStorage.setItem('jet_gh_token', tok);
   if (tok && rep) {
     setGhStatus('warn','Conectando...');
     clearTimeout(window._ghTimer);
@@ -754,13 +814,20 @@ function checkKeys() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────
+// Restaurar token salvo no browser (não precisa digitar toda vez)
+const _saved = localStorage.getItem('jet_gh_token');
+if (_saved) {
+  document.getElementById('gh-token').value = _saved;
+  setTimeout(loadKB, 600);
+}
+
 addAgentMsg(
-  `Olá, Matheus! Sou o <strong>Agente Jet</strong> — curadoria de produtos da Jet Supply.<br><br>
-  Meu fluxo: processo o lote do Signus, aplico o que sei, e pergunto o que não sei. Cada resposta sua fica salva na base compartilhada no GitHub para toda a equipe.<br><br>
-  Para começar configure o <strong>GitHub Token</strong> e o <strong>repositório</strong> na barra lateral, depois faça o upload da planilha.`,
+  `Olá! Sou o <strong>Agente Jet</strong> — curadoria de produtos da Jet Supply.<br><br>
+  Meu fluxo: processo o lote do Signus, aplico o que sei, e pergunto o que não sei. Cada resposta fica salva na base compartilhada para toda a equipe.<br><br>
+  ${_saved ? 'Token detectado — conectando à base...' : 'Cole o <strong>GitHub Token</strong> na barra lateral para conectar. Na primeira vez só — o browser salva automaticamente.'}`,
   `<div class="act-row">
-    <button class="act-btn" onclick="sendQuick('Como configuro o GitHub Token?')">Como configuro o token?</button>
     <button class="act-btn" onclick="sendQuick('Base de conhecimento')">Ver base atual</button>
+    <button class="act-btn" onclick="sendQuick('Como funciona a curadoria?')">Como funciona?</button>
   </div>`
 );
 </script>
