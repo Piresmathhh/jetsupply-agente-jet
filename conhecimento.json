@@ -29,7 +29,8 @@
   },
   "categorias": {
     "DISJUNTOR MINI 1P MONOPOLAR": "DISJUNTOR MINI 1P MONOPOLAR",
-    "DISJUNTOR MINI 3P TRIPOLAR": "DISJUNTOR MINI 3P TRIPOLAR"
+    "DISJUNTOR MINI 3P TRIPOLAR": "DISJUNTOR MINI 3P TRIPOLAR",
+    "DISJUNTOR MINI 4P TETRAPOLAR": "DISJUNTOR MINI 4P TETRAPOLAR"
   },
   "unidades_globais": [
     "A",
@@ -56,6 +57,11 @@
   ],
   "regras_globais": [],
   "historico": [
+    {
+      "data": "2026-06-17",
+      "usuario": "Accorsi",
+      "acao": "Mapeou categoria: \"DISJUNTOR MINI 4P TETRAPOLAR\" → \"DISJUNTOR MINI 4P TETRAPOLAR\""
+    },
     {
       "data": "2026-06-17",
       "usuario": "Accorsi",
