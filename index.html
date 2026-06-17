@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente Jet — Jet Supply</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#15375B;--orange:#EA5618;--bg:#F0F3F6;--surface:#FFFFFF;
+  --soft:#F7F9FB;--callout:#FDEEE5;
+  --t1:#333;--t2:#555;--t3:#666;--t4:#777;--t5:#999;
+  --on-navy:#FFF;--on-soft:#AAC4DD;--on-faint:#6A94B5;
+  --border:#E8ECF0;--border-c:#E0E8F0;
+  --green:#1A7A4A;--green-l:#E8F5EE;
+  --amber:#B45309;--amber-l:#FEF3C7;
+  --red:#C0392B;--red-l:#FDEEEC;
+  --rc:10px;--rb:8px;--rbt:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1);font-size:14px;line-height:1.5;height:100vh;overflow:hidden}
+.app{display:grid;grid-template-columns:280px 1fr;grid-template-rows:52px 1fr;height:100vh}
+
+/* Topbar */
+.topbar{grid-column:1/-1;background:var(--navy);display:flex;align-items:center;padding:0 16px;gap:12px}
+.topbar-logo{height:28px;flex-shrink:0}
+.topbar-div{width:1px;height:22px;background:var(--on-faint)}
+.topbar-name{font-size:13px;font-weight:bold;color:var(--on-navy)}
+.topbar-sub{font-size:10px;color:var(--on-soft);margin-top:1px}
+.topbar-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--on-faint);flex-shrink:0}
+.status-dot.ok{background:#4ade80}
+.status-dot.warn{background:#fbbf24}
+.status-txt{font-size:11px;color:var(--on-soft)}
+.sync-btn{padding:4px 10px;border-radius:var(--rbt);border:1px solid var(--on-faint);background:transparent;color:var(--on-soft);font-size:11px;cursor:pointer;font-family:inherit}
+.sync-btn:hover{border-color:var(--on-navy);color:var(--on-navy)}
+
+/* Sidebar */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-sec{padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-lbl{font-size:10px;font-weight:bold;color:var(--t5);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.upload-z{border:1.5px dashed var(--border-c);border-radius:var(--rb);padding:12px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg)}
+.upload-z:hover{border-color:var(--orange);background:var(--callout)}
+.upload-z input{display:none}
+.upload-z strong{font-size:12px;color:var(--t1);display:block}
+.upload-z p{font-size:11px;color:var(--t5);margin-top:2px}
+.file-ok{background:var(--green-l);border:1px solid #86efac;border-radius:var(--rb);padding:9px 11px}
+.file-ok-name{font-size:12px;font-weight:bold;color:var(--green)}
+.file-ok-sub{font-size:11px;color:var(--green);margin-top:1px}
+
+.cfg-row{margin-bottom:7px}
+.cfg-lbl{font-size:11px;color:var(--t4);display:block;margin-bottom:3px}
+.cfg-inp{width:100%;padding:5px 8px;border:1px solid var(--border-c);border-radius:var(--rbt);font-size:12px;background:var(--bg);color:var(--t1);outline:none;font-family:inherit}
+.cfg-inp:focus{border-color:var(--navy)}
+.cfg-2{display:flex;gap:5px}
+.cfg-2 input{flex:1}
+.cfg-btn{padding:5px 9px;border:1px solid var(--border-c);border-radius:var(--rbt);background:var(--bg);font-size:11px;cursor:pointer;color:var(--t4);font-family:inherit;white-space:nowrap}
+.cfg-btn:hover{border-color:var(--navy);color:var(--navy)}
+
+/* Pendências */
+.pend-area{flex:1;overflow-y:auto;padding:10px 14px}
+.pend-empty{font-size:11px;color:var(--t5);text-align:center;padding:20px 4px;line-height:1.7}
+.pend-item{border:1px solid var(--border-c);border-radius:var(--rb);margin-bottom:8px;overflow:hidden}
+.pend-head{background:var(--amber-l);padding:7px 10px;display:flex;align-items:center;gap:6px}
+.pend-head-txt{font-size:11px;font-weight:bold;color:var(--amber);flex:1}
+.pend-body{padding:8px 10px}
+.pend-q{font-size:11px;color:var(--t2);margin-bottom:5px;font-weight:bold}
+.pend-inp{width:100%;padding:5px 8px;border:1px solid var(--border-c);border-radius:var(--rbt);font-size:11px;background:var(--bg);color:var(--t1);outline:none;font-family:inherit;margin-bottom:5px}
+.pend-inp:focus{border-color:var(--orange)}
+.pend-save{padding:4px 12px;border-radius:var(--rbt);border:none;background:var(--orange);color:#fff;font-size:11px;font-weight:bold;cursor:pointer;font-family:inherit}
+.pend-save:hover{opacity:.88}
+.pend-skip{padding:4px 10px;border-radius:var(--rbt);border:1px solid var(--border-c);background:transparent;color:var(--t4);font-size:11px;cursor:pointer;font-family:inherit;margin-left:5px}
+
+/* Main */
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.chat{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+
+.msg{max-width:720px}
+.msg-a{align-self:flex-start}
+.msg-u{align-self:flex-end}
+.msg-lbl{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;color:var(--t5);margin-bottom:3px;padding:0 2px}
+.msg-u .msg-lbl{text-align:right}
+.bubble{padding:11px 14px;border-radius:var(--rc);font-size:13px;line-height:1.6;color:var(--t2)}
+.msg-a .bubble{background:var(--surface);border:1px solid var(--border);border-radius:4px 10px 10px 10px}
+.msg-u .bubble{background:var(--navy);color:var(--on-navy);border-radius:10px 4px 10px 10px}
+
+/* Preview */
+.preview{border:1px solid var(--border-c);border-radius:var(--rb);overflow:hidden;margin-top:8px;font-size:11px}
+.preview table{width:100%;border-collapse:collapse}
+.preview th{background:var(--bg);padding:5px 9px;text-align:left;font-weight:bold;color:var(--t5);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.preview td{padding:6px 9px;border-bottom:1px solid var(--border);vertical-align:top}
+.preview tr:last-child td{border-bottom:none}
+.td-old{color:var(--t5);text-decoration:line-through;font-size:10px}
+.td-new{color:var(--t1);font-weight:bold;margin-top:1px}
+.td-warn{background:#fffbeb}
+.td-pend{background:var(--amber-l)}
+.badge{display:inline-block;font-size:10px;font-weight:bold;padding:1px 6px;border-radius:10px}
+.b-ok{background:var(--green-l);color:var(--green)}
+.b-pend{background:var(--amber-l);color:var(--amber)}
+.b-err{background:var(--red-l);color:var(--red)}
+
+.act-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.act-btn{padding:6px 13px;border-radius:20px;border:1px solid var(--border-c);background:var(--surface);font-size:12px;cursor:pointer;color:var(--navy);font-family:inherit;font-weight:bold;transition:all .15s}
+.act-btn:hover{border-color:var(--navy);background:var(--soft)}
+.act-btn.pri{background:var(--orange);color:#fff;border-color:transparent}
+.act-btn.pri:hover{opacity:.9}
+.act-btn.sec{background:var(--navy);color:#fff;border-color:transparent}
+
+/* Relatório */
+.report{border:1px solid var(--border-c);border-radius:var(--rb);overflow:hidden;margin-top:8px}
+.report-head{background:var(--navy);padding:8px 12px;font-size:12px;font-weight:bold;color:var(--on-navy);display:flex;justify-content:space-between;align-items:center}
+.report-stats{display:flex;gap:12px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--soft)}
+.stat{text-align:center}
+.stat-n{font-size:18px;font-weight:bold}
+.stat-l{font-size:10px;color:var(--t5);margin-top:1px}
+.n-ok{color:var(--green)}.n-pend{color:var(--amber)}.n-err{color:var(--red)}
+
+/* DL bar */
+.dl-bar{background:var(--green-l);border-top:1px solid #86efac;padding:9px 20px;display:none;align-items:center;gap:10px}
+.dl-bar.show{display:flex}
+.dl-bar p{font-size:12px;color:var(--green);flex:1;font-weight:bold}
+.dl-btn{padding:7px 16px;background:var(--green);color:#fff;border:none;border-radius:var(--rbt);font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit}
+
+/* Input */
+.inp-area{padding:10px 16px 14px;border-top:1px solid var(--border);background:var(--surface)}
+.inp-row{display:flex;gap:7px;align-items:flex-end}
+.inp-wrap{flex:1;border:1px solid var(--border-c);border-radius:var(--rc);background:var(--bg);display:flex;align-items:center;padding:7px 11px;gap:7px;transition:border-color .15s}
+.inp-wrap:focus-within{border-color:var(--navy)}
+.inp{flex:1;border:none;background:transparent;font-size:13px;outline:none;resize:none;color:var(--t1);font-family:inherit;max-height:80px}
+.inp::placeholder{color:var(--t5)}
+.send{width:34px;height:34px;border-radius:var(--rbt);background:var(--orange);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send:hover{opacity:.85}
+.send:disabled{opacity:.35;cursor:default}
+.send svg{width:15px;height:15px;fill:#fff}
+
+/* Typing */
+.typing{display:flex;gap:4px;align-items:center}
+.typing span{width:5px;height:5px;background:var(--border-c);border-radius:50%;animation:bounce .8s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+
+/* Base viewer */
+.base-card{background:var(--soft);border:1px solid var(--border-c);border-radius:var(--rb);padding:10px 12px;margin-top:8px;font-size:11px}
+.base-marca{font-weight:bold;color:var(--navy);margin-bottom:4px;font-size:12px}
+.base-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+.base-chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1px 7px;color:var(--t3)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Topbar -->
+<header class="topbar">
+  <svg class="topbar-logo" viewBox="0 0 697.51 131.43" xmlns="http://www.w3.org/2000/svg" aria-label="Jet Supply">
+    <polygon fill="#EA5618" points="653.61 97.2 628.23 42.48 643.57 42.48 661.42 80.99 653.61 97.2"/>
+    <path fill="#fff" d="M697.51,42.48l-26.97,58.13-3.6,7.91c-2.17,4.73-5.43,8.49-9.77,11.28-4.34,2.79-9.15,4.19-14.41,4.19h-6.16l3.49-13.95h3.37c2.25,0,4.34-.62,6.28-1.86,1.94-1.24,3.37-2.91,4.3-5l.26-.58h0s0,0,0,0h0s0-.02,0-.02v-.02s.02-.02.02-.02l9.95-21.46.41-.89.67-1.44.52-1.12.24-.5,16.06-34.64h15.35Z"/>
+    <rect fill="#fff" x="609.62" y="19.23" width="13.95" height="81.38"/>
+    <path fill="#fff" d="M573.7,40.86c4.26,0,8.2.79,11.8,2.38,3.6,1.59,6.72,3.78,9.36,6.57,2.64,2.79,4.69,6.05,6.16,9.77,1.47,3.72,2.21,7.71,2.21,11.97s-.74,8.14-2.21,11.86c-1.47,3.72-3.53,6.98-6.16,9.77-2.64,2.79-5.75,4.98-9.36,6.57-3.6,1.59-7.54,2.38-11.8,2.38-4.73,0-8.87-.89-12.44-2.67l5-12.44c1.86.77,3.95,1.16,6.28,1.16s4.38-.41,6.39-1.22c2.02-.81,3.84-2.03,5.46-3.66,3.26-3.26,4.88-7.17,4.88-11.74s-1.63-8.6-4.88-11.86c-3.41-3.26-7.36-4.88-11.86-4.88s-8.6,1.63-11.86,4.88c-3.25,3.26-4.88,7.21-4.88,11.86v58.55l-13.95.27V42.37h13.95v4.65c2.25-1.78,4.84-3.26,7.79-4.42,2.94-1.16,6.32-1.74,10.11-1.74"/>
+    <path fill="#fff" d="M505.92,40.86c4.26,0,8.2.79,11.8,2.38,3.6,1.59,6.72,3.78,9.36,6.57,2.64,2.79,4.69,6.05,6.16,9.77,1.47,3.72,2.21,7.71,2.21,11.97s-.74,8.14-2.21,11.86c-1.47,3.72-3.53,6.98-6.16,9.77-2.64,2.79-5.75,4.98-9.36,6.57-3.6,1.59-7.54,2.38-11.8,2.38-4.73,0-8.87-.89-12.44-2.67l5-12.44c1.86.77,3.95,1.16,6.28,1.16s4.38-.41,6.39-1.22c2.02-.81,3.84-2.03,5.46-3.66,3.26-3.26,4.88-7.17,4.88-11.74s-1.63-8.6-4.88-11.86c-3.41-3.26-7.36-4.88-11.86-4.88s-8.6,1.63-11.86,4.88c-3.26,3.26-4.88,7.21-4.88,11.86v58.77l-13.95-.04V42.37h13.95v4.65c2.25-1.78,4.84-3.26,7.79-4.42,2.94-1.16,6.32-1.74,10.11-1.74"/>
+    <path fill="#fff" d="M466.51,42.48v58.13h-13.95v-4.42c-2.09,1.78-4.46,3.24-7.09,4.36-2.64,1.12-5.58,1.69-8.84,1.69-3.8,0-7.25-.72-10.35-2.15-3.1-1.43-5.76-3.39-7.96-5.87-2.21-2.48-3.91-5.39-5.12-8.72-1.2-3.33-1.8-6.9-1.8-10.7v-32.32h13.95v32.32c0,3.64,1.36,6.82,4.07,9.53,2.64,2.64,5.81,3.95,9.53,3.95s7.02-1.32,9.65-3.95c2.63-2.64,3.95-5.81,3.95-9.53v-32.32h13.95Z"/>
+    <path fill="#fff" d="M405.59,77.36c0,3.8-.62,7.23-1.86,10.29-1.24,3.06-3,5.66-5.29,7.79-2.29,2.13-5.06,3.78-8.31,4.94-3.26,1.16-6.9,1.74-10.93,1.74-6.43,0-12.17-1.03-17.21-3.08-5.04-2.05-9.18-4.4-12.44-7.03l9.65-9.65c2.56,2.33,5.43,4.11,8.6,5.35,1.94.78,3.76,1.28,5.46,1.51,1.71.23,3.1.35,4.19.35,2.01,0,3.85-.25,5.52-.76,1.67-.5,3.12-1.18,4.36-2.03,2.64-1.94,3.95-4.5,3.95-7.67,0-1.94-.7-3.68-2.09-5.23-1.09-1.24-2.48-2.25-4.19-3.02-1.4-.77-2.87-1.39-4.42-1.86-1.55-.46-2.95-.89-4.19-1.28-.39-.16-.74-.25-1.05-.29-.31-.04-.58-.14-.81-.29-.15,0-.39-.08-.7-.23-1.63-.46-3.97-1.28-7.03-2.44-3.06-1.16-6.1-2.75-9.13-4.77-7.05-4.73-10.58-10.54-10.58-17.44,0-4.57.79-8.43,2.38-11.57,1.59-3.14,3.66-5.7,6.22-7.67,2.56-1.98,5.41-3.39,8.54-4.24,3.14-.85,6.22-1.28,9.24-1.28,5.58,0,10.27.66,14.07,1.98,3.8,1.32,6.82,2.64,9.07,3.95,1.16.7,2.15,1.38,2.96,2.03.81.66,1.53,1.26,2.15,1.8l-9.88,10c-2.09-2.09-4.22-3.68-6.39-4.77-3.26-1.55-6.67-2.33-10.23-2.33-1.55,0-3.1.19-4.65.58-1.55.39-2.91.89-4.07,1.51-3.41,2.09-5.11,4.84-5.11,8.26,0,2.09.7,3.88,2.09,5.35,1.01,1.16,2.4,2.21,4.19,3.14,1.47.78,3.02,1.39,4.65,1.86,1.63.47,3.14.89,4.53,1.28l1.4.35c.39.16,1.12.39,2.21.7,1.08.31,2.36.78,3.84,1.4,1.47.62,3.08,1.36,4.82,2.21,1.74.85,3.47,1.86,5.17,3.02,7.52,4.96,11.28,10.81,11.28,17.56"/>
+    <path fill="#fff" d="M323,100.61h-15.41c-2.64,0-5.12-.5-7.44-1.51-2.33-1.01-4.34-2.38-6.05-4.13-1.71-1.74-3.06-3.78-4.07-6.1-1.01-2.32-1.51-4.81-1.51-7.44V31.56h13.95v17.9h8.14l3.49,13.95h-11.63v18.02c0,1.47.5,2.71,1.51,3.72,1.01,1.01,2.21,1.51,3.61,1.51h11.83l3.58,13.95Z"/>
+    <path fill="#fff" d="M267.83,78.53h-30.46c.77,1.78,1.9,3.37,3.37,4.77,1.63,1.63,3.45,2.85,5.46,3.66,2.02.81,4.15,1.22,6.39,1.22,3.18,0,6.01-.74,8.49-2.21l14.53,5.81c-2.79,3.25-6.16,5.79-10.11,7.61-3.95,1.82-8.26,2.73-12.9,2.73-4.26,0-8.25-.79-11.97-2.38-3.72-1.59-6.98-3.78-9.77-6.57s-4.98-6.05-6.57-9.77c-1.59-3.72-2.38-7.67-2.38-11.86s.79-8.26,2.38-11.97c1.59-3.72,3.78-6.98,6.57-9.77,2.79-2.79,6.05-4.98,9.77-6.57,3.72-1.59,7.71-2.38,11.97-2.38s8.25.79,11.97,2.38c3.72,1.59,6.98,3.78,9.77,6.57,2.79,2.79,4.98,6.05,6.57,9.77,1.59,3.72,2.38,7.71,2.38,11.97,0,2.48-.27,4.8-.81,6.98h-14.65ZM252.6,54.81c-4.5,0-8.45,1.63-11.86,4.88-1.47,1.47-2.6,3.1-3.37,4.88h30.46c-.78-1.78-1.9-3.41-3.37-4.88-3.25-3.26-7.21-4.88-11.86-4.88"/>
+    <path fill="#fff" d="M216.09,19.23v48.83c0,4.73-.89,9.17-2.67,13.31-1.78,4.15-4.22,7.77-7.32,10.87-3.1,3.1-6.74,5.54-10.93,7.32-4.19,1.78-8.64,2.68-13.37,2.68s-9.15-.89-13.25-2.68c-4.11-1.78-7.71-4.22-10.81-7.32l9.88-9.88c3.95,3.95,8.68,5.93,14.18,5.93s10.46-1.98,14.42-5.93c1.94-1.94,3.41-4.13,4.42-6.57,1.01-2.44,1.51-5.02,1.51-7.73V19.23h13.95Z"/>
+    <path fill="#EA5618" d="M134.18,58.43c3.5,10.85,3.72,22.87-.11,34.53-8.78,26.74-35.8,42.37-62.73,37.63,13.58-6.43,25.86-16.06,35.92-26.97,11.34-12.3,21.41-28.22,26.92-45.18"/>
+    <path fill="#EA5618" d="M98.4,22.43c5.76,1.89,11,4.63,15.63,8.03-3.17,15.58-12.27,30.74-22.69,42.05-9.48,10.29-21.79,19.42-35.22,23.75-8.55,2.76-19.2,3.94-27.34-.72-4.45-11.59-5.09-24.72-.92-37.44,9.63-29.33,41.21-45.3,70.54-35.67"/>
+    <path fill="#fff" d="M99.74,80.24c-27.76,30.11-65.26,38.9-83.76,19.64-11-11.45-12.81-30.25-6.63-49.94-12.52,25.48-12.85,51.85,1.33,66.62,19.48,20.28,58.96,11.03,88.18-20.68,21.11-22.91,31.09-51.26,27.66-72.88-1.12,18.35-10.44,39.52-26.79,57.25"/>
+    <path fill="#fff" d="M124.96,9.36c.12-1.68,1.57-2.94,3.25-2.82,1.68.12,2.94,1.57,2.82,3.25-.12,1.68-1.57,2.94-3.25,2.82-1.68-.12-2.94-1.57-2.82-3.25M128.66,0s-10.9,8.02-7.44,23.87c-2.76,3.14-4.76,7.93-4.99,11.27-.06.78-.02,1.54.1,2.28,1.04-3.35,3.77-5.9,7.14-6.72.73,1.68,1.61,3.43,2.67,5.25,1.31-1.65,2.42-3.26,3.38-4.82,3.22,1.29,5.57,4.19,6.13,7.65.22-.71.37-1.47.42-2.25.23-3.34-1.08-8.36-3.37-11.86,5.64-15.21-4.03-24.67-4.03-24.67"/>
+  </svg>
+  <div class="topbar-div"></div>
+  <div>
+    <div class="topbar-name">Agente Jet</div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon</div>
+  </div>
+  <div class="topbar-r">
+    <div class="status-dot" id="gh-dot"></div>
+    <span class="status-txt" id="gh-txt">GitHub não configurado</span>
+    <button class="sync-btn" onclick="syncGitHub()" id="sync-btn" style="display:none">Sincronizar base</button>
+  </div>
+</header>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sb-sec">
+    <div class="sb-lbl">Planilha Signus</div>
+    <div id="upload-area">
+      <label class="upload-z" for="file-in">
+        <input type="file" id="file-in" accept=".xlsx,.xls">
+        <strong>Selecionar arquivo</strong>
+        <p>Exportação do Signus (.xlsx)</p>
+      </label>
+    </div>
+  </div>
+
+  <div class="sb-sec">
+    <div class="sb-lbl">Configurações</div>
+    <div class="cfg-row">
+      <label class="cfg-lbl">Chave API Claude</label>
+      <div class="cfg-2">
+        <input type="password" id="claude-key" class="cfg-inp" placeholder="sk-ant-..." oninput="checkKeys()">
+        <button class="cfg-btn" onclick="toggleVis('claude-key')">ver</button>
+      </div>
+    </div>
+    <div class="cfg-row">
+      <label class="cfg-lbl">GitHub Token (repo write)</label>
+      <div class="cfg-2">
+        <input type="password" id="gh-token" class="cfg-inp" placeholder="ghp_..." oninput="checkKeys()">
+        <button class="cfg-btn" onclick="toggleVis('gh-token')">ver</button>
+      </div>
+    </div>
+    <div class="cfg-row">
+      <label class="cfg-lbl">Repositório GitHub</label>
+      <input type="text" id="gh-repo" class="cfg-inp" placeholder="usuario/jetsupply-agente-jet" oninput="checkKeys()">
+    </div>
+    <div class="cfg-row">
+      <label class="cfg-lbl">Seu nome (para histórico)</label>
+      <input type="text" id="user-name" class="cfg-inp" placeholder="Matheus" value="Matheus">
+    </div>
+    <div class="cfg-row">
+      <label class="cfg-lbl">URL base imagens (R2)</label>
+      <input type="text" id="img-url" class="cfg-inp" placeholder="https://cdn.jetsupply.com.br">
+    </div>
+  </div>
+
+  <div class="sb-sec" style="flex-shrink:0">
+    <div class="sb-lbl" style="margin-bottom:0;display:flex;justify-content:space-between;align-items:center">
+      Pendências de curadoria
+      <span id="pend-count" style="font-size:11px;color:var(--orange);font-weight:bold"></span>
+    </div>
+  </div>
+  <div class="pend-area" id="pend-area">
+    <div class="pend-empty">Processe um lote para ver<br>as dúvidas do agente aqui.</div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="chat" id="chat"></div>
+  <div class="dl-bar" id="dl-bar">
+    <p id="dl-msg">Planilha pronta.</p>
+    <button class="dl-btn" id="dl-btn">Baixar planilha Zydon</button>
+  </div>
+  <div class="inp-area">
+    <div class="inp-row">
+      <div class="inp-wrap">
+        <textarea class="inp" id="inp" rows="1" placeholder="Converse com o agente, corrija nomes, ensine marcas..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+      </div>
+      <button class="send" id="send-btn" onclick="send()" title="Enviar">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+// ── Estado global ────────────────────────────────────────────────────
+let products = [];
+let kb = null; // knowledge base
+let kbSha = null; // SHA do arquivo no GitHub (necessário pra atualizar)
+let pendentes = [];
+
+// ── Formatação de nome ────────────────────────────────────────────────
+const UPPER_GLOBAL = new Set(['VCA','VCC','CA','CC','AC','DC','VA','KW','KVA','MW','HZ','KHZ','MHZ','IP','IK','NBR','ABNT','IEC','NR','1P','2P','3P','4P','5P','DIN','NEMA','UL','CE']);
+const LOWER_CONN   = new Set(['de','do','da','dos','das','e','a','o','em','para','com','por','na','no','nas','nos']);
+
+function getMarcaConfig(marcaNome) {
+  if (!kb) return null;
+  const key = Object.keys(kb.marcas || {}).find(k => k.toLowerCase() === (marcaNome||'').toLowerCase());
+  return key ? kb.marcas[key] : null;
+}
+
+function getSiglasUpper(marcaNome) {
+  const cfg = getMarcaConfig(marcaNome);
+  const siglas = new Set(UPPER_GLOBAL);
+  if (cfg) {
+    (cfg.siglas_modelos || []).forEach(s => siglas.add(s.toUpperCase()));
+    (cfg.unidades_upper || []).forEach(u => siglas.add(u.toUpperCase()));
+  }
+  if (kb) (kb.unidades_globais || []).forEach(u => siglas.add(u.toUpperCase()));
+  return siglas;
+}
+
+function formatToken(token, isFirst, upper) {
+  if (/^[-\/.,]$/.test(token)) return token;
+  const up = token.toUpperCase();
+  if (upper.has(up)) return up;
+  const m = token.match(/^(\d+(?:[.,]\d+)?)(A|V|W|VA|KW|KVA|MW|VCA|VCC|HZ|KHZ|MHZ|KV|CV|HP|RPM|BAR|PSI)$/i);
+  if (m) return m[1] + m[2].toUpperCase();
+  if (/^\d+VCA\/\d+VCC$/i.test(token)) return token.toUpperCase();
+  if (/^[1-5]P$/i.test(token)) return token.toUpperCase();
+  if (/^\d+$/.test(token)) return token;
+  if (LOWER_CONN.has(token.toLowerCase()) && !isFirst) return token.toLowerCase();
+  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+}
+
+function formatName(raw, marcaNome) {
+  if (!raw) return '';
+  const upper = getSiglasUpper(marcaNome);
+  const parts = raw.trim().split(/(\s*-\s*)/);
+  let out = [], isFirst = true;
+  for (const p of parts) {
+    if (/^\s*-\s*$/.test(p)) { out.push(' - '); continue; }
+    const words = p.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) continue;
+    out.push(words.map((w,i) => formatToken(w, isFirst && i===0, upper)).join(' '));
+    isFirst = false;
+  }
+  // Aplicar regras globais
+  let result = out.join('').replace(/\s{2,}/g,' ').trim();
+  if (kb) {
+    for (const r of (kb.regras_globais || [])) {
+      result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
+    }
+    const cfg = getMarcaConfig(marcaNome);
+    if (cfg) for (const r of (cfg.regras_nome || [])) {
+      result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
+    }
+  }
+  return result;
+}
+
+// ── GitHub API ────────────────────────────────────────────────────────
+function ghHeaders() {
+  return {
+    'Authorization': `token ${document.getElementById('gh-token').value.trim()}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json'
+  };
+}
+function ghRepo() { return document.getElementById('gh-repo').value.trim(); }
+
+async function loadKB() {
+  const repo = ghRepo();
+  const token = document.getElementById('gh-token').value.trim();
+  if (!repo || !token) return;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, { headers: ghHeaders() });
+    if (r.ok) {
+      const d = await r.json();
+      kbSha = d.sha;
+      kb = JSON.parse(atob(d.content.replace(/\n/g,'')));
+      setGhStatus('ok', `Base carregada · ${Object.keys(kb.marcas||{}).length} marcas`);
+      document.getElementById('sync-btn').style.display = '';
+    } else if (r.status === 404) {
+      // Criar arquivo inicial
+      await saveKB(defaultKB(), 'Base inicializada');
+      setGhStatus('ok', 'Base criada no repositório');
+    }
+  } catch(e) {
+    setGhStatus('err', 'Erro ao conectar ao GitHub');
+  }
+}
+
+function defaultKB() {
+  return {
+    versao:'1.0',
+    marcas:{ WEG:{ nome_exibicao:'WEG', siglas_modelos:['MDW','CFW','HGF','CWM','SSW','RW','BSW'], unidades_upper:['VCA','VCC'], regras_nome:[] } },
+    categorias:{}, unidades_globais:['A','V','W','VA','KW','KVA','MW','HP','CV','HZ','RPM','VCA','VCC','IP','IK','BAR','PSI'],
+    regras_globais:[], historico:[{data:new Date().toISOString().slice(0,10), usuario: userName(), acao:'Base inicializada'}]
+  };
+}
+
+async function saveKB(data, msg) {
+  const repo = ghRepo();
+  const token = document.getElementById('gh-token').value.trim();
+  if (!repo || !token) return false;
+  const body = { message: `[Agente Jet] ${msg}`, content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))) };
+  if (kbSha) body.sha = kbSha;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, {
+      method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body)
+    });
+    if (r.ok) {
+      const d = await r.json();
+      kbSha = d.content.sha;
+      kb = data;
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+async function syncGitHub() {
+  setGhStatus('warn', 'Sincronizando...');
+  await loadKB();
+}
+
+async function learnAndSave(updates, histMsg) {
+  if (!kb) kb = defaultKB();
+  Object.assign(kb, updates);
+  kb.historico = kb.historico || [];
+  kb.historico.unshift({ data: new Date().toISOString().slice(0,10), usuario: userName(), acao: histMsg });
+  if (kb.historico.length > 100) kb.historico = kb.historico.slice(0, 100);
+  const ok = await saveKB(kb, histMsg);
+  if (ok) setGhStatus('ok', `Base atualizada · ${Object.keys(kb.marcas||{}).length} marcas`);
+  return ok;
+}
+
+function userName() { return document.getElementById('user-name').value.trim() || 'Usuário'; }
+function setGhStatus(st, txt) {
+  const dot = document.getElementById('gh-dot');
+  dot.className = 'status-dot' + (st==='ok'?' ok':st==='warn'?' warn':'');
+  document.getElementById('gh-txt').textContent = txt;
+}
+
+// ── Verificação de marca desconhecida ─────────────────────────────────
+function marcaConhecida(marca) {
+  if (!marca || !kb) return false;
+  return Object.keys(kb.marcas||{}).some(k => k.toLowerCase() === marca.toLowerCase());
+}
+
+function analisarProduto(p) {
+  const marca = p['Marca'] || '';
+  const issues = [];
+  if (marca && !marcaConhecida(marca)) issues.push({ tipo:'marca', valor:marca });
+  const cat = p['Grupo setorial'] || '';
+  if (cat && kb && kb.categorias && !kb.categorias[cat]) issues.push({ tipo:'categoria', valor:cat });
+  return issues;
+}
+
+// ── Upload ────────────────────────────────────────────────────────────
+document.getElementById('file-in').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    const wb = XLSX.read(ev.target.result, { type:'array' });
+    products = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    document.getElementById('upload-area').innerHTML =
+      `<div class="file-ok"><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${products.length} produtos</div></div>`;
+    await processarLote();
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+async function processarLote() {
+  if (!products.length) return;
+  if (!kb) await loadKB();
+  if (!kb) kb = defaultKB();
+
+  pendentes = [];
+  const processados = [], novos_pend = [];
+
+  for (const p of products) {
+    const issues = analisarProduto(p);
+    const nome = formatName(p['Nome']||'', p['Marca']||'');
+    if (issues.length) {
+      novos_pend.push({ produto: p, issues, nomeFormatado: nome });
+    } else {
+      processados.push({ ...p, _nomeFormatado: nome });
+    }
+  }
+  pendentes = novos_pend;
+
+  const nOk = processados.length;
+  const nPend = pendentes.length;
+
+  addAgentMsg(
+    `Lote processado: <strong>${products.length} produtos</strong><br><br>` +
+    `<strong style="color:var(--green)">${nOk} prontos</strong> — regras conhecidas aplicadas<br>` +
+    `<strong style="color:var(--amber)">${nPend} pendentes</strong> — ${nPend > 0 ? 'veja as dúvidas na barra lateral' : 'nenhuma dúvida!'}`,
+    nOk > 0 ? buildPreview(products.slice(0,5)) : ''
+  );
+
+  renderPendentes();
+
+  if (nOk > 0) {
+    setTimeout(() => {
+      const area = document.getElementById('chat');
+      const div = document.createElement('div');
+      div.className = 'msg msg-a';
+      div.innerHTML = `<div class="msg-lbl">Agente Jet</div><div class="bubble">
+        <div class="act-row">
+          <button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button>
+          <button class="act-btn" onclick="sendQuick('Mostrar todos os produtos formatados')">Ver todos</button>
+        </div></div>`;
+      area.appendChild(div);
+      area.scrollTop = area.scrollHeight;
+    }, 300);
+  }
+}
+
+function buildPreview(rows) {
+  const marcas = [...new Set(rows.map(r=>r['Marca']||'').filter(Boolean))];
+  const thead = `<tr><th>Nome formatado</th><th>Marca</th><th>Status</th></tr>`;
+  const tbody = rows.map(r => {
+    const nome = formatName(r['Nome']||'', r['Marca']||'');
+    const issues = analisarProduto(r);
+    const cls = issues.length ? 'td-pend' : '';
+    const badge = issues.length
+      ? `<span class="badge b-pend">pendente</span>`
+      : `<span class="badge b-ok">pronto</span>`;
+    return `<tr class="${cls}">
+      <td><div class="td-old">${(r['Nome']||'').slice(0,60)}</div><div class="td-new">${nome.slice(0,60)}</div></td>
+      <td style="white-space:nowrap;color:var(--t4)">${r['Marca']||''}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="preview"><table>${thead}<tbody>${tbody}</tbody></table></div>`;
+}
+
+function renderPendentes() {
+  const area = document.getElementById('pend-area');
+  const count = document.getElementById('pend-count');
+  if (!pendentes.length) {
+    count.textContent = '';
+    area.innerHTML = '<div class="pend-empty">Sem pendências.<br>Tudo processado!</div>';
+    return;
+  }
+  count.textContent = `${pendentes.length} pendente${pendentes.length>1?'s':''}`;
+
+  // Agrupar por marca desconhecida
+  const porMarca = {};
+  pendentes.forEach(p => {
+    p.issues.forEach(issue => {
+      if (issue.tipo === 'marca') {
+        if (!porMarca[issue.valor]) porMarca[issue.valor] = [];
+        porMarca[issue.valor].push(p);
+      }
+    });
+  });
+
+  let html = '';
+  Object.entries(porMarca).forEach(([marca, prods]) => {
+    html += `<div class="pend-item">
+      <div class="pend-head">
+        <div class="pend-head-txt">Marca desconhecida: ${marca} (${prods.length} produto${prods.length>1?'s':''})</div>
+      </div>
+      <div class="pend-body">
+        <div class="pend-q">Como escrever o nome desta marca?</div>
+        <input class="pend-inp" id="pend-nome-${marca}" placeholder="Ex: Schneider Electric" value="${marca}">
+        <div class="pend-q" style="margin-top:6px">Siglas de modelo que ficam maiúsculas (separadas por vírgula):</div>
+        <input class="pend-inp" id="pend-siglas-${marca}" placeholder="Ex: NSX, IC60, A9, XE...">
+        <button class="pend-save" onclick="salvarMarca('${marca}')">Salvar e aplicar</button>
+        <button class="pend-skip" onclick="pularMarca('${marca}')">Pular por agora</button>
+      </div>
+    </div>`;
+  });
+
+  area.innerHTML = html || '<div class="pend-empty">Sem pendências de marca.</div>';
+}
+
+async function salvarMarca(marcaOriginal) {
+  const nomeExib = document.getElementById(`pend-nome-${marcaOriginal}`)?.value.trim() || marcaOriginal;
+  const siglasRaw = document.getElementById(`pend-siglas-${marcaOriginal}`)?.value.trim() || '';
+  const siglas = siglasRaw.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
+
+  if (!kb) kb = defaultKB();
+  kb.marcas = kb.marcas || {};
+  kb.marcas[nomeExib] = {
+    nome_exibicao: nomeExib,
+    siglas_modelos: siglas,
+    unidades_upper: [],
+    regras_nome: []
+  };
+
+  const ok = await learnAndSave(kb, `Adicionou marca: ${nomeExib}`);
+
+  // Remover pendências dessa marca
+  pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marcaOriginal));
+  renderPendentes();
+
+  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length ? ` com ${siglas.length} sigla(s): ${siglas.join(', ')}` : ''}. ${ok ? 'Base sincronizada no GitHub.' : 'Erro ao sincronizar — tente novamente.'}`);
+
+  // Reprocessar se não há mais pendências
+  if (!pendentes.length) {
+    setTimeout(() => addAgentMsg('Todas as dúvidas respondidas! Agora você pode gerar a planilha.',
+      `<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button></div>`), 400);
+  }
+}
+
+function pularMarca(marca) {
+  pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca));
+  renderPendentes();
+}
+
+// ── Gerar planilha ────────────────────────────────────────────────────
+function gerarPlanilha() {
+  if (!products.length) { addAgentMsg('Nenhuma planilha carregada.'); return; }
+  const imgBase = (document.getElementById('img-url').value||'').trim().replace(/\/$/,'');
+
+  const rows = products.map(p => {
+    const nome = formatName(p['Nome']||'', p['Marca']||'');
+    const marc = p['Marca']||'';
+    const cat  = p['Grupo setorial']||'';
+    const gen  = p['Gênero']||'';
+    const lin  = p['Linha de produto']||'';
+    const un   = p['Unidade de medida']||'';
+    const pG   = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
+    const ean  = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
+    return {
+      'Código': String(p['ID']||''),
+      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO'?'Sim':'Não',
+      'Nome': nome, 'SKU': p['Código genérico nos parceiros']||'',
+      'Descrição Curta': nome,
+      'Descrição Longa': String(p['Descrição']||'').replace(/_x000D_/g,'').replace(/\r/g,'').trim(),
+      'EAN/GTIN': ean, 'Marca (Código)':'', 'Marca (Nome)': marc,
+      'Vídeo':'','Preço':'','Estoque':'',
+      'Centro de Distribuição Padrão (Código)':'','Centro de Distribuição Padrão (Nome)':'',
+      'Desconto Máximo (%)':'','Estoque Mínimo':'','Quantidade Mínima p/ Venda':'','Múltiplo p/ Venda':'',
+      'Unidade Padrão (Código)':'','Unidade Padrão (Abreviação)': un,
+      'Categoria (Código)':'','Categoria (Nome)': cat,
+      'Peso (g)': pG, 'Largura (cm)': p['Largura (cm)']||'',
+      'Altura (cm)': p['Altura (cm)']||'', 'Profundidade (cm)': p['Profundidade (cm)']||'',
+      'Peso da Embalagem (g)':'','Largura da Embalagem (cm)':'','Altura da Embalagem (cm)':'','Profundidade da Embalagem (cm)':'',
+      'Destaque':'','Título do SEO': nome,'Descrição do SEO': nome,
+      'Palavras-chave do SEO': [marc,cat,gen].filter(Boolean).join(', '),
+      'Acréscimo Máximo':'','Tags': [lin,gen].filter(Boolean).join(', '),
+    };
+  });
+
+  const grupos={};
+  products.forEach(p=>{ const g=p['Cód. agrupamento']; if(g){if(!grupos[g])grupos[g]=[];grupos[g].push(p);}});
+  const sims=[]; let sid=1;
+  Object.values(grupos).forEach(grp=>{
+    if(grp.length<2)return;
+    for(let i=0;i<grp.length;i++) for(let j=i+1;j<grp.length;j++)
+      [[grp[i],grp[j]],[grp[j],grp[i]]].forEach(([a,b])=>{
+        sims.push({'Código':sid++,'Produto (Código)':String(a['ID']||''),'Produto (Nome)':formatName(a['Nome']||'',a['Marca']||''),'Produto Similar (Código)':String(b['ID']||''),'Produto Similar (Nome)':formatName(b['Nome']||'',b['Marca']||'')});
+      });
+  });
+
+  const imgs = products.map((p,i)=>({
+    'Código':i+1,'Produto (Código)':String(p['ID']||''),
+    'Produto (Nome)':formatName(p['Nome']||'',p['Marca']||''),
+    'Imagem': imgBase?`${imgBase}/${p['Código']||''}.jpg`:'',
+  }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Produtos');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Unidades Alternativas');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Ficha Técnica');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sims.length?sims:[]), 'Produtos Similares');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Produtos Recomendados');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Variações');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(imgs), 'Imagens');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Complementos');
+
+  const date = new Date().toISOString().slice(0,10);
+  const dl = document.getElementById('dl-bar');
+  document.getElementById('dl-msg').textContent = `✓ ${products.length} produtos · ${sims.length} similares · ${pendentes.length} ainda pendentes`;
+  dl.classList.add('show');
+  document.getElementById('dl-btn').onclick = ()=> XLSX.writeFile(wb,`JetSupply_Zydon_${date}.xlsx`);
+
+  addAgentMsg(`Planilha gerada: <strong>${products.length}</strong> produtos, <strong>${sims.length}</strong> similares.${pendentes.length?' <span style="color:var(--amber)">'+pendentes.length+' produto(s) ainda com pendências foram incluídos sem curadoria completa.</span>':''}`);
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────
+function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,80)+'px'; }
+function sendQuick(t){ document.getElementById('inp').value=t; send(); }
+
+async function send() {
+  const inp = document.getElementById('inp');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value=''; inp.style.height='auto';
+  addUserMsg(txt);
+  document.getElementById('send-btn').disabled=true;
+
+  const low = txt.toLowerCase();
+
+  if (low.includes('gerar planilha')||low==='gerar'){ gerarPlanilha(); document.getElementById('send-btn').disabled=false; return; }
+  if (low.includes('ver todos')||low.includes('mostrar todos')){
+    addAgentMsg(`<strong>${products.length} produtos</strong>:`, buildPreview(products.slice(0,20)));
+    document.getElementById('send-btn').disabled=false; return;
+  }
+  if (low.includes('base de conhecimento')||low.includes('marcas conhecidas')){
+    showBase(); document.getElementById('send-btn').disabled=false; return;
+  }
+
+  // Regra rápida: "X vira Y"
+  const ruleM = txt.match(/[""']?(.+?)[""']?\s+(?:vira|→|->|por|muda para|muda pra|substituir por)\s+[""']?(.+?)[""']?$/i);
+  if (ruleM) {
+    const de=ruleM[1].trim(), para=ruleM[2].trim();
+    if (!kb) kb=defaultKB();
+    kb.regras_globais=kb.regras_globais||[];
+    kb.regras_globais=kb.regras_globais.filter(r=>r.de.toLowerCase()!==de.toLowerCase());
+    kb.regras_globais.push({de,para});
+    await learnAndSave(kb,`Regra: "${de}" → "${para}"`);
+    addAgentMsg(`Regra salva e sincronizada: <strong>"${de}"</strong> → <strong>"${para}"</strong>`);
+    document.getElementById('send-btn').disabled=false; return;
+  }
+
+  // Claude API
+  const key = document.getElementById('claude-key').value.trim();
+  if (!key.startsWith('sk-ant-')){
+    addAgentMsg('Configure a <strong>chave API Claude</strong> para perguntas livres.');
+    document.getElementById('send-btn').disabled=false; return;
+  }
+  showTyping();
+  try {
+    const reply = await callClaude(key, txt);
+    removeTyping();
+    addAgentMsg(reply);
+  } catch(e) { removeTyping(); addAgentMsg(`Erro: ${e.message}`); }
+  document.getElementById('send-btn').disabled=false;
+}
+
+function showBase() {
+  if (!kb || !Object.keys(kb.marcas||{}).length) { addAgentMsg('Base ainda vazia. Processe um lote para começar.'); return; }
+  let html = '<strong>Base de conhecimento atual:</strong>';
+  Object.entries(kb.marcas).forEach(([k,v])=>{
+    html += `<div class="base-card">
+      <div class="base-marca">${v.nome_exibicao||k}</div>
+      <div class="base-row">${(v.siglas_modelos||[]).map(s=>`<span class="base-chip">${s}</span>`).join('')||'<span style="color:var(--t5);font-size:11px">sem siglas cadastradas</span>'}</div>
+    </div>`;
+  });
+  html += `<div style="font-size:11px;color:var(--t5);margin-top:6px">${Object.keys(kb.marcas).length} marcas · ${(kb.regras_globais||[]).length} regras globais</div>`;
+  addAgentMsg(html);
+}
+
+function buildContext() {
+  const marcas = Object.keys(kb?.marcas||{}).join(', ') || 'nenhuma ainda';
+  return `Você é o Agente Jet da Jet Supply — especialista em curadoria de produtos para importação na plataforma Zydon B2B.
+
+Jet Supply: distribuidora B2B de MRO desde 2000, +45.000 produtos, +300 marcas. Plataformas: Signus (ERP) → Zydon (B2B).
+
+Marcas conhecidas na base: ${marcas}
+Regras globais ativas: ${(kb?.regras_globais||[]).map(r=>`"${r.de}"→"${r.para}"`).join(', ')||'nenhuma'}
+Produtos carregados: ${products.length}
+Pendências de curadoria: ${pendentes.length}
+
+Responda em português brasileiro, direto e objetivo. Se sugerir uma regra, use o formato "X" → "Y".`;
+}
+
+async function callClaude(key, msg) {
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:800,system:buildContext(),messages:[{role:'user',content:msg}]})
+  });
+  if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`HTTP ${r.status}`); }
+  return (await r.json()).content[0].text;
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────
+function addUserMsg(t){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-u'; d.innerHTML=`<div class="msg-lbl">Você</div><div class="bubble">${t}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
+function addAgentMsg(h,ex=''){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-a'; d.innerHTML=`<div class="msg-lbl">Agente Jet</div><div class="bubble">${h}${ex}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
+function showTyping(){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-a'; d.id='typ'; d.innerHTML=`<div class="msg-lbl">Agente Jet</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
+function removeTyping(){ const t=document.getElementById('typ'); if(t)t.remove(); }
+function toggleVis(id){ const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; }
+
+function checkKeys() {
+  const tok = document.getElementById('gh-token').value.trim();
+  const rep = document.getElementById('gh-repo').value.trim();
+  if (tok && rep) {
+    setGhStatus('warn','Conectando...');
+    clearTimeout(window._ghTimer);
+    window._ghTimer = setTimeout(loadKB, 800);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+addAgentMsg(
+  `Olá, Matheus! Sou o <strong>Agente Jet</strong> — curadoria de produtos da Jet Supply.<br><br>
+  Meu fluxo: processo o lote do Signus, aplico o que sei, e pergunto o que não sei. Cada resposta sua fica salva na base compartilhada no GitHub para toda a equipe.<br><br>
+  Para começar configure o <strong>GitHub Token</strong> e o <strong>repositório</strong> na barra lateral, depois faça o upload da planilha.`,
+  `<div class="act-row">
+    <button class="act-btn" onclick="sendQuick('Como configuro o GitHub Token?')">Como configuro o token?</button>
+    <button class="act-btn" onclick="sendQuick('Base de conhecimento')">Ver base atual</button>
+  </div>`
+);
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "versao": "1.0",
+  "marcas": {
+    "WEG": {
+      "nome_exibicao": "WEG",
+      "siglas_modelos": ["MDW", "CFW", "HGF", "CWM", "SSW", "RW", "BSW"],
+      "unidades_upper": ["VCA", "VCC", "A", "V", "W", "KW", "VA", "KVA", "HZ", "IP"],
+      "regras_nome": []
+    }
+  },
+  "categorias": {},
+  "unidades_globais": ["A", "V", "W", "VA", "KW", "KVA", "MW", "HP", "CV", "HZ", "KHZ", "RPM", "VCA", "VCC", "IP", "IK", "DB", "BAR", "PSI", "GPM", "LPM"],
+  "regras_globais": [],
+  "historico": [
+    { "data": "2026-06-16", "usuario": "Sistema", "acao": "Base inicializada com WEG" }
+  ]
+}
