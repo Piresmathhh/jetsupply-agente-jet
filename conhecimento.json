@@ -28,7 +28,8 @@
     }
   },
   "categorias": {
-    "DISJUNTOR MINI 1P MONOPOLAR": "DISJUNTOR MINI 1P MONOPOLAR"
+    "DISJUNTOR MINI 1P MONOPOLAR": "DISJUNTOR MINI 1P MONOPOLAR",
+    "DISJUNTOR MINI 3P TRIPOLAR": "DISJUNTOR MINI 3P TRIPOLAR"
   },
   "unidades_globais": [
     "A",
@@ -57,8 +58,13 @@
   "historico": [
     {
       "data": "2026-06-17",
-      "usuario": "Usuário",
-      "acao": "Mapeou categoria: \"DISJUNTOR MINI 1P MONOPOLAR\" → \"DISJUNTOR MINI 1P MONOPOLAR\""
+      "usuario": "Accorsi",
+      "acao": "Mapeou categoria: \"DISJUNTOR MINI 3P TRIPOLAR\" → \"DISJUNTOR MINI 3P TRIPOLAR\""
+    },
+    {
+      "data": "2026-06-17",
+      "usuario": "UsuÃ¡rio",
+      "acao": "Mapeou categoria: \"DISJUNTOR MINI 1P MONOPOLAR\" â \"DISJUNTOR MINI 1P MONOPOLAR\""
     },
     {
       "data": "2026-06-16",
