@@ -652,7 +652,7 @@ function gerarPlanilha() {
     return {
       'Código': String(p['ID']||''),
       'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO'?'Sim':'Não',
-      'Nome': nome, 'SKU': p['Código genérico nos parceiros']||'',
+      'Nome': nome, 'SKU': String(p['Código']||''),
       'Descrição Curta': nome,
       'Descrição Longa': String(p['Descrição']||'').replace(/_x000D_/g,'').replace(/\r/g,'').trim(),
       'EAN/GTIN': ean, 'Marca (Código)':'', 'Marca (Nome)': marc,
