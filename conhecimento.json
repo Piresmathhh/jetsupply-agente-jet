@@ -3,23 +3,23 @@
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
-      "descricao": "ID único do produto no Signus — identificador imutável do banco de dados"
+      "descricao": "ID Ãºnico do produto no Signus â identificador imutÃ¡vel do banco de dados"
     },
     "sku_zydon": {
-      "origem": "Código",
-      "descricao": "Código comercial do produto no Signus (ex: 10076405) — referência usada operacionalmente"
+      "origem": "CÃ³digo",
+      "descricao": "CÃ³digo comercial do produto no Signus (ex: 10076405) â referÃªncia usada operacionalmente"
     },
     "categoria_zydon": {
       "origem": "Grupo setorial",
-      "descricao": "Nível mais específico da hierarquia do Signus — ex: DISJUNTOR MINI 1P MONOPOLAR"
+      "descricao": "NÃ­vel mais especÃ­fico da hierarquia do Signus â ex: DISJUNTOR MINI 1P MONOPOLAR"
     },
     "nome_zydon": {
       "origem": "Nome",
-      "descricao": "Nome formatado com regras de negócio: descritivo em Title Case, unidades e marcas em UPPERCASE"
+      "descricao": "Nome formatado com regras de negÃ³cio: descritivo em Title Case, unidades e marcas em UPPERCASE"
     },
     "codigo_generico_parceiros": {
-      "origem": "Código genérico nos parceiros",
-      "descricao": "Sigla do modelo do fabricante (ex: MDWC10) — NÃO é o SKU da Zydon"
+      "origem": "CÃ³digo genÃ©rico nos parceiros",
+      "descricao": "Sigla do modelo do fabricante (ex: MDWC10) â NÃO Ã© o SKU da Zydon"
     }
   },
   "marcas": {
@@ -41,7 +41,9 @@
       "regras_nome": []
     }
   },
-  "categorias": {},
+  "categorias": {
+    "DISJUNTOR MINI 1P MONOPOLAR": "1P Monopolar"
+  },
   "unidades_globais": [
     "A",
     "V",
@@ -66,12 +68,17 @@
     {
       "data": "2026-06-20",
       "usuario": "Matheus",
-      "acao": "Corrigido: SKU Zydon = Código Signus (não Código genérico nos parceiros)"
+      "acao": "Mapeou categoria: \"DISJUNTOR MINI 1P MONOPOLAR\" → \"1P Monopolar\""
     },
     {
       "data": "2026-06-20",
       "usuario": "Matheus",
-      "acao": "Definido mapeamento: Código Zydon = ID Signus | SKU Zydon = Código Signus"
+      "acao": "Corrigido: SKU Zydon = CÃ³digo Signus (nÃ£o CÃ³digo genÃ©rico nos parceiros)"
+    },
+    {
+      "data": "2026-06-20",
+      "usuario": "Matheus",
+      "acao": "Definido mapeamento: CÃ³digo Zydon = ID Signus | SKU Zydon = CÃ³digo Signus"
     },
     {
       "data": "2026-06-16",
