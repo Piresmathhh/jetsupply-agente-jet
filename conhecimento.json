@@ -3,34 +3,78 @@
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
-      "descricao": "ID único do produto no Signus — identificador imutável do banco de dados"
+      "descricao": "ID Ãºnico do produto no Signus â identificador imutÃ¡vel do banco de dados"
     },
     "sku_zydon": {
-      "origem": "Código",
-      "descricao": "Código comercial do produto no Signus — referência usada operacionalmente (compras, vendas, estoque)"
+      "origem": "CÃ³digo",
+      "descricao": "CÃ³digo comercial do produto no Signus â referÃªncia usada operacionalmente (compras, vendas, estoque)"
     },
     "categoria_zydon": {
       "origem": "Grupo setorial",
-      "descricao": "Nível mais específico da hierarquia do Signus — ex: DISJUNTOR MINI 1P MONOPOLAR"
+      "descricao": "NÃ­vel mais especÃ­fico da hierarquia do Signus â ex: DISJUNTOR MINI 1P MONOPOLAR"
     },
     "nome_zydon": {
       "origem": "Nome",
-      "descricao": "Nome formatado com regras de negócio: descritivo em Title Case, unidades e marcas em UPPERCASE"
+      "descricao": "Nome formatado com regras de negÃ³cio: descritivo em Title Case, unidades e marcas em UPPERCASE"
     }
   },
   "marcas": {
     "WEG": {
       "nome_exibicao": "WEG",
-      "siglas_modelos": ["MDW", "CFW", "HGF", "CWM", "SSW", "RW", "BSW"],
-      "unidades_upper": ["VCA", "VCC"],
+      "siglas_modelos": [
+        "MDW",
+        "CFW",
+        "HGF",
+        "CWM",
+        "SSW",
+        "RW",
+        "BSW"
+      ],
+      "unidades_upper": [
+        "VCA",
+        "VCC"
+      ],
       "regras_nome": []
     }
   },
-  "categorias": {},
-  "unidades_globais": ["A", "V", "W", "VA", "KW", "KVA", "MW", "HP", "CV", "HZ", "RPM", "VCA", "VCC", "IP", "IK", "BAR", "PSI"],
+  "categorias": {
+    "DISJUNTOR MINI 1P MONOPOLAR": "1P Monopolar"
+  },
+  "unidades_globais": [
+    "A",
+    "V",
+    "W",
+    "VA",
+    "KW",
+    "KVA",
+    "MW",
+    "HP",
+    "CV",
+    "HZ",
+    "RPM",
+    "VCA",
+    "VCC",
+    "IP",
+    "IK",
+    "BAR",
+    "PSI"
+  ],
   "regras_globais": [],
   "historico": [
-    { "data": "2026-06-20", "usuario": "Matheus", "acao": "Definido mapeamento: Código Zydon = ID Signus | SKU Zydon = Código Signus" },
-    { "data": "2026-06-16", "usuario": "Sistema", "acao": "Base inicializada com WEG" }
+    {
+      "data": "2026-06-20",
+      "usuario": "Matheus",
+      "acao": "Mapeou categoria: \"DISJUNTOR MINI 1P MONOPOLAR\" → \"1P Monopolar\""
+    },
+    {
+      "data": "2026-06-20",
+      "usuario": "Matheus",
+      "acao": "Definido mapeamento: CÃ³digo Zydon = ID Signus | SKU Zydon = CÃ³digo Signus"
+    },
+    {
+      "data": "2026-06-16",
+      "usuario": "Sistema",
+      "acao": "Base inicializada com WEG"
+    }
   ]
 }
