@@ -640,6 +640,40 @@ function gerarPlanilha() {
   if (!products.length) { addAgentMsg('Nenhuma planilha carregada.'); return; }
   const imgBase = (document.getElementById('img-url').value||'').trim().replace(/\/$/,'');
 
+  // Buscar códigos reais da Zydon na base de conhecimento
+  const codZydon = kb?.codigos_zydon || {};
+  const marcasZydon = kb?.marcas_zydon || {};
+  const catZydonMap = kb?.categorias || {};
+
+  function getMarcaCodigo(nomeMarca) {
+    if (!nomeMarca) return '';
+    // Busca exata
+    if (marcasZydon[nomeMarca]) return marcasZydon[nomeMarca];
+    // Busca parcial
+    const key = Object.keys(marcasZydon).find(k =>
+      k.toLowerCase().includes(nomeMarca.toLowerCase()) ||
+      nomeMarca.toLowerCase().includes(k.toLowerCase())
+    );
+    return key ? marcasZydon[key] : '';
+  }
+
+  function getCatCodigo(nomecat) {
+    if (!nomecat || !kb?.categorias) return '';
+    // categorias é { "GRUPO SETORIAL": "Nome Zydon" } — precisa buscar pelo código
+    return '';
+  }
+
+  // Agrupar por Cód. agrupamento para montar EAN_VARIACAO
+  const gruposEan = {};
+  products.forEach(p => {
+    const g = p['Cód. agrupamento'];
+    if (g) {
+      if (!gruposEan[g]) gruposEan[g] = [];
+      const ean = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
+      if (ean) gruposEan[g].push(ean);
+    }
+  });
+
   const rows = products.map(p => {
     const nome = formatName(p['Nome']||'', p['Marca']||'');
     const marc = p['Marca']||'';
@@ -649,6 +683,20 @@ function gerarPlanilha() {
     const un   = p['Unidade de medida']||'';
     const pG   = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
     const ean  = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
+
+    // Códigos reais da Zydon
+    const marcaCod = getMarcaCodigo(marc);
+    const unCod    = codZydon.unidade_padrao?.codigo || '';
+    const cdCod    = codZydon.centro_distribuicao?.codigo || '';
+    const cdNome   = codZydon.centro_distribuicao?.nome || '';
+
+    // Categoria — usar mapeamento aprendido ou deixar em branco
+    const catNomeZydon = catZydonMap[cat] || cat;
+
+    // EAN_VARIACAO — todos os EANs do agrupamento separados por ;
+    const grpCod = p['Cód. agrupamento'];
+    const eanVariacao = grpCod && gruposEan[grpCod] ? gruposEan[grpCod].join('; ') : ean;
+
     return {
       'Imagem Principal': imgBase?`${imgBase}/${p['Código']||''}.jpg`:'',
       'Código': String(p['ID']||''),
@@ -656,18 +704,20 @@ function gerarPlanilha() {
       'Nome': nome, 'SKU': String(p['Código']||''),
       'Descrição Curta': nome,
       'Descrição Longa': String(p['Descrição']||'').replace(/_x000D_/g,'').replace(/\r/g,'').trim(),
-      'EAN/GTIN': ean, 'Marca (Código)':'', 'Marca (Nome)': marc,
-      'Vídeo':'','Preço':'','Estoque':'',
-      'Centro de Distribuição Padrão (Código)':'','Centro de Distribuição Padrão (Nome)':'',
-      'Desconto Máximo (%)':'','Estoque Mínimo':'','Quantidade Mínima p/ Venda':'','Múltiplo p/ Venda':'',
-      'Unidade Padrão (Código)':'','Unidade Padrão (Abreviação)': un,
-      'Categoria (Código)':'','Categoria (Nome)': cat,
+      'EAN/GTIN': ean, 'Marca (Código)': marcaCod, 'Marca (Nome)': marc,
+      'Vídeo':'','Preço': 0,'Estoque': 0,
+      'Centro de Distribuição Padrão (Código)': cdCod,'Centro de Distribuição Padrão (Nome)': cdNome,
+      'Desconto Máximo (%)': 0,'Estoque Mínimo': 0,'Quantidade Mínima p/ Venda': 0,'Múltiplo p/ Venda': 0,
+      'Unidade Padrão (Código)': unCod,'Unidade Padrão (Abreviação)': un,
+      'Categoria (Código)':'','Categoria (Nome)': catNomeZydon,
       'Peso (g)': pG, 'Largura (cm)': p['Largura (cm)']||'',
       'Altura (cm)': p['Altura (cm)']||'', 'Profundidade (cm)': p['Profundidade (cm)']||'',
-      'Peso da Embalagem (g)':'','Largura da Embalagem (cm)':'','Altura da Embalagem (cm)':'','Profundidade da Embalagem (cm)':'',
+      'Peso da Embalagem (g)': pG,'Largura da Embalagem (cm)': p['Largura (cm)']||'',
+      'Altura da Embalagem (cm)': p['Altura (cm)']||'','Profundidade da Embalagem (cm)': p['Profundidade (cm)']||'',
       'Destaque':'','Título do SEO': nome,'Descrição do SEO': nome,
       'Palavras-chave do SEO': [marc,cat,gen].filter(Boolean).join(', '),
-      'Acréscimo Máximo':'','Tags': [lin,gen].filter(Boolean).join(', '),
+      'Acréscimo Máximo': 0,'Tags': [lin,gen].filter(Boolean).join(', '),
+      'EAN_VARIACAO': eanVariacao,
     };
   });
 
@@ -680,6 +730,72 @@ function gerarPlanilha() {
       [[grp[i],grp[j]],[grp[j],grp[i]]].forEach(([a,b])=>{
         sims.push({'Código':sid++,'Produto (Código)':String(a['ID']||''),'Produto (Nome)':formatName(a['Nome']||'',a['Marca']||''),'Produto Similar (Código)':String(b['ID']||''),'Produto Similar (Nome)':formatName(b['Nome']||'',b['Marca']||'')});
       });
+  });
+
+  // ── Gerar aba Variações ───────────────────────────────────────────
+  // Ordenação natural: extrai número do início do valor de variação
+  function naturalOrder(valor) {
+    if (!valor) return 9999;
+    const m = String(valor).match(/^(\d+(?:[.,]\d+)?)/);
+    return m ? parseFloat(m[1].replace(',','.')) : 9999;
+  }
+
+  // Identificar o atributo de variação de cada grupo (ex: Corrente elétrica)
+  // A diferença entre os produtos do grupo revela o atributo
+  function extrairValorVariacao(produto, grupoBase) {
+    // Tentar extrair do nome: diferença entre produtos do mesmo grupo
+    // Usa o campo Corrente elétrica se existir, senão extrai do nome
+    const corrente = produto['Corrente elétrica'] || produto['Corrente'] || '';
+    if (corrente) return String(corrente);
+    // Fallback: extrair do nome (ex: "10A" do nome completo)
+    const nome = produto['Nome'] || '';
+    const m = nome.match(/\b(\d+(?:[.,]\d+)?A)\b/i);
+    return m ? m[1].toUpperCase() : String(produto['Código'] || '');
+  }
+
+  const variacoes = [];
+  Object.entries(grupos).forEach(([grpCod, grp]) => {
+    if (grp.length < 1) return;
+
+    // Produto pai = primeiro do grupo (ou poderia ser o de menor corrente)
+    // O Código do produto pai é o Cód. agrupamento
+    const pai = grp[0];
+    const codPai = String(pai['ID'] || '');
+    const nomePai = formatName(pai['Nome']||'', pai['Marca']||'');
+
+    // Extrair valores de variação e ordenar naturalmente
+    const comValor = grp.map(p => ({
+      produto: p,
+      valor: extrairValorVariacao(p, grp)
+    }));
+    comValor.sort((a, b) => naturalOrder(a.valor) - naturalOrder(b.valor));
+
+    comValor.forEach((item, idx) => {
+      const p = item.produto;
+      const pG = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
+      const ean = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
+      variacoes.push({
+        'Código': String(p['ID']||''),
+        'Código produto': codPai,
+        'NOME': formatName(p['Nome']||'', p['Marca']||''),
+        'SKU': String(p['Código']||''),
+        'Status': true,
+        'ORDER': idx + 1,
+        'Valores': item.valor,
+        'PRICE': 0,
+        'STOCK': 0,
+        'VARIATION_WEIGHT': pG,
+        'VARIATION_WIDTH': p['Largura (cm)']||'',
+        'VARIATION_HEIGHT': p['Altura (cm)']||'',
+        'VARIATION_DEPTH': p['Profundidade (cm)']||'',
+        'PACKAGING_WEIGHT': pG,
+        'PACKAGING_WIDTH': p['Largura (cm)']||'',
+        'PACKAGING_HEIGHT': p['Altura (cm)']||'',
+        'PACKAGING_DEPTH': p['Profundidade (cm)']||'',
+        'EAN_VARIACAO': ean,
+        'Código variação': String(p['ID']||''),
+      });
+    });
   });
 
   // Gerar aba Imagens — varrer código principal + _1 até _10 por produto
@@ -715,7 +831,7 @@ function gerarPlanilha() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Ficha Técnica');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sims.length?sims:[]), 'Produtos Similares');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Produtos Recomendados');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Variações');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(variacoes.length?variacoes:[]), 'Variações produtos');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(imgs), 'Imagens');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Complementos');
 
@@ -725,7 +841,9 @@ function gerarPlanilha() {
   dl.classList.add('show');
   document.getElementById('dl-btn').onclick = ()=> XLSX.writeFile(wb,`JetSupply_Zydon_${date}.xlsx`);
 
-  addAgentMsg(`Planilha gerada: <strong>${products.length}</strong> produtos, <strong>${sims.length}</strong> similares, <strong>${imgs.length}</strong> linhas de imagem (principal + até 10 variações por produto).${pendentes.length?' <span style="color:var(--amber)">'+pendentes.length+' produto(s) ainda com pendências.</span>':''}`);
+  addAgentMsg(`Planilha gerada:<br>
+    <strong>${products.length}</strong> produtos · <strong>${variacoes.length}</strong> variações (ORDER calculado) · <strong>${sims.length}</strong> similares · <strong>${imgs.length}</strong> linhas de imagem.
+    ${pendentes.length?' <span style="color:var(--amber)">'+pendentes.length+' produto(s) com pendências.</span>':''}`);
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────
