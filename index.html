@@ -438,7 +438,14 @@ function analisarProduto(p) {
   const issues = [];
   if (marca && !marcaConhecida(marca)) issues.push({ tipo:'marca', valor:marca });
   const cat = p['Grupo setorial'] || '';
-  if (cat && kb && kb.categorias && !kb.categorias[cat]) issues.push({ tipo:'categoria', valor:cat });
+  // Só pede mapeamento de categoria se não conseguir resolver automaticamente
+  if (cat && kb && kb.categorias && !kb.categorias[cat]) {
+    const upper = cat.toUpperCase();
+    const jaConhece = CATS_ZYDON[upper] ||
+      (kb?.categorias_zydon_por_nome?.[upper]) ||
+      Object.keys(CATS_ZYDON).some(k => k.includes(upper) || upper.includes(k));
+    if (!jaConhece) issues.push({ tipo:'categoria', valor:cat });
+  }
   return issues;
 }
 
@@ -657,16 +664,20 @@ function gerarPlanilha() {
     return key ? marcasZydon[key] : '';
   }
 
+  // Mapa de categorias Zydon embutido (Signus → código Zydon)
+  const CATS_ZYDON = {"MATERIAIS ELÉTRICOS":488,"DISJUNTORES":489,"DISJUNTORES CAIXA MOLDADA":490,"ACESSÓRIOS":566,"1P MONOPOLAR":561,"2P BIPOLAR":537,"3P TRIPOLAR":563,"4P TETRAPOLAR":538,"DISJUNTORES MINI":494,"DISJUNTORES A VÁCUO":502,"3P TRIPOLAR EXTRAÍVEL":516,"3P TRIPOLAR FIXO":517,"4P TETRAPOLAR EXTRAÍVEL":518,"4P TETRAPOLAR FIXO":519,"DISJUNTORES ABERTO":508,"DISJUNTORES A GÁS":514,"DISJUNTORES MOTOR":520,"DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS":539,"CLASSE I":540,"CLASSE I + II":545,"CLASSE II":550,"CLASSE II + III":555,"CLASSE III":560,"FUSÍVEIS":565,"BASE PARA FUSÍVEL":567,"EXTRATOR DE FUSÍVEL":568,"INDICADOR DE FUSÃO":569,"PORTA-FUSÍVEL":570,"SUPORTE PARA FUSÍVEL":571,"AUTOMOTIVO":572,"LÂMINA":573,"MAXI":574,"MICRO":575,"MINI LÂMINA":576,"CILÍNDRICO":577,"AM":590,"AR":593,"GL/GG":594,"GPV":595,"GR":596,"DIAZED":583,"HH - ALTA TENSÃO":586,"LIMITADOR DE CORRENTE":587,"RETARDADO":599,"NEOZED":589,"NH":592,"VIDRO":597,"RÁPIDO":598,"IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS":526,"TIPO A":527,"TIPO AC":530,"TIPO B":533,"TIPO F":536,"DISJUNTOR MINI 1P MONOPOLAR":495,"DISJUNTOR MINI 2P BIPOLAR":496,"DISJUNTOR MINI 3P TRIPOLAR":497,"DISJUNTOR MINI 4P TETRAPOLAR":498,"DISJUNTOR CAIXA MOLDADA 1P MONOPOLAR":501,"DISJUNTOR CAIXA MOLDADA 2P BIPOLAR":491,"DISJUNTOR CAIXA MOLDADA 3P TRIPOLAR":492,"DISJUNTOR CAIXA MOLDADA 4P TETRAPOLAR":493,"DISJUNTOR MOTOR 1P MONOPOLAR":522,"DISJUNTOR MOTOR 2P BIPOLAR":523,"DISJUNTOR MOTOR 3P TRIPOLAR":524,"DISJUNTOR MOTOR 4P TETRAPOLAR":525};
+
   function getCatCodigo(nomecat) {
-    if (!nomecat || !kb?.categorias_zydon_por_nome) return '';
-    // Busca exata pelo nome
+    if (!nomecat) return '';
     const upper = nomecat.toUpperCase();
-    if (kb.categorias_zydon_por_nome[upper]) return kb.categorias_zydon_por_nome[upper];
-    // Busca parcial
-    const key = Object.keys(kb.categorias_zydon_por_nome).find(k =>
-      k.includes(upper) || upper.includes(k.split(' > ').pop())
-    );
-    return key ? kb.categorias_zydon_por_nome[key] : '';
+    // 1. Mapa embutido (tem precedência)
+    if (CATS_ZYDON[upper]) return CATS_ZYDON[upper];
+    // 2. Base de conhecimento do GitHub
+    if (kb?.categorias_zydon_por_nome?.[upper]) return kb.categorias_zydon_por_nome[upper];
+    // 3. Busca parcial no mapa embutido
+    const key = Object.keys(CATS_ZYDON).find(k => k.includes(upper) || upper.includes(k));
+    if (key) return CATS_ZYDON[key];
+    return '';
   }
 
   // Agrupar por Cód. agrupamento para montar EAN_VARIACAO
