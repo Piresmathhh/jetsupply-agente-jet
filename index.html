@@ -363,7 +363,7 @@ async function loadKB() {
       const d = await r.json();
       kbSha = d.sha;
       kb = JSON.parse(atob(d.content.replace(/\n/g,'')));
-      setGhStatus('ok', `Base carregada · ${Object.keys(kb.marcas||{}).length} marcas`);
+      setGhStatus('ok', `Base carregada · ${Object.keys(kb.marcas||{}).length} marcas cadastradas · ${Object.keys(kb.marcas_zydon||{}).length} marcas Zydon`);
       document.getElementById('sync-btn').style.display = '';
     } else if (r.status === 404) {
       // Criar arquivo inicial
