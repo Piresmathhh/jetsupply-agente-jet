@@ -3,23 +3,23 @@
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
-      "descricao": "ID Ãºnico do produto no Signus â identificador imutÃ¡vel do banco de dados"
+      "descricao": "ID único do produto no Signus — identificador imutável do banco de dados"
     },
     "sku_zydon": {
-      "origem": "CÃ³digo",
-      "descricao": "CÃ³digo comercial do produto no Signus (ex: 10076405) â referÃªncia usada operacionalmente"
+      "origem": "Código",
+      "descricao": "Código comercial do produto no Signus (ex: 10076405) — referência usada operacionalmente"
     },
     "categoria_zydon": {
       "origem": "Grupo setorial",
-      "descricao": "NÃ­vel mais especÃ­fico da hierarquia do Signus â ex: DISJUNTOR MINI 1P MONOPOLAR"
+      "descricao": "Nível mais específico da hierarquia do Signus — ex: DISJUNTOR MINI 1P MONOPOLAR"
     },
     "nome_zydon": {
       "origem": "Nome",
-      "descricao": "Nome formatado com regras de negÃ³cio: descritivo em Title Case, unidades e marcas em UPPERCASE"
+      "descricao": "Nome formatado com regras de negócio: descritivo em Title Case, unidades e marcas em UPPERCASE"
     },
     "codigo_generico_parceiros": {
-      "origem": "CÃ³digo genÃ©rico nos parceiros",
-      "descricao": "Sigla do modelo do fabricante (ex: MDWC10) â NÃO Ã© o SKU da Zydon"
+      "origem": "Código genérico nos parceiros",
+      "descricao": "Sigla do modelo do fabricante (ex: MDWC10) — NÃO é o SKU da Zydon"
     }
   },
   "marcas": {
@@ -41,9 +41,7 @@
       "regras_nome": []
     }
   },
-  "categorias": {
-    "DISJUNTOR MINI 1P MONOPOLAR": "1P Monopolar"
-  },
+  "categorias": {},
   "unidades_globais": [
     "A",
     "V",
@@ -66,24 +64,43 @@
   "regras_globais": [],
   "historico": [
     {
-      "data": "2026-06-20",
+      "data": "2026-07-13",
       "usuario": "Matheus",
-      "acao": "Mapeou categoria: \"DISJUNTOR MINI 1P MONOPOLAR\" → \"1P Monopolar\""
+      "acao": "Adicionado padrão de imagens: principal + _1 até _10 por produto"
     },
     {
       "data": "2026-06-20",
       "usuario": "Matheus",
-      "acao": "Corrigido: SKU Zydon = CÃ³digo Signus (nÃ£o CÃ³digo genÃ©rico nos parceiros)"
+      "acao": "Corrigido: SKU Zydon = Código Signus (não Código genérico nos parceiros)"
     },
     {
       "data": "2026-06-20",
       "usuario": "Matheus",
-      "acao": "Definido mapeamento: CÃ³digo Zydon = ID Signus | SKU Zydon = CÃ³digo Signus"
+      "acao": "Definido mapeamento: Código Zydon = ID Signus | SKU Zydon = Código Signus"
     },
     {
       "data": "2026-06-16",
       "usuario": "Sistema",
       "acao": "Base inicializada com WEG"
     }
-  ]
+  ],
+  "imagens": {
+    "url_base": "https://pub-cf3871f2a73948b4a2d96d40202b4148.r2.dev",
+    "bucket": "jetsupply-imagens",
+    "padrao_nome": "Código do produto no Signus (ex: 10076405.jpg)",
+    "multiplas_imagens": {
+      "descricao": "Um produto pode ter até 11 imagens",
+      "formato": [
+        "10076405.jpg — imagem principal (sem sufixo)",
+        "10076405_1.jpg — extra 1",
+        "10076405_2.jpg — extra 2",
+        "até 10076405_10.jpg"
+      ],
+      "observacao": "A aba Imagens gera uma linha por imagem, todas vinculadas ao mesmo Produto (Código)"
+    },
+    "campo_planilha": {
+      "imagem_principal": "Coluna Imagem Principal na aba Produtos — URL sem sufixo",
+      "imagens_extras": "Aba Imagens — uma linha por imagem com Produto (Código), Produto (Nome) e Imagem"
+    }
+  }
 }

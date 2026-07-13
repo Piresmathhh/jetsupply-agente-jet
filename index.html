@@ -650,6 +650,7 @@ function gerarPlanilha() {
     const pG   = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
     const ean  = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
     return {
+      'Imagem Principal': imgBase?`${imgBase}/${p['Código']||''}.jpg`:'',
       'Código': String(p['ID']||''),
       'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO'?'Sim':'Não',
       'Nome': nome, 'SKU': String(p['Código']||''),
@@ -681,11 +682,32 @@ function gerarPlanilha() {
       });
   });
 
-  const imgs = products.map((p,i)=>({
-    'Código':i+1,'Produto (Código)':String(p['ID']||''),
-    'Produto (Nome)':formatName(p['Nome']||'',p['Marca']||''),
-    'Imagem': imgBase?`${imgBase}/${p['Código']||''}.jpg`:'',
-  }));
+  // Gerar aba Imagens — varrer código principal + _1 até _10 por produto
+  const imgs = [];
+  let imgSeq = 1;
+
+  for (const p of products) {
+    const cod = p['Código'] || '';
+    const id  = String(p['ID'] || '');
+    const nome = formatName(p['Nome']||'', p['Marca']||'');
+    if (!imgBase || !cod) continue;
+
+    // Imagem principal (sem sufixo)
+    imgs.push({
+      'Produto (Código)': id,
+      'Produto (Nome)': nome,
+      'Imagem': `${imgBase}/${cod}.jpg`,
+    });
+
+    // Imagens extras _1 até _10
+    for (let n = 1; n <= 10; n++) {
+      imgs.push({
+        'Produto (Código)': id,
+        'Produto (Nome)': nome,
+        'Imagem': `${imgBase}/${cod}_${n}.jpg`,
+      });
+    }
+  }
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Produtos');
@@ -703,7 +725,7 @@ function gerarPlanilha() {
   dl.classList.add('show');
   document.getElementById('dl-btn').onclick = ()=> XLSX.writeFile(wb,`JetSupply_Zydon_${date}.xlsx`);
 
-  addAgentMsg(`Planilha gerada: <strong>${products.length}</strong> produtos, <strong>${sims.length}</strong> similares.${pendentes.length?' <span style="color:var(--amber)">'+pendentes.length+' produto(s) ainda com pendências foram incluídos sem curadoria completa.</span>':''}`);
+  addAgentMsg(`Planilha gerada: <strong>${products.length}</strong> produtos, <strong>${sims.length}</strong> similares, <strong>${imgs.length}</strong> linhas de imagem (principal + até 10 variações por produto).${pendentes.length?' <span style="color:var(--amber)">'+pendentes.length+' produto(s) ainda com pendências.</span>':''}`);
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────
