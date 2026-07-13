@@ -658,9 +658,15 @@ function gerarPlanilha() {
   }
 
   function getCatCodigo(nomecat) {
-    if (!nomecat || !kb?.categorias) return '';
-    // categorias é { "GRUPO SETORIAL": "Nome Zydon" } — precisa buscar pelo código
-    return '';
+    if (!nomecat || !kb?.categorias_zydon_por_nome) return '';
+    // Busca exata pelo nome
+    const upper = nomecat.toUpperCase();
+    if (kb.categorias_zydon_por_nome[upper]) return kb.categorias_zydon_por_nome[upper];
+    // Busca parcial
+    const key = Object.keys(kb.categorias_zydon_por_nome).find(k =>
+      k.includes(upper) || upper.includes(k.split(' > ').pop())
+    );
+    return key ? kb.categorias_zydon_por_nome[key] : '';
   }
 
   // Agrupar por Cód. agrupamento para montar EAN_VARIACAO
@@ -690,8 +696,9 @@ function gerarPlanilha() {
     const cdCod    = codZydon.centro_distribuicao?.codigo || '';
     const cdNome   = codZydon.centro_distribuicao?.nome || '';
 
-    // Categoria — usar mapeamento aprendido ou deixar em branco
+    // Categoria — buscar código real da Zydon
     const catNomeZydon = catZydonMap[cat] || cat;
+    const catCod = getCatCodigo(catNomeZydon) || getCatCodigo(cat);
 
     // EAN_VARIACAO — todos os EANs do agrupamento separados por ;
     const grpCod = p['Cód. agrupamento'];
@@ -709,7 +716,7 @@ function gerarPlanilha() {
       'Centro de Distribuição Padrão (Código)': cdCod,'Centro de Distribuição Padrão (Nome)': cdNome,
       'Desconto Máximo (%)': 0,'Estoque Mínimo': 0,'Quantidade Mínima p/ Venda': 0,'Múltiplo p/ Venda': 0,
       'Unidade Padrão (Código)': unCod,'Unidade Padrão (Abreviação)': un,
-      'Categoria (Código)':'','Categoria (Nome)': catNomeZydon,
+      'Categoria (Código)': catCod,'Categoria (Nome)': catNomeZydon,
       'Peso (g)': pG, 'Largura (cm)': p['Largura (cm)']||'',
       'Altura (cm)': p['Altura (cm)']||'', 'Profundidade (cm)': p['Profundidade (cm)']||'',
       'Peso da Embalagem (g)': pG,'Largura da Embalagem (cm)': p['Largura (cm)']||'',

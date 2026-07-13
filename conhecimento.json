@@ -67,6 +67,11 @@
     {
       "data": "2026-07-13",
       "usuario": "Matheus",
+      "acao": "Adicionadas 112 categorias Zydon com hierarquia completa"
+    },
+    {
+      "data": "2026-07-13",
+      "usuario": "Matheus",
       "acao": "Adicionados 94 códigos de marcas Zydon + códigos de CD, Unidade e Categoria"
     },
     {
@@ -218,5 +223,732 @@
     "Corr Plastik": 1728,
     "Perfil Líder": 1729,
     "Real Perfil": 1730
+  },
+  "categorias_zydon": {
+    "488": {
+      "nome": "Materiais Elétricos",
+      "pai": null,
+      "caminho": "Materiais Elétricos"
+    },
+    "489": {
+      "nome": "Disjuntores",
+      "pai": 488,
+      "caminho": "Materiais Elétricos > Disjuntores"
+    },
+    "490": {
+      "nome": "Disjuntores Caixa Moldada",
+      "pai": 489,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Caixa Moldada"
+    },
+    "499": {
+      "nome": "Acessórios",
+      "pai": 490,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Caixa Moldada > Acessórios"
+    },
+    "501": {
+      "nome": "1P Monopolar",
+      "pai": 490,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Caixa Moldada > 1P Monopolar"
+    },
+    "491": {
+      "nome": "2P Bipolar",
+      "pai": 490,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Caixa Moldada > 2P Bipolar"
+    },
+    "492": {
+      "nome": "3P Tripolar",
+      "pai": 490,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Caixa Moldada > 3P Tripolar"
+    },
+    "493": {
+      "nome": "4P Tetrapolar",
+      "pai": 490,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Caixa Moldada > 4P Tetrapolar"
+    },
+    "494": {
+      "nome": "Disjuntores Mini",
+      "pai": 489,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Mini"
+    },
+    "500": {
+      "nome": "Acessórios",
+      "pai": 494,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Mini > Acessórios"
+    },
+    "495": {
+      "nome": "1P Monopolar",
+      "pai": 494,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Mini > 1P Monopolar"
+    },
+    "496": {
+      "nome": "2P Bipolar",
+      "pai": 494,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Mini > 2P Bipolar"
+    },
+    "497": {
+      "nome": "3P Tripolar",
+      "pai": 494,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Mini > 3P Tripolar"
+    },
+    "498": {
+      "nome": "4P Tetrapolar",
+      "pai": 494,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Mini > 4P Tetrapolar"
+    },
+    "502": {
+      "nome": "Disjuntores a Vácuo",
+      "pai": 489,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Vácuo"
+    },
+    "503": {
+      "nome": "Acessórios",
+      "pai": 502,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Vácuo > Acessórios"
+    },
+    "504": {
+      "nome": "3P Tripolar Extraível",
+      "pai": 502,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Vácuo > 3P Tripolar Extraível"
+    },
+    "505": {
+      "nome": "3P Tripolar Fixo",
+      "pai": 502,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Vácuo > 3P Tripolar Fixo"
+    },
+    "506": {
+      "nome": "4P Tetrapolar Extraível",
+      "pai": 502,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Vácuo > 4P Tetrapolar Extraível"
+    },
+    "507": {
+      "nome": "4P Tetrapolar Fixo",
+      "pai": 502,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Vácuo > 4P Tetrapolar Fixo"
+    },
+    "508": {
+      "nome": "Disjuntores Aberto",
+      "pai": 489,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Aberto"
+    },
+    "509": {
+      "nome": "Acessórios",
+      "pai": 508,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Aberto > Acessórios"
+    },
+    "510": {
+      "nome": "3P Tripolar Extraível",
+      "pai": 508,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Aberto > 3P Tripolar Extraível"
+    },
+    "511": {
+      "nome": "3P Tripolar Fixo",
+      "pai": 508,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Aberto > 3P Tripolar Fixo"
+    },
+    "512": {
+      "nome": "4P Tetrapolar Extraível",
+      "pai": 508,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Aberto > 4P Tetrapolar Extraível"
+    },
+    "513": {
+      "nome": "4P Tetrapolar Fixo",
+      "pai": 508,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Aberto > 4P Tetrapolar Fixo"
+    },
+    "514": {
+      "nome": "Disjuntores a Gás",
+      "pai": 489,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Gás"
+    },
+    "515": {
+      "nome": "Acessórios",
+      "pai": 514,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Gás > Acessórios"
+    },
+    "516": {
+      "nome": "3P Tripolar Extraível",
+      "pai": 514,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Gás > 3P Tripolar Extraível"
+    },
+    "517": {
+      "nome": "3P Tripolar Fixo",
+      "pai": 514,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Gás > 3P Tripolar Fixo"
+    },
+    "518": {
+      "nome": "4P Tetrapolar Extraível",
+      "pai": 514,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Gás > 4P Tetrapolar Extraível"
+    },
+    "519": {
+      "nome": "4P Tetrapolar Fixo",
+      "pai": 514,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores a Gás > 4P Tetrapolar Fixo"
+    },
+    "520": {
+      "nome": "Disjuntores Motor",
+      "pai": 489,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Motor"
+    },
+    "521": {
+      "nome": "Acessórios",
+      "pai": 520,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Motor > Acessórios"
+    },
+    "522": {
+      "nome": "1P Monopolar",
+      "pai": 520,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Motor > 1P Monopolar"
+    },
+    "523": {
+      "nome": "2P Bipolar",
+      "pai": 520,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Motor > 2P Bipolar"
+    },
+    "524": {
+      "nome": "3P Tripolar",
+      "pai": 520,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Motor > 3P Tripolar"
+    },
+    "525": {
+      "nome": "4P Tetrapolar",
+      "pai": 520,
+      "caminho": "Materiais Elétricos > Disjuntores > Disjuntores Motor > 4P Tetrapolar"
+    },
+    "539": {
+      "nome": "DPS - Dispositivo de Proteção Contra Surtos",
+      "pai": 488,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos"
+    },
+    "540": {
+      "nome": "Classe I",
+      "pai": 539,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I"
+    },
+    "541": {
+      "nome": "1P Monopolar",
+      "pai": 540,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I > 1P Monopolar"
+    },
+    "542": {
+      "nome": "2P Bipolar",
+      "pai": 540,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I > 2P Bipolar"
+    },
+    "543": {
+      "nome": "3P Tripolar",
+      "pai": 540,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I > 3P Tripolar"
+    },
+    "544": {
+      "nome": "4P Tetrapolar",
+      "pai": 540,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I > 4P Tetrapolar"
+    },
+    "545": {
+      "nome": "Classe I + II",
+      "pai": 539,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I + II"
+    },
+    "546": {
+      "nome": "1P Monopolar",
+      "pai": 545,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I + II > 1P Monopolar"
+    },
+    "547": {
+      "nome": "2P Bipolar",
+      "pai": 545,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I + II > 2P Bipolar"
+    },
+    "548": {
+      "nome": "3P Tripolar",
+      "pai": 545,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I + II > 3P Tripolar"
+    },
+    "549": {
+      "nome": "4P Tetrapolar",
+      "pai": 545,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe I + II > 4P Tetrapolar"
+    },
+    "550": {
+      "nome": "Classe II",
+      "pai": 539,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II"
+    },
+    "551": {
+      "nome": "1P Monopolar",
+      "pai": 550,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II > 1P Monopolar"
+    },
+    "552": {
+      "nome": "2P Bipolar",
+      "pai": 550,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II > 2P Bipolar"
+    },
+    "553": {
+      "nome": "3P Tripolar",
+      "pai": 550,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II > 3P Tripolar"
+    },
+    "554": {
+      "nome": "4P Tetrapolar",
+      "pai": 550,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II > 4P Tetrapolar"
+    },
+    "555": {
+      "nome": "Classe II + III",
+      "pai": 539,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II + III"
+    },
+    "556": {
+      "nome": "1P Monopolar",
+      "pai": 555,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II + III > 1P Monopolar"
+    },
+    "557": {
+      "nome": "2P Bipolar",
+      "pai": 555,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II + III > 2P Bipolar"
+    },
+    "558": {
+      "nome": "3P Tripolar",
+      "pai": 555,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II + III > 3P Tripolar"
+    },
+    "559": {
+      "nome": "4P Tetrapolar",
+      "pai": 555,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe II + III > 4P Tetrapolar"
+    },
+    "560": {
+      "nome": "Classe III",
+      "pai": 539,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe III"
+    },
+    "561": {
+      "nome": "1P Monopolar",
+      "pai": 560,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe III > 1P Monopolar"
+    },
+    "562": {
+      "nome": "2P Bipolar",
+      "pai": 560,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe III > 2P Bipolar"
+    },
+    "563": {
+      "nome": "3P Tripolar",
+      "pai": 560,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe III > 3P Tripolar"
+    },
+    "564": {
+      "nome": "4P Tetrapolar",
+      "pai": 560,
+      "caminho": "Materiais Elétricos > DPS - Dispositivo de Proteção Contra Surtos > Classe III > 4P Tetrapolar"
+    },
+    "565": {
+      "nome": "Fusíveis",
+      "pai": 488,
+      "caminho": "Materiais Elétricos > Fusíveis"
+    },
+    "566": {
+      "nome": "Acessórios",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > Acessórios"
+    },
+    "567": {
+      "nome": "Base para Fusível",
+      "pai": 566,
+      "caminho": "Materiais Elétricos > Fusíveis > Acessórios > Base para Fusível"
+    },
+    "568": {
+      "nome": "Extrator de Fusível",
+      "pai": 566,
+      "caminho": "Materiais Elétricos > Fusíveis > Acessórios > Extrator de Fusível"
+    },
+    "569": {
+      "nome": "Indicador de Fusão",
+      "pai": 566,
+      "caminho": "Materiais Elétricos > Fusíveis > Acessórios > Indicador de Fusão"
+    },
+    "570": {
+      "nome": "Porta-Fusível",
+      "pai": 566,
+      "caminho": "Materiais Elétricos > Fusíveis > Acessórios > Porta-Fusível"
+    },
+    "571": {
+      "nome": "Suporte para Fusível",
+      "pai": 266,
+      "caminho": "Suporte para Fusível"
+    },
+    "572": {
+      "nome": "Automotivo",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > Automotivo"
+    },
+    "573": {
+      "nome": "Lâmina",
+      "pai": 572,
+      "caminho": "Materiais Elétricos > Fusíveis > Automotivo > Lâmina"
+    },
+    "574": {
+      "nome": "Maxi",
+      "pai": 572,
+      "caminho": "Materiais Elétricos > Fusíveis > Automotivo > Maxi"
+    },
+    "575": {
+      "nome": "Micro",
+      "pai": 572,
+      "caminho": "Materiais Elétricos > Fusíveis > Automotivo > Micro"
+    },
+    "576": {
+      "nome": "Mini Lâmina",
+      "pai": 572,
+      "caminho": "Materiais Elétricos > Fusíveis > Automotivo > Mini Lâmina"
+    },
+    "577": {
+      "nome": "Cilíndrico",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > Cilíndrico"
+    },
+    "578": {
+      "nome": "aM",
+      "pai": 577,
+      "caminho": "Materiais Elétricos > Fusíveis > Cilíndrico > aM"
+    },
+    "579": {
+      "nome": "aR",
+      "pai": 577,
+      "caminho": "Materiais Elétricos > Fusíveis > Cilíndrico > aR"
+    },
+    "580": {
+      "nome": "gL/gG",
+      "pai": 577,
+      "caminho": "Materiais Elétricos > Fusíveis > Cilíndrico > gL/gG"
+    },
+    "581": {
+      "nome": "gPV",
+      "pai": 577,
+      "caminho": "Materiais Elétricos > Fusíveis > Cilíndrico > gPV"
+    },
+    "582": {
+      "nome": "gR",
+      "pai": 577,
+      "caminho": "Materiais Elétricos > Fusíveis > Cilíndrico > gR"
+    },
+    "583": {
+      "nome": "Diazed",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > Diazed"
+    },
+    "584": {
+      "nome": "aM",
+      "pai": 583,
+      "caminho": "Materiais Elétricos > Fusíveis > Diazed > aM"
+    },
+    "585": {
+      "nome": "gL/gG",
+      "pai": 583,
+      "caminho": "Materiais Elétricos > Fusíveis > Diazed > gL/gG"
+    },
+    "586": {
+      "nome": "HH - Alta Tensão",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > HH - Alta Tensão"
+    },
+    "587": {
+      "nome": "Limitador de Corrente",
+      "pai": 586,
+      "caminho": "Materiais Elétricos > Fusíveis > HH - Alta Tensão > Limitador de Corrente"
+    },
+    "588": {
+      "nome": "Retardado",
+      "pai": 586,
+      "caminho": "Materiais Elétricos > Fusíveis > HH - Alta Tensão > Retardado"
+    },
+    "589": {
+      "nome": "Neozed",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > Neozed"
+    },
+    "590": {
+      "nome": "aM",
+      "pai": 589,
+      "caminho": "Materiais Elétricos > Fusíveis > Neozed > aM"
+    },
+    "591": {
+      "nome": "gL/gG",
+      "pai": 589,
+      "caminho": "Materiais Elétricos > Fusíveis > Neozed > gL/gG"
+    },
+    "592": {
+      "nome": "NH",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > NH"
+    },
+    "593": {
+      "nome": "aR",
+      "pai": 592,
+      "caminho": "Materiais Elétricos > Fusíveis > NH > aR"
+    },
+    "594": {
+      "nome": "gL/gG",
+      "pai": 592,
+      "caminho": "Materiais Elétricos > Fusíveis > NH > gL/gG"
+    },
+    "595": {
+      "nome": "gPV",
+      "pai": 592,
+      "caminho": "Materiais Elétricos > Fusíveis > NH > gPV"
+    },
+    "596": {
+      "nome": "gR",
+      "pai": 592,
+      "caminho": "Materiais Elétricos > Fusíveis > NH > gR"
+    },
+    "597": {
+      "nome": "Vidro",
+      "pai": 565,
+      "caminho": "Materiais Elétricos > Fusíveis > Vidro"
+    },
+    "598": {
+      "nome": "Rápido",
+      "pai": 597,
+      "caminho": "Materiais Elétricos > Fusíveis > Vidro > Rápido"
+    },
+    "599": {
+      "nome": "Retardado",
+      "pai": 597,
+      "caminho": "Materiais Elétricos > Fusíveis > Vidro > Retardado"
+    },
+    "526": {
+      "nome": "IDR - Interruptores Diferenciais Residuais",
+      "pai": 488,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais"
+    },
+    "527": {
+      "nome": "Tipo A",
+      "pai": 526,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo A"
+    },
+    "528": {
+      "nome": "2P Bipolar",
+      "pai": 527,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo A > 2P Bipolar"
+    },
+    "529": {
+      "nome": "4P Tetrapolar",
+      "pai": 527,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo A > 4P Tetrapolar"
+    },
+    "530": {
+      "nome": "Tipo AC",
+      "pai": 526,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo AC"
+    },
+    "531": {
+      "nome": "2P Bipolar",
+      "pai": 530,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo AC > 2P Bipolar"
+    },
+    "532": {
+      "nome": "4P Tetrapolar",
+      "pai": 530,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo AC > 4P Tetrapolar"
+    },
+    "533": {
+      "nome": "Tipo B",
+      "pai": 526,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo B"
+    },
+    "534": {
+      "nome": "2P Bipolar",
+      "pai": 533,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo B > 2P Bipolar"
+    },
+    "535": {
+      "nome": "4P Tetrapolar",
+      "pai": 533,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo B > 4P Tetrapolar"
+    },
+    "536": {
+      "nome": "Tipo F",
+      "pai": 526,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo F"
+    },
+    "537": {
+      "nome": "2P Bipolar",
+      "pai": 536,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo F > 2P Bipolar"
+    },
+    "538": {
+      "nome": "4P Tetrapolar",
+      "pai": 536,
+      "caminho": "Materiais Elétricos > IDR - Interruptores Diferenciais Residuais > Tipo F > 4P Tetrapolar"
+    }
+  },
+  "categorias_zydon_por_nome": {
+    "MATERIAIS ELÉTRICOS": 488,
+    "DISJUNTORES": 489,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES": 489,
+    "DISJUNTORES CAIXA MOLDADA": 490,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES CAIXA MOLDADA": 490,
+    "ACESSÓRIOS": 566,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES CAIXA MOLDADA > ACESSÓRIOS": 499,
+    "1P MONOPOLAR": 561,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES CAIXA MOLDADA > 1P MONOPOLAR": 501,
+    "2P BIPOLAR": 537,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES CAIXA MOLDADA > 2P BIPOLAR": 491,
+    "3P TRIPOLAR": 563,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES CAIXA MOLDADA > 3P TRIPOLAR": 492,
+    "4P TETRAPOLAR": 538,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES CAIXA MOLDADA > 4P TETRAPOLAR": 493,
+    "DISJUNTORES MINI": 494,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MINI": 494,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MINI > ACESSÓRIOS": 500,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MINI > 1P MONOPOLAR": 495,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MINI > 2P BIPOLAR": 496,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MINI > 3P TRIPOLAR": 497,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MINI > 4P TETRAPOLAR": 498,
+    "DISJUNTORES A VÁCUO": 502,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A VÁCUO": 502,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A VÁCUO > ACESSÓRIOS": 503,
+    "3P TRIPOLAR EXTRAÍVEL": 516,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A VÁCUO > 3P TRIPOLAR EXTRAÍVEL": 504,
+    "3P TRIPOLAR FIXO": 517,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A VÁCUO > 3P TRIPOLAR FIXO": 505,
+    "4P TETRAPOLAR EXTRAÍVEL": 518,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A VÁCUO > 4P TETRAPOLAR EXTRAÍVEL": 506,
+    "4P TETRAPOLAR FIXO": 519,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A VÁCUO > 4P TETRAPOLAR FIXO": 507,
+    "DISJUNTORES ABERTO": 508,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES ABERTO": 508,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES ABERTO > ACESSÓRIOS": 509,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES ABERTO > 3P TRIPOLAR EXTRAÍVEL": 510,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES ABERTO > 3P TRIPOLAR FIXO": 511,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES ABERTO > 4P TETRAPOLAR EXTRAÍVEL": 512,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES ABERTO > 4P TETRAPOLAR FIXO": 513,
+    "DISJUNTORES A GÁS": 514,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A GÁS": 514,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A GÁS > ACESSÓRIOS": 515,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A GÁS > 3P TRIPOLAR EXTRAÍVEL": 516,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A GÁS > 3P TRIPOLAR FIXO": 517,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A GÁS > 4P TETRAPOLAR EXTRAÍVEL": 518,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES A GÁS > 4P TETRAPOLAR FIXO": 519,
+    "DISJUNTORES MOTOR": 520,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MOTOR": 520,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MOTOR > ACESSÓRIOS": 521,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MOTOR > 1P MONOPOLAR": 522,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MOTOR > 2P BIPOLAR": 523,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MOTOR > 3P TRIPOLAR": 524,
+    "MATERIAIS ELÉTRICOS > DISJUNTORES > DISJUNTORES MOTOR > 4P TETRAPOLAR": 525,
+    "DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS": 539,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS": 539,
+    "CLASSE I": 540,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I": 540,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I > 1P MONOPOLAR": 541,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I > 2P BIPOLAR": 542,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I > 3P TRIPOLAR": 543,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I > 4P TETRAPOLAR": 544,
+    "CLASSE I + II": 545,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I + II": 545,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I + II > 1P MONOPOLAR": 546,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I + II > 2P BIPOLAR": 547,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I + II > 3P TRIPOLAR": 548,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE I + II > 4P TETRAPOLAR": 549,
+    "CLASSE II": 550,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II": 550,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II > 1P MONOPOLAR": 551,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II > 2P BIPOLAR": 552,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II > 3P TRIPOLAR": 553,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II > 4P TETRAPOLAR": 554,
+    "CLASSE II + III": 555,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II + III": 555,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II + III > 1P MONOPOLAR": 556,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II + III > 2P BIPOLAR": 557,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II + III > 3P TRIPOLAR": 558,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE II + III > 4P TETRAPOLAR": 559,
+    "CLASSE III": 560,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE III": 560,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE III > 1P MONOPOLAR": 561,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE III > 2P BIPOLAR": 562,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE III > 3P TRIPOLAR": 563,
+    "MATERIAIS ELÉTRICOS > DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS > CLASSE III > 4P TETRAPOLAR": 564,
+    "FUSÍVEIS": 565,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS": 565,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > ACESSÓRIOS": 566,
+    "BASE PARA FUSÍVEL": 567,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > ACESSÓRIOS > BASE PARA FUSÍVEL": 567,
+    "EXTRATOR DE FUSÍVEL": 568,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > ACESSÓRIOS > EXTRATOR DE FUSÍVEL": 568,
+    "INDICADOR DE FUSÃO": 569,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > ACESSÓRIOS > INDICADOR DE FUSÃO": 569,
+    "PORTA-FUSÍVEL": 570,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > ACESSÓRIOS > PORTA-FUSÍVEL": 570,
+    "SUPORTE PARA FUSÍVEL": 571,
+    "AUTOMOTIVO": 572,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > AUTOMOTIVO": 572,
+    "LÂMINA": 573,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > AUTOMOTIVO > LÂMINA": 573,
+    "MAXI": 574,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > AUTOMOTIVO > MAXI": 574,
+    "MICRO": 575,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > AUTOMOTIVO > MICRO": 575,
+    "MINI LÂMINA": 576,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > AUTOMOTIVO > MINI LÂMINA": 576,
+    "CILÍNDRICO": 577,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > CILÍNDRICO": 577,
+    "AM": 590,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > CILÍNDRICO > AM": 578,
+    "AR": 593,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > CILÍNDRICO > AR": 579,
+    "GL/GG": 594,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > CILÍNDRICO > GL/GG": 580,
+    "GPV": 595,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > CILÍNDRICO > GPV": 581,
+    "GR": 596,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > CILÍNDRICO > GR": 582,
+    "DIAZED": 583,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > DIAZED": 583,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > DIAZED > AM": 584,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > DIAZED > GL/GG": 585,
+    "HH - ALTA TENSÃO": 586,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > HH - ALTA TENSÃO": 586,
+    "LIMITADOR DE CORRENTE": 587,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > HH - ALTA TENSÃO > LIMITADOR DE CORRENTE": 587,
+    "RETARDADO": 599,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > HH - ALTA TENSÃO > RETARDADO": 588,
+    "NEOZED": 589,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NEOZED": 589,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NEOZED > AM": 590,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NEOZED > GL/GG": 591,
+    "NH": 592,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NH": 592,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NH > AR": 593,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NH > GL/GG": 594,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NH > GPV": 595,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > NH > GR": 596,
+    "VIDRO": 597,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > VIDRO": 597,
+    "RÁPIDO": 598,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > VIDRO > RÁPIDO": 598,
+    "MATERIAIS ELÉTRICOS > FUSÍVEIS > VIDRO > RETARDADO": 599,
+    "IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS": 526,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS": 526,
+    "TIPO A": 527,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO A": 527,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO A > 2P BIPOLAR": 528,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO A > 4P TETRAPOLAR": 529,
+    "TIPO AC": 530,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO AC": 530,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO AC > 2P BIPOLAR": 531,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO AC > 4P TETRAPOLAR": 532,
+    "TIPO B": 533,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO B": 533,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO B > 2P BIPOLAR": 534,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO B > 4P TETRAPOLAR": 535,
+    "TIPO F": 536,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO F": 536,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO F > 2P BIPOLAR": 537,
+    "MATERIAIS ELÉTRICOS > IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS > TIPO F > 4P TETRAPOLAR": 538
   }
 }
