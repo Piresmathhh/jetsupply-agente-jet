@@ -171,7 +171,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v1.5 · 13/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v1.8 · 13/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -239,7 +239,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="chat" id="chat"></div>
   <div class="dl-bar" id="dl-bar">
     <p id="dl-msg">Planilha pronta.</p>
-    <button class="dl-btn" id="dl-btn">Baixar planilha Zydon</button>
+    <button class="dl-btn" id="dl-btn">Baixar 3 planilhas Zydon</button>
   </div>
   <div class="inp-area">
     <div class="inp-row">
@@ -313,8 +313,12 @@ function formatName(raw, marcaNome) {
     out.push(words.map((w,i) => formatToken(w, isFirst && i===0, upper)).join(' '));
     isFirst = false;
   }
-  // Aplicar regras globais
   let result = out.join('').replace(/\s{2,}/g,' ').trim();
+  // Garantir que a marca no final fique maiúscula
+  if (marcaNome) {
+    const marcaUp = marcaNome.toUpperCase();
+    result = result.replace(new RegExp(`\\b${marcaNome}\\b`, 'gi'), marcaUp);
+  }
   if (kb) {
     for (const r of (kb.regras_globais || [])) {
       result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
@@ -705,7 +709,7 @@ function gerarPlanilha() {
     const marcaCod = getMarcaCodigo(marc);
     const unCod    = codZydon.unidade_padrao?.codigo || '';
     const cdCod    = codZydon.centro_distribuicao?.codigo || '';
-    const cdNome   = codZydon.centro_distribuicao?.nome || '';
+    const cdNome   = 'CD - Espírito Santo - Serra';
 
     // Categoria — buscar código real da Zydon
     const catNomeZydon = catZydonMap[cat] || cat;
@@ -718,7 +722,7 @@ function gerarPlanilha() {
     return {
       'Imagem Principal': imgBase?`${imgBase}/${p['Código']||''}.jpg`:'',
       'Código': String(p['ID']||''),
-      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO'?'Sim':'Não',
+      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO'?true:false,
       'Nome': nome, 'SKU': String(p['Código']||''),
       'Descrição Curta': nome,
       'Descrição Longa': String(p['Descrição']||'').replace(/_x000D_/g,'').replace(/\r/g,'').trim(),
@@ -735,7 +739,7 @@ function gerarPlanilha() {
       'Destaque':'','Título do SEO': nome,'Descrição do SEO': nome,
       'Palavras-chave do SEO': [marc,cat,gen].filter(Boolean).join(', '),
       'Acréscimo Máximo': 0,'Tags': [lin,gen].filter(Boolean).join(', '),
-      'EAN_VARIACAO': eanVariacao,
+      'EAN_VARIACAO - Campo para inclusão de todos os códigos de barras das variações ': eanVariacao,
     };
   });
 
@@ -828,6 +832,7 @@ function gerarPlanilha() {
 
     // Imagem principal (sem sufixo)
     imgs.push({
+      'Código': imgs.length + 1,
       'Produto (Código)': id,
       'Produto (Nome)': nome,
       'Imagem': `${imgBase}/${cod}.jpg`,
@@ -836,6 +841,7 @@ function gerarPlanilha() {
     // Imagens extras _1 até _10
     for (let n = 1; n <= 10; n++) {
       imgs.push({
+        'Código': imgs.length + 1,
         'Produto (Código)': id,
         'Produto (Nome)': nome,
         'Imagem': `${imgBase}/${cod}_${n}.jpg`,
@@ -843,21 +849,42 @@ function gerarPlanilha() {
     }
   }
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Produtos');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Unidades Alternativas');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Ficha Técnica');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sims.length?sims:[]), 'Produtos Similares');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Produtos Recomendados');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(variacoes.length?variacoes:[]), 'Variações produtos');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(imgs), 'Imagens');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), 'Complementos');
+  // ── Arquivo 1: Produto (planilha principal) ──────────────────────
+  const wb1 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(rows), 'Produtos');
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Unidades Alternativas');
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Ficha Técnica');
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(sims.length?sims:[]), 'Produtos Similares');
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Produtos Recomendados');
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(imgs), 'Imagens');
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Complementos');
+
+  // ── Arquivo 2: Variações ─────────────────────────────────────────
+  const wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, XLSX.utils.json_to_sheet(variacoes.length?variacoes:[]), 'Variações produtos');
+
+  // ── Arquivo 3: Variações Valores ─────────────────────────────────
+  const valoresVar = [];
+  variacoes.forEach(v => {
+    valoresVar.push({
+      'PRODUCT_VARIATION_ID': v['Código variação'],
+      'VALUE': v['Valores'],
+      'ID': v['Código variação'],
+      'VARIATION_ID': v['ORDER'],
+    });
+  });
+  const wb3 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb3, XLSX.utils.json_to_sheet(valoresVar.length?valoresVar:[]), 'Valores de Variações de Produto');
 
   const date = new Date().toISOString().slice(0,10);
   const dl = document.getElementById('dl-bar');
-  document.getElementById('dl-msg').textContent = `✓ ${products.length} produtos · ${sims.length} similares · ${pendentes.length} ainda pendentes`;
+  document.getElementById('dl-msg').textContent = `✓ ${products.length} produtos · ${variacoes.length} variações · ${sims.length} similares — 3 arquivos prontos`;
   dl.classList.add('show');
-  document.getElementById('dl-btn').onclick = ()=> XLSX.writeFile(wb,`JetSupply_Zydon_${date}.xlsx`);
+  document.getElementById('dl-btn').onclick = () => {
+    XLSX.writeFile(wb1, `JetSupply_Produto_${date}.xlsx`);
+    setTimeout(() => XLSX.writeFile(wb2, `JetSupply_Variacoes_${date}.xlsx`), 500);
+    setTimeout(() => XLSX.writeFile(wb3, `JetSupply_Variacoes_Valores_${date}.xlsx`), 1000);
+  };
 
   addAgentMsg(`Planilha gerada:<br>
     <strong>${products.length}</strong> produtos · <strong>${variacoes.length}</strong> variações (ORDER calculado) · <strong>${sims.length}</strong> similares · <strong>${imgs.length}</strong> linhas de imagem.
