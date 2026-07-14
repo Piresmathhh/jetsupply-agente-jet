@@ -1,5 +1,5 @@
 {
-  "versao": "3.6",
+  "versao": "3.8",
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
@@ -64,6 +64,16 @@
   ],
   "regras_globais": [],
   "historico": [
+    {
+      "data": "2026-07-14",
+      "usuario": "Matheus",
+      "acao": "v3.8 — MUDANÇA ESTRUTURAL: aba Produtos agora gera só 1 linha por família (o \"produto pai\", cujo ID é igual ao Cód. agrupamento — nome vira faixa \"min a max\", ativo sempre true). Filhos ficam só na aba Variações com dados individuais completos. Similares desativado entre membros do grupo (não fazem mais sentido). Imagens ajustada para referenciar o Código do pai (mantendo nome de arquivo por SKU individual, como já está no R2). PRICE/STOCK da aba Variações corrigidos para default 1 (não 0). Produtos sem agrupamento continuam com linha própria normal."
+    },
+    {
+      "data": "2026-07-14",
+      "usuario": "Matheus",
+      "acao": "v3.7 — correções confirmadas via comparação com planilha manual: Ativo/Status agora \"true\"/\"false\" minúsculo; removido auto-preenchimento de SEO/Tags (ficam em branco, igual ao padrão manual, pois copy duplicando o nome não é SEO real)"
+    },
     {
       "data": "2026-07-14",
       "usuario": "Matheus",

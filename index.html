@@ -196,7 +196,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.6 · 14/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.8 · 14/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -309,7 +309,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.6';
+const VERSION = 'v3.8';
 let products = [];
 let kb = null;
 let kbSha = null;
@@ -828,6 +828,38 @@ function gerarPlanilha() {
     }
   });
 
+  // ── Produto Pai: identificar o representante de cada grupo e montar seu nome agregado ──
+  // O Cód. agrupamento do Signus é o próprio ID de um dos produtos da família (o "pai").
+  // Esse produto reaproveita sua própria linha, só ajustamos Nome (faixa) e Ativo (sempre true).
+  function buildNomePai(paiProduto, infoMin, infoMax) {
+    let raw = paiProduto['Nome'] || '';
+    // Remove "( Substituído por : XXXXX )"
+    raw = raw.replace(/\(\s*Subst?itu[ií]do\s+por\s*:\s*\d+\s*\)/gi, '').trim();
+    // Remove o segmento do SKU (Código Signus) que aparece embutido no nome
+    const cod = String(paiProduto['Código']||'').trim();
+    if (cod) raw = raw.replace(new RegExp('\\s*-\\s*'+cod.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b'), '');
+    raw = raw.replace(/\s{2,}/g,' ').replace(/\s*-\s*-\s*/g,' - ').trim();
+    // Troca o valor específico da variação pela faixa "min a max"
+    if (infoMin.valor !== infoMax.valor) {
+      const re = new RegExp('\\b'+infoMin.valor.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b');
+      if (re.test(raw)) raw = raw.replace(re, `${infoMin.valor} a ${infoMax.valor}`);
+    }
+    // Aplica a mesma regra de maiúsculas já validada (marca/sigla/unidade em CAPS)
+    return formatName(raw, paiProduto['Marca']||'');
+  }
+
+  const grpPaiId = {};    // grpCod -> ID do produto designado como pai
+  const grpNomePai = {};  // grpCod -> nome agregado do pai (faixa min a max)
+  Object.entries(grupos).forEach(([grpCod, grp]) => {
+    const comValor = grp.map(p => ({ produto:p, info: extrairValorVariacao(p) }));
+    comValor.sort((a,b) => a.info.num - b.info.num);
+    const infoMin = comValor[0].info, infoMax = comValor[comValor.length-1].info;
+    // Produto pai = aquele cujo próprio ID é igual ao Cód. agrupamento; se não achar, usa o de menor valor
+    const paiProduto = grp.find(p => String(p['ID']||'') === String(grpCod)) || comValor[0].produto;
+    grpPaiId[grpCod] = String(paiProduto['ID']||'');
+    grpNomePai[grpCod] = buildNomePai(paiProduto, infoMin, infoMax);
+  });
+
   // Validações — agrupadas para não poluir o relatório com repetição
   const eansSeen = {};
   const rows = [];
@@ -869,10 +901,18 @@ function gerarPlanilha() {
     const grpCod = p[COL_AGRUPAMENTO];
     const eanVariacao = grpCod && gruposEan[grpCod] ? gruposEan[grpCod].join('; ') : ean;
 
+    // Produtos = só o pai por família (1 linha, nome agregado, ativo sempre true).
+    // Os demais filhos do grupo não geram linha em Produtos — só existem na aba Variações.
+    const ehFilhoNaoPai = grpCod && String(p['ID']||'') !== String(grpPaiId[grpCod]||'');
+    if (ehFilhoNaoPai) return;
+
+    const nomeLinha = grpCod ? (grpNomePai[grpCod] || nome) : nome;
+    const ativoLinha = grpCod ? 'true' : (String(p['Situação']||'').toUpperCase()==='ATIVO' ? 'true' : 'false');
+
     rows.push({
       'Código': String(p['ID']||''),
-      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO' ? 'TRUE' : 'FALSE',
-      'Nome': nome,
+      'Ativo': ativoLinha,
+      'Nome': nomeLinha,
       'SKU': String(p['Código']||''),
       'Descrição Curta': '',
       'Descrição Longa': '',
@@ -901,24 +941,19 @@ function gerarPlanilha() {
       'Altura da Embalagem (cm)': p['Altura (cm)']||'',
       'Profundidade da Embalagem (cm)': p['Profundidade (cm)']||'',
       'Destaque': '',
-      'Título do SEO': nome,
-      'Descrição do SEO': nome,
-      'Palavras-chave do SEO': [marc, catNomeZydon, gen].filter(Boolean).join(', '),
+      'Título do SEO': '',
+      'Descrição do SEO': '',
+      'Palavras-chave do SEO': '',
       'Acréscimo Máximo': 0,
-      'Tags': [lin, gen].filter(Boolean).join(', '),
+      'Tags': '',
       'EAN_VARIACAO': eanVariacao,
     });
   });
 
-  // Similares
-  const sims = []; let sid = 1;
-  Object.values(grupos).forEach(grp => {
-    if (grp.length < 2) return;
-    for (let i=0;i<grp.length;i++) for (let j=i+1;j<grp.length;j++)
-      [[grp[i],grp[j]],[grp[j],grp[i]]].forEach(([a,b]) => {
-        sims.push({'Código':sid++,'Produto (Código)':String(a['ID']||''),'Produto (Nome)':formatName(a['Nome']||'',a['Marca']||''),'Produto Similar (Código)':String(b['ID']||''),'Produto Similar (Nome)':formatName(b['Nome']||'',b['Marca']||'')});
-      });
-  });
+  // Similares — desativado para membros do mesmo grupo: agora são variações de UM produto
+  // (o pai), não produtos separados. Gerar "similar" entre eles duplicaria referências a
+  // Códigos que não existem mais como linha própria em Produtos.
+  const sims = [];
 
   // Variações
   const variacoes = [];
@@ -930,12 +965,12 @@ function gerarPlanilha() {
       const pG = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
       const ean = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
       variacoes.push({
-        'PRICE': 0,
+        'PRICE': 1,
         'VARIATION_HEIGHT': p['Altura (cm)']||'',
         'ORDER': idx + 1,
         'Código': String(p['ID']||''),
         'NOME': formatName(p['Nome']||'', p['Marca']||''),
-        'STOCK': 0,
+        'STOCK': 1,
         'VARIATION_WIDTH': p['Largura (cm)']||'',
         'PACKAGING_HEIGHT': p['Altura (cm)']||'',
         'Código produto': String(grpCod||''),
@@ -944,7 +979,7 @@ function gerarPlanilha() {
         'Valores': 1,
         'VARIATION_DEPTH': p['Profundidade (cm)']||'',
         'Código variação': String(p['ID']||''),
-        'Status': 'TRUE',
+        'Status': 'true',
         'SKU': String(p['Código']||''),
         'PACKAGING_WIDTH': p['Largura (cm)']||'',
         'PACKAGING_DEPTH': p['Profundidade (cm)']||'',
@@ -956,11 +991,14 @@ function gerarPlanilha() {
     });
   });
 
-  // Imagens
+  // Imagens — aponta para o Código do PAI (única linha que existe em Produtos agora),
+  // mas mantém o nome do arquivo por SKU individual (é como foi feito o upload no R2).
   const imgs = [];
   for (const p of products) {
-    const cod = p['Código']||'', id = String(p['ID']||'');
-    const nome = formatName(p['Nome']||'', p['Marca']||'');
+    const cod = p['Código']||'';
+    const grpCod = p[COL_AGRUPAMENTO];
+    const id = grpCod ? String(grpPaiId[grpCod]||grpCod) : String(p['ID']||'');
+    const nome = grpCod ? (grpNomePai[grpCod] || formatName(p['Nome']||'', p['Marca']||'')) : formatName(p['Nome']||'', p['Marca']||'');
     if (!imgBase || !cod) continue;
     imgs.push({ 'Código':'', 'Produto (Código)':id, 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}.jpg` });
     for (let n=1; n<=10; n++) imgs.push({ 'Código':'', 'Produto (Código)':id, 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}_${n}.jpg` });
@@ -1007,11 +1045,11 @@ function gerarPlanilha() {
   window._dlDate = date;
   window._ultimoRelatorio = errosGeracao.slice(); // guardar para reabrir depois
   const dl = document.getElementById('dl-bar');
-  document.getElementById('dl-msg').textContent = `✓ ${products.length} produtos · ${variacoesFinal.length} variações · ${sims.length} similares · ${errosGeracao.length} aviso(s)`;
+  document.getElementById('dl-msg').textContent = `✓ ${rows.length} produtos · ${variacoesFinal.length} SKUs em variações · ${errosGeracao.length} aviso(s)`;
   dl.classList.add('show');
 
   // Mensagem com relatório de erros
-  let msg = `Planilhas geradas com sucesso:<br><strong>${products.length}</strong> produtos · <strong>${variacoesFinal.length}</strong> variações · <strong>${sims.length}</strong> similares`;
+  let msg = `Planilhas geradas com sucesso:<br><strong>${rows.length}</strong> produto(s) na aba Produtos (${Object.keys(grupos).length} família(s) + ${rows.length - Object.keys(grupos).length} avulso(s)) · <strong>${variacoesFinal.length}</strong> SKUs na aba Variações`;
   if (errosGeracao.length) {
     msg += buildReportHtml(errosGeracao);
   }
