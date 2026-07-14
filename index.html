@@ -175,7 +175,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.2 · 13/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.3 · 13/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -262,7 +262,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.2';
+const VERSION = 'v3.3';
 let products = [];
 let kb = null;
 let kbSha = null;
@@ -288,6 +288,7 @@ const COLUNAS_RECOMENDADAS = { 'Cód. agrupamento': ['cód. agrupamento','cod. a
 // Fonte única: sincronizado com conhecimento.json
 // ══════════════════════════════════════════════════════════════════
 const CATS_ZYDON = {"MATERIAIS ELÉTRICOS":488,"DISJUNTORES":489,"DISJUNTORES CAIXA MOLDADA":490,"ACESSÓRIOS":566,"1P MONOPOLAR":561,"2P BIPOLAR":537,"3P TRIPOLAR":563,"4P TETRAPOLAR":538,"DISJUNTORES MINI":494,"DISJUNTORES A VÁCUO":502,"3P TRIPOLAR EXTRAÍVEL":516,"3P TRIPOLAR FIXO":517,"4P TETRAPOLAR EXTRAÍVEL":518,"4P TETRAPOLAR FIXO":519,"DISJUNTORES ABERTO":508,"DISJUNTORES A GÁS":514,"DISJUNTORES MOTOR":520,"DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS":539,"CLASSE I":540,"CLASSE I + II":545,"CLASSE II":550,"CLASSE II + III":555,"CLASSE III":560,"FUSÍVEIS":565,"BASE PARA FUSÍVEL":567,"EXTRATOR DE FUSÍVEL":568,"INDICADOR DE FUSÃO":569,"PORTA-FUSÍVEL":570,"SUPORTE PARA FUSÍVEL":571,"AUTOMOTIVO":572,"LÂMINA":573,"MAXI":574,"MICRO":575,"MINI LÂMINA":576,"CILÍNDRICO":577,"DIAZED":583,"HH - ALTA TENSÃO":586,"LIMITADOR DE CORRENTE":587,"NEOZED":589,"NH":592,"VIDRO":597,"RÁPIDO":598,"RETARDADO":599,"IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS":526,"TIPO A":527,"TIPO AC":530,"TIPO B":533,"TIPO F":536,"DISJUNTOR MINI 1P MONOPOLAR":495,"DISJUNTOR MINI 2P BIPOLAR":496,"DISJUNTOR MINI 3P TRIPOLAR":497,"DISJUNTOR MINI 4P TETRAPOLAR":498,"DISJUNTOR CAIXA MOLDADA 1P MONOPOLAR":501,"DISJUNTOR CAIXA MOLDADA 2P BIPOLAR":491,"DISJUNTOR CAIXA MOLDADA 3P TRIPOLAR":492,"DISJUNTOR CAIXA MOLDADA 4P TETRAPOLAR":493,"DISJUNTOR MOTOR 1P MONOPOLAR":522,"DISJUNTOR MOTOR 2P BIPOLAR":523,"DISJUNTOR MOTOR 3P TRIPOLAR":524,"DISJUNTOR MOTOR 4P TETRAPOLAR":525};
+const CATS_ZYDON_NOMES = {"488":"Materiais Elétricos","489":"Disjuntores","490":"Disjuntores Caixa Moldada","499":"Acessórios","501":"1P Monopolar","491":"2P Bipolar","492":"3P Tripolar","493":"4P Tetrapolar","494":"Disjuntores Mini","500":"Acessórios","495":"1P Monopolar","496":"2P Bipolar","497":"3P Tripolar","498":"4P Tetrapolar","502":"Disjuntores a Vácuo","503":"Acessórios","504":"3P Tripolar Extraível","505":"3P Tripolar Fixo","506":"4P Tetrapolar Extraível","507":"4P Tetrapolar Fixo","508":"Disjuntores Aberto","509":"Acessórios","510":"3P Tripolar Extraível","511":"3P Tripolar Fixo","512":"4P Tetrapolar Extraível","513":"4P Tetrapolar Fixo","514":"Disjuntores a Gás","515":"Acessórios","516":"3P Tripolar Extraível","517":"3P Tripolar Fixo","518":"4P Tetrapolar Extraível","519":"4P Tetrapolar Fixo","520":"Disjuntores Motor","521":"Acessórios","522":"1P Monopolar","523":"2P Bipolar","524":"3P Tripolar","525":"4P Tetrapolar","539":"DPS - Dispositivo de Proteção Contra Surtos","540":"Classe I","541":"1P Monopolar","542":"2P Bipolar","543":"3P Tripolar","544":"4P Tetrapolar","545":"Classe I + II","546":"1P Monopolar","547":"2P Bipolar","548":"3P Tripolar","549":"4P Tetrapolar","550":"Classe II","551":"1P Monopolar","552":"2P Bipolar","553":"3P Tripolar","554":"4P Tetrapolar","555":"Classe II + III","556":"1P Monopolar","557":"2P Bipolar","558":"3P Tripolar","559":"4P Tetrapolar","560":"Classe III","561":"1P Monopolar","562":"2P Bipolar","563":"3P Tripolar","564":"4P Tetrapolar","565":"Fusíveis","566":"Acessórios","567":"Base para Fusível","568":"Extrator de Fusível","569":"Indicador de Fusão","570":"Porta-Fusível","571":"Suporte para Fusível","572":"Automotivo","573":"Lâmina","574":"Maxi","575":"Micro","576":"Mini Lâmina","577":"Cilíndrico","578":"aM","579":"aR","580":"gL/gG","581":"gPV","582":"gR","583":"Diazed","584":"aM","585":"gL/gG","586":"HH - Alta Tensão","587":"Limitador de Corrente","588":"Retardado","589":"Neozed","590":"aM","591":"gL/gG","592":"NH","593":"aR","594":"gL/gG","595":"gPV","596":"gR","597":"Vidro","598":"Rápido","599":"Retardado","526":"IDR - Interruptores Diferenciais Residuais","527":"Tipo A","528":"2P Bipolar","529":"4P Tetrapolar","530":"Tipo AC","531":"2P Bipolar","532":"4P Tetrapolar","533":"Tipo B","534":"2P Bipolar","535":"4P Tetrapolar","536":"Tipo F","537":"2P Bipolar","538":"4P Tetrapolar"};
 
 // ══════════════════════════════════════════════════════════════════
 // FORMATAÇÃO DE NOMES
@@ -791,7 +792,10 @@ function gerarPlanilha() {
     const nome = formatName(p['Nome']||'', p['Marca']||'');
     const marc = p['Marca']||'';
     const cat  = p['Grupo setorial']||'';
-    const catNomeZydon = catZydonMap[cat] || cat;
+    const catNomeSignus = catZydonMap[cat] || cat;
+    const catCod = getCatCodigo(catNomeSignus) || getCatCodigo(cat);
+    // Nome oficial da Zydon: prioriza o nome real do código resolvido, senão usa o mapeado, senão o bruto do Signus
+    const catNomeZydon = (catCod && CATS_ZYDON_NOMES[catCod]) ? CATS_ZYDON_NOMES[catCod] : catNomeSignus;
     const gen  = p['Gênero']||'';
     const lin  = p['Linha de produto']||'';
     const un   = p['Unidade de medida']||'';
@@ -809,7 +813,6 @@ function gerarPlanilha() {
     const marcaCod = getMarcaCodigo(marc);
     if (!marcaCod && marc) errosGeracao.push(`Marca "${marc}" não tem código Zydon mapeado`);
 
-    const catCod = getCatCodigo(catNomeZydon) || getCatCodigo(cat);
     if (!catCod && cat) errosGeracao.push(`Categoria "${cat}" não tem código Zydon mapeado`);
 
     const grpCod = p[COL_AGRUPAMENTO];

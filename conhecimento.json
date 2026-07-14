@@ -1,5 +1,5 @@
 {
-  "versao": "3.2",
+  "versao": "3.3",
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
@@ -64,6 +64,11 @@
   ],
   "regras_globais": [],
   "historico": [
+    {
+      "data": "2026-07-14",
+      "usuario": "Matheus",
+      "acao": "v3.3 — correção: Categoria (Nome) agora usa o nome oficial da Zydon (ex: \"1P Monopolar\") em vez do texto bruto do Signus (ex: \"DISJUNTOR MINI 1P MONOPOLAR\"); embutido mapa reverso código→nome com as 112 categorias"
+    },
     {
       "data": "2026-07-13",
       "usuario": "Matheus",
