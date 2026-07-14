@@ -175,7 +175,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.0 · 13/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.1 · 13/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -262,7 +262,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.0';
+const VERSION = 'v3.1';
 let products = [];
 let kb = null;
 let kbSha = null;
@@ -271,8 +271,17 @@ let chatHistory = [];
 let wb1 = null, wb2 = null, wb3 = null; // workbooks gerados
 let errosGeracao = [];
 
-// Colunas obrigatórias para validar o arquivo Signus
-const COLUNAS_OBRIGATORIAS = ['ID','Código','Nome','Marca','Situação','Grupo setorial','Cód. agrupamento'];
+// Colunas obrigatórias — cada uma com variações aceitas (nomes podem sofrer pequenas mudanças no Signus)
+const COLUNAS_OBRIGATORIAS = {
+  'ID': ['id'],
+  'Código': ['código','codigo'],
+  'Nome': ['nome'],
+  'Marca': ['marca'],
+  'Situação': ['situação','situacao'],
+  'Grupo setorial': ['grupo setorial'],
+};
+// Cód. agrupamento é importante mas não bloqueia (produto pode não ter variação)
+const COLUNAS_RECOMENDADAS = { 'Cód. agrupamento': ['cód. agrupamento','cod. agrupamento','código agrupamento','codigo agrupamento','cód agrupamento'] };
 
 // ══════════════════════════════════════════════════════════════════
 // MAPA DE CATEGORIAS EMBUTIDO (Signus → código Zydon)
@@ -390,13 +399,47 @@ function getMarcaCodigo(nomeMarca) {
 // ══════════════════════════════════════════════════════════════════
 // VALIDAÇÃO DO ARQUIVO
 // ══════════════════════════════════════════════════════════════════
+function normalizarNomeColuna(c) {
+  return String(c).toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
+// Encontra o nome real da coluna no arquivo, tolerando variações de grafia
+function acharColuna(data, variacoes) {
+  if (!data || !data.length) return null;
+  const colunas = Object.keys(data[0]);
+  const variacoesNorm = variacoes.map(normalizarNomeColuna);
+  return colunas.find(c => variacoesNorm.includes(normalizarNomeColuna(c))) || null;
+}
+
+let COL_AGRUPAMENTO = 'Cód. agrupamento'; // atualizado dinamicamente no upload
+
 function validarArquivo(data) {
   const erros = [];
-  if (!data || data.length === 0) { erros.push('Arquivo vazio.'); return erros; }
+  const avisos = [];
+  if (!data || data.length === 0) { erros.push('Arquivo vazio.'); return { erros, avisos }; }
+
   const colunas = Object.keys(data[0]);
-  const faltando = COLUNAS_OBRIGATORIAS.filter(c => !colunas.includes(c));
-  if (faltando.length) erros.push(`Colunas obrigatórias ausentes: ${faltando.join(', ')}. Este não parece ser uma exportação válida do Signus.`);
-  return erros;
+  const colunasNorm = colunas.map(normalizarNomeColuna);
+
+  // Checar obrigatórias (com variações aceitas)
+  const faltandoObrig = [];
+  for (const [nomeOficial, variacoes] of Object.entries(COLUNAS_OBRIGATORIAS)) {
+    const variacoesNorm = variacoes.map(normalizarNomeColuna);
+    const encontrou = colunasNorm.some(c => variacoesNorm.includes(c));
+    if (!encontrou) faltandoObrig.push(nomeOficial);
+  }
+  if (faltandoObrig.length) {
+    erros.push(`Colunas obrigatórias ausentes: ${faltandoObrig.join(', ')}. Verifique se esta é uma exportação de Produtos do Signus.`);
+  }
+
+  // Checar recomendadas (apenas aviso, não bloqueia)
+  for (const [nomeOficial, variacoes] of Object.entries(COLUNAS_RECOMENDADAS)) {
+    const variacoesNorm = variacoes.map(normalizarNomeColuna);
+    const encontrou = colunasNorm.some(c => variacoesNorm.includes(c));
+    if (!encontrou) avisos.push(`Coluna "${nomeOficial}" não encontrada — produtos não serão agrupados em variações/similares.`);
+  }
+
+  return { erros, avisos };
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -540,7 +583,7 @@ function handleFileUpload(e) {
     const data = XLSX.utils.sheet_to_json(wbRaw.Sheets[wbRaw.SheetNames[0]]);
 
     // Validar arquivo
-    const errosVal = validarArquivo(data);
+    const { erros: errosVal, avisos: avisosVal } = validarArquivo(data);
     if (errosVal.length) {
       document.getElementById('upload-area').innerHTML =
         `<label class="upload-z" for="file-in"><input type="file" id="file-in" accept=".xlsx,.xls"><strong>Selecionar arquivo</strong><p>Exportação do Signus (.xlsx)</p></label>`;
@@ -550,6 +593,10 @@ function handleFileUpload(e) {
     }
 
     products = data;
+    // Detectar nome real da coluna de agrupamento (pode variar de grafia)
+    const colAchada = acharColuna(data, COLUNAS_RECOMENDADAS['Cód. agrupamento']);
+    COL_AGRUPAMENTO = colAchada || 'Cód. agrupamento';
+    if (avisosVal.length) addAgentMsg(`<div class="alert alert-warn">⚠ ${avisosVal.join('<br>')}</div>`);
     document.getElementById('upload-area').innerHTML =
       `<div class="file-ok">
         <div style="display:flex;align-items:center;justify-content:space-between">
@@ -718,14 +765,14 @@ function gerarPlanilha() {
   // Agrupar por Cód. agrupamento
   const grupos = {};
   products.forEach(p => {
-    const g = p['Cód. agrupamento'];
+    const g = p[COL_AGRUPAMENTO];
     if (g) { if (!grupos[g]) grupos[g]=[]; grupos[g].push(p); }
   });
 
   // EAN_VARIACAO por grupo
   const gruposEan = {};
   products.forEach(p => {
-    const g = p['Cód. agrupamento'];
+    const g = p[COL_AGRUPAMENTO];
     if (g) {
       if (!gruposEan[g]) gruposEan[g] = [];
       const ean = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
@@ -765,7 +812,7 @@ function gerarPlanilha() {
     const catCod = getCatCodigo(catNomeZydon) || getCatCodigo(cat);
     if (!catCod && cat) errosGeracao.push(`Categoria "${cat}" não tem código Zydon mapeado`);
 
-    const grpCod = p['Cód. agrupamento'];
+    const grpCod = p[COL_AGRUPAMENTO];
     const eanVariacao = grpCod && gruposEan[grpCod] ? gruposEan[grpCod].join('; ') : ean;
 
     rows.push({
