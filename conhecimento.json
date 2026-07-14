@@ -1,5 +1,5 @@
 {
-  "versao": "3.8",
+  "versao": "3.9",
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
@@ -64,6 +64,11 @@
   ],
   "regras_globais": [],
   "historico": [
+    {
+      "data": "2026-07-14",
+      "usuario": "Matheus",
+      "acao": "v3.9 — três ajustes confirmados na comparação: (1) Nome volta pra Title Case (Weg, Mdw, 440Vca/250Vcc) em vez de tudo maiúsculo — testado e batendo 100% com a planilha manual; (2) removido \"( Subtituído por : XXXXX )\" do nome — corrigido bug de regex, o Signus grava \"Subtituído\" com um S só, não \"Substituído\"; (3) Imagens agora gera 1 conjunto por família usando o SKU do pai (não existe foto por variação)"
+    },
     {
       "data": "2026-07-14",
       "usuario": "Matheus",

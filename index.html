@@ -196,7 +196,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.8 · 14/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.9 · 14/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -309,7 +309,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.8';
+const VERSION = 'v3.9';
 let products = [];
 let kb = null;
 let kbSha = null;
@@ -360,35 +360,46 @@ function getSiglasUpper(marcaNome) {
   return siglas;
 }
 
-function formatToken(token, isFirst, upper) {
+// Capitaliza a primeira letra do token (mesmo que venha depois de números) e deixa o resto minúsculo.
+// Ex: "440VCA" -> "440Vca" · "MDW" -> "Mdw" · "WEG" -> "Weg" · "2A" -> "2A" (só 1 letra, sem "resto")
+function capFirstAlphaLowerRest(s) {
+  let out = '', capped = false;
+  for (const ch of s) {
+    if (/[a-zA-ZÀ-ÿ]/.test(ch)) {
+      out += capped ? ch.toLowerCase() : ch.toUpperCase();
+      capped = true;
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+function formatToken(token, isFirst) {
   if (/^[-\/.,]$/.test(token)) return token;
-  const up = token.toUpperCase();
-  if (upper.has(up)) return up;
-  const m = token.match(/^(\d+(?:[.,]\d+)?)(A|V|W|VA|KW|KVA|MW|VCA|VCC|HZ|KHZ|MHZ|KV|CV|HP|RPM|BAR|PSI)$/i);
-  if (m) return m[1] + m[2].toUpperCase();
-  if (/^\d+VCA\/\d+VCC$/i.test(token)) return token.toUpperCase();
-  if (/^[1-5]P$/i.test(token)) return token.toUpperCase();
-  if (/^\d+$/.test(token)) return token;
+  if (/^\d+$/.test(token)) return token; // número puro, sem letras
+  if (token.includes('/')) return token.split('/').map(capFirstAlphaLowerRest).join('/');
   if (LOWER_CONN.has(token.toLowerCase()) && !isFirst) return token.toLowerCase();
-  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+  return capFirstAlphaLowerRest(token);
 }
 
 function formatName(raw, marcaNome) {
   if (!raw) return '';
-  const upper = getSiglasUpper(marcaNome);
-  const parts = raw.trim().split(/(\s*-\s*)/);
+  // Remove "( Substituído por : XXXXX )"
+  let clean = raw.replace(/\(\s*Subs?titu[ií]do\s+por\s*:\s*\d+\s*\)/gi, '').trim();
+  clean = clean.replace(/\s{2,}/g,' ').replace(/\s*-\s*$/,'').trim();
+
+  const parts = clean.split(/(\s*-\s*)/);
   let out = [], isFirst = true;
   for (const p of parts) {
     if (/^\s*-\s*$/.test(p)) { out.push(' - '); continue; }
     const words = p.trim().split(/\s+/).filter(Boolean);
     if (!words.length) continue;
-    out.push(words.map((w,i) => formatToken(w, isFirst && i===0, upper)).join(' '));
+    out.push(words.map((w,i) => formatToken(w, isFirst && i===0)).join(' '));
     isFirst = false;
   }
   let result = out.join('').replace(/\s{2,}/g,' ').trim();
-  // Garantir que a marca no final fique maiúscula
-  if (marcaNome) result = result.replace(new RegExp(`\\b${marcaNome}\\b`, 'gi'), marcaNome.toUpperCase());
-  // Aplicar regras
+  // Aplicar regras aprendidas
   if (kb) {
     for (const r of (kb.regras_globais||[])) result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
     const cfg = getMarcaConfig(marcaNome);
@@ -834,7 +845,7 @@ function gerarPlanilha() {
   function buildNomePai(paiProduto, infoMin, infoMax) {
     let raw = paiProduto['Nome'] || '';
     // Remove "( Substituído por : XXXXX )"
-    raw = raw.replace(/\(\s*Subst?itu[ií]do\s+por\s*:\s*\d+\s*\)/gi, '').trim();
+    raw = raw.replace(/\(\s*Subs?titu[ií]do\s+por\s*:\s*\d+\s*\)/gi, '').trim();
     // Remove o segmento do SKU (Código Signus) que aparece embutido no nome
     const cod = String(paiProduto['Código']||'').trim();
     if (cod) raw = raw.replace(new RegExp('\\s*-\\s*'+cod.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b'), '');
@@ -991,17 +1002,29 @@ function gerarPlanilha() {
     });
   });
 
-  // Imagens — aponta para o Código do PAI (única linha que existe em Produtos agora),
-  // mas mantém o nome do arquivo por SKU individual (é como foi feito o upload no R2).
+  // Imagens — não existe foto por variação, só pelo SKU do produto PAI.
+  // Gera o conjunto de imagens (principal + _1 até _10) UMA VEZ por família.
   const imgs = [];
+  const gruposImgFeitos = new Set();
   for (const p of products) {
-    const cod = p['Código']||'';
     const grpCod = p[COL_AGRUPAMENTO];
-    const id = grpCod ? String(grpPaiId[grpCod]||grpCod) : String(p['ID']||'');
-    const nome = grpCod ? (grpNomePai[grpCod] || formatName(p['Nome']||'', p['Marca']||'')) : formatName(p['Nome']||'', p['Marca']||'');
-    if (!imgBase || !cod) continue;
-    imgs.push({ 'Código':'', 'Produto (Código)':id, 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}.jpg` });
-    for (let n=1; n<=10; n++) imgs.push({ 'Código':'', 'Produto (Código)':id, 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}_${n}.jpg` });
+    if (grpCod) {
+      if (gruposImgFeitos.has(grpCod)) continue; // já gerou imagem dessa família
+      gruposImgFeitos.add(grpCod);
+      const paiId = grpPaiId[grpCod];
+      const paiProduto = (grupos[grpCod]||[]).find(x => String(x['ID']||'')===String(paiId)) || p;
+      const cod = paiProduto['Código']||'';
+      const nome = grpNomePai[grpCod] || formatName(paiProduto['Nome']||'', paiProduto['Marca']||'');
+      if (!imgBase || !cod) continue;
+      imgs.push({ 'Código':'', 'Produto (Código)':String(paiId||grpCod), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}.jpg` });
+      for (let n=1; n<=10; n++) imgs.push({ 'Código':'', 'Produto (Código)':String(paiId||grpCod), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}_${n}.jpg` });
+    } else {
+      const cod = p['Código']||'';
+      const nome = formatName(p['Nome']||'', p['Marca']||'');
+      if (!imgBase || !cod) continue;
+      imgs.push({ 'Código':'', 'Produto (Código)':String(p['ID']||''), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}.jpg` });
+      for (let n=1; n<=10; n++) imgs.push({ 'Código':'', 'Produto (Código)':String(p['ID']||''), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}_${n}.jpg` });
+    }
   }
 
   // Variações Valores
