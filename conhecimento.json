@@ -1,5 +1,5 @@
 {
-  "versao": "3.5",
+  "versao": "3.6",
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
@@ -64,6 +64,11 @@
   ],
   "regras_globais": [],
   "historico": [
+    {
+      "data": "2026-07-14",
+      "usuario": "Matheus",
+      "acao": "v3.6 — nova funcionalidade: \"Validar contra planilha manual\" na barra lateral. Sobe a planilha feita manualmente + a gerada pelo agente, casa as linhas por Código/SKU e compara célula a célula. Mostra resumo (% de células idênticas), ranking de quais colunas mais divergem, detalhe produto a produto, e exporta as divergências em .xlsx"
+    },
     {
       "data": "2026-07-14",
       "usuario": "Matheus",

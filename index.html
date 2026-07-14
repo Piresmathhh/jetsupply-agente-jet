@@ -120,6 +120,27 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .dl-bar p{font-size:12px;color:var(--green);flex:1;font-weight:bold}
 .dl-btn{padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--rbt);font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;margin-right:4px}
 
+/* Comparação / Validação */
+.diff-summary{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+.diff-stat{background:var(--soft);border:1px solid var(--border-c);border-radius:var(--rb);padding:8px 14px;text-align:center;min-width:90px}
+.diff-stat-n{font-size:18px;font-weight:bold}
+.diff-stat-l{font-size:10px;color:var(--t5);margin-top:1px}
+.diff-ranking{border:1px solid var(--border-c);border-radius:var(--rb);overflow:hidden;margin-top:8px}
+.diff-ranking-head{background:var(--bg);padding:7px 12px;font-size:11px;font-weight:bold;color:var(--t4);text-transform:uppercase;letter-spacing:.3px}
+.diff-ranking-row{display:flex;justify-content:space-between;padding:6px 12px;font-size:12px;border-top:1px solid var(--border)}
+.diff-ranking-col{color:var(--t2);font-weight:bold}
+.diff-ranking-n{color:var(--red);font-weight:bold}
+.diff-table{border:1px solid var(--border-c);border-radius:var(--rb);overflow:hidden;margin-top:10px;font-size:11px}
+.diff-table table{width:100%;border-collapse:collapse}
+.diff-table th{background:var(--bg);padding:5px 9px;text-align:left;font-weight:bold;color:var(--t5);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;white-space:nowrap}
+.diff-table td{padding:5px 9px;border-bottom:1px solid var(--border);vertical-align:top;white-space:nowrap}
+.diff-table tr:last-child td{border-bottom:none}
+.diff-cell-eq{color:var(--t3)}
+.diff-cell-ne{background:var(--red-l)}
+.diff-cell-ne .dv-manual{color:var(--t3);text-decoration:line-through;font-size:10px}
+.diff-cell-ne .dv-agente{color:var(--red);font-weight:bold;margin-top:1px}
+.diff-prod-head{background:var(--soft);font-weight:bold;padding:6px 9px}
+
 /* Input */
 .inp-area{padding:10px 16px 14px;border-top:1px solid var(--border);background:var(--surface)}
 .inp-row{display:flex;gap:7px;align-items:flex-end}
@@ -175,7 +196,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.5 · 14/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.6 · 14/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -225,6 +246,30 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <input type="text" id="img-url" class="cfg-inp" placeholder="https://pub-....r2.dev" oninput="localStorage.setItem('jet_img_url', this.value)">
     </div>
   </div>
+  <div class="sb-sec">
+    <div class="sb-lbl" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="toggleValidacao()">
+      Validar contra planilha manual
+      <span id="val-toggle-icon" style="font-size:13px;color:var(--t4)">▾</span>
+    </div>
+    <div id="val-area" style="display:none">
+      <div class="cfg-row">
+        <label class="cfg-lbl">Planilha feita manualmente (referência)</label>
+        <label class="upload-z" for="val-file-manual" style="padding:8px">
+          <input type="file" id="val-file-manual" accept=".xlsx,.xls">
+          <strong style="font-size:11px" id="val-manual-name">Selecionar arquivo</strong>
+        </label>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Planilha gerada pelo agente</label>
+        <label class="upload-z" for="val-file-agente" style="padding:8px">
+          <input type="file" id="val-file-agente" accept=".xlsx,.xls">
+          <strong style="font-size:11px" id="val-agente-name">Selecionar arquivo</strong>
+        </label>
+      </div>
+      <button class="act-btn pri" style="width:100%;margin-top:4px" onclick="compararPlanilhas()">Comparar campo a campo</button>
+      <div style="font-size:10px;color:var(--t5);margin-top:6px;line-height:1.4">Casa as linhas pelo <strong>Código</strong> (ou SKU) e compara cada coluna entre as duas planilhas.</div>
+    </div>
+  </div>
   <div class="sb-sec" style="flex-shrink:0">
     <div class="sb-lbl" style="margin-bottom:0;display:flex;justify-content:space-between;align-items:center">
       Pendências de curadoria
@@ -264,7 +309,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.5';
+const VERSION = 'v3.6';
 let products = [];
 let kb = null;
 let kbSha = null;
@@ -979,6 +1024,195 @@ function buildReportHtml(erros) {
       <div class="report-head">⚠ ${erros.length} aviso(s) encontrado(s)</div>
       <div class="report-body">${erros.slice(0,15).map(e=>`<div class="report-item">· ${e}</div>`).join('')}${erros.length>15?`<div class="report-item" style="color:var(--t5)">...e mais ${erros.length-15} avisos</div>`:''}</div>
     </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VALIDAÇÃO — COMPARAR PLANILHA MANUAL vs GERADA PELO AGENTE
+// ══════════════════════════════════════════════════════════════════
+let valManualRows = null, valAgenteRows = null;
+
+function toggleValidacao() {
+  const area = document.getElementById('val-area');
+  const icon = document.getElementById('val-toggle-icon');
+  const open = area.style.display !== 'none';
+  area.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '▾' : '▴';
+}
+
+function lerPrimeiraAbaUtil(wbRaw, preferSheet) {
+  // Prioriza a aba "Produtos" (nome oficial Zydon); senão pega a primeira aba com dados
+  const nomes = wbRaw.SheetNames;
+  let alvo = nomes.find(n => n.toLowerCase() === (preferSheet||'produtos').toLowerCase());
+  if (!alvo) alvo = nomes.find(n => XLSX.utils.sheet_to_json(wbRaw.Sheets[n]).length > 0) || nomes[0];
+  return XLSX.utils.sheet_to_json(wbRaw.Sheets[alvo], { defval:'' });
+}
+
+document.getElementById('val-file-manual').addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('val-manual-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => { const wb = XLSX.read(ev.target.result,{type:'array'}); valManualRows = lerPrimeiraAbaUtil(wb); };
+  reader.readAsArrayBuffer(file);
+});
+document.getElementById('val-file-agente').addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('val-agente-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => { const wb = XLSX.read(ev.target.result,{type:'array'}); valAgenteRows = lerPrimeiraAbaUtil(wb); };
+  reader.readAsArrayBuffer(file);
+});
+
+function normalizarValor(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  return String(v).trim();
+}
+
+function chaveLinha(row) {
+  // Casa por Código; se vazio, tenta SKU
+  const cod = row['Código'];
+  if (cod !== undefined && cod !== '') return 'COD:' + normalizarValor(cod);
+  const sku = row['SKU'];
+  if (sku !== undefined && sku !== '') return 'SKU:' + normalizarValor(sku);
+  return null;
+}
+
+function compararPlanilhas() {
+  if (!valManualRows || !valAgenteRows) {
+    addAgentMsg('<div class="alert alert-warn">⚠ Selecione as duas planilhas (manual e gerada pelo agente) antes de comparar.</div>');
+    return;
+  }
+
+  const manualMap = {}, agenteMap = {};
+  valManualRows.forEach(r => { const k = chaveLinha(r); if (k) manualMap[k] = r; });
+  valAgenteRows.forEach(r => { const k = chaveLinha(r); if (k) agenteMap[k] = r; });
+
+  const chavesManual = Object.keys(manualMap);
+  const chavesAgente = Object.keys(agenteMap);
+  const chavesComuns = chavesManual.filter(k => agenteMap[k]);
+  const soManual = chavesManual.filter(k => !agenteMap[k]);
+  const soAgente = chavesAgente.filter(k => !manualMap[k]);
+
+  // Todas as colunas presentes em qualquer uma das duas planilhas
+  const todasColunas = new Set();
+  valManualRows.forEach(r => Object.keys(r).forEach(c => todasColunas.add(c)));
+  valAgenteRows.forEach(r => Object.keys(r).forEach(c => todasColunas.add(c)));
+  const colunas = Array.from(todasColunas);
+
+  let totalCelulas = 0, celulasIguais = 0;
+  const diffPorColuna = {}; // coluna -> contagem de divergências
+  const produtosComDiff = []; // {chave, diffs: [{coluna, manual, agente}]}
+  const produtosIguais = [];
+
+  chavesComuns.forEach(k => {
+    const rm = manualMap[k], ra = agenteMap[k];
+    const diffs = [];
+    colunas.forEach(col => {
+      const vm = normalizarValor(rm[col]);
+      const va = normalizarValor(ra[col]);
+      totalCelulas++;
+      if (vm === va) {
+        celulasIguais++;
+      } else {
+        diffPorColuna[col] = (diffPorColuna[col]||0) + 1;
+        diffs.push({ coluna: col, manual: vm, agente: va });
+      }
+    });
+    if (diffs.length) produtosComDiff.push({ chave:k, nome: rm['Nome']||ra['Nome']||k, diffs });
+    else produtosIguais.push(k);
+  });
+
+  const pctIgual = totalCelulas ? Math.round(celulasIguais/totalCelulas*100) : 0;
+
+  // Resumo
+  let html = `<strong>Comparação: planilha manual vs gerada pelo agente</strong>`;
+  html += `<div class="diff-summary">
+    <div class="diff-stat"><div class="diff-stat-n" style="color:var(--navy)">${chavesComuns.length}</div><div class="diff-stat-l">produtos comparados</div></div>
+    <div class="diff-stat"><div class="diff-stat-n" style="color:var(--green)">${produtosIguais.length}</div><div class="diff-stat-l">100% idênticos</div></div>
+    <div class="diff-stat"><div class="diff-stat-n" style="color:var(--red)">${produtosComDiff.length}</div><div class="diff-stat-l">com divergência</div></div>
+    <div class="diff-stat"><div class="diff-stat-n" style="color:${pctIgual>=95?'var(--green)':pctIgual>=80?'var(--amber)':'var(--red)'}">${pctIgual}%</div><div class="diff-stat-l">células idênticas</div></div>
+  </div>`;
+
+  if (soManual.length || soAgente.length) {
+    html += `<div class="alert alert-warn">`;
+    if (soManual.length) html += `⚠ ${soManual.length} produto(s) existem só na planilha manual (o agente não gerou).<br>`;
+    if (soAgente.length) html += `⚠ ${soAgente.length} produto(s) existem só na planilha do agente (não estão na manual).`;
+    html += `</div>`;
+  }
+
+  // Ranking de colunas que mais divergem — é o dado mais acionável
+  const ranking = Object.entries(diffPorColuna).sort((a,b) => b[1]-a[1]);
+  if (ranking.length) {
+    html += `<div class="diff-ranking">
+      <div class="diff-ranking-head">Colunas que mais divergem — ajustar nessa ordem</div>
+      ${ranking.slice(0,15).map(([col,n]) => `<div class="diff-ranking-row"><span class="diff-ranking-col">${col}</span><span class="diff-ranking-n">${n} produto(s)</span></div>`).join('')}
+    </div>`;
+  } else {
+    html += `<div class="alert alert-ok">✓ Nenhuma divergência encontrada — o agente está replicando exatamente o padrão manual!</div>`;
+  }
+
+  addAgentMsg(html);
+
+  // Guardar para detalhamento e exportação
+  window._ultimaComparacao = { produtosComDiff, colunas, ranking };
+
+  // Mensagem com ações
+  if (produtosComDiff.length) {
+    setTimeout(() => {
+      addAgentMsg(`Quer ver o detalhe produto a produto ou exportar tudo para revisar no Excel?`,
+        `<div class="act-row">
+          <button class="act-btn pri" onclick="mostrarDetalheComparacao()">Ver detalhe por produto</button>
+          <button class="act-btn" onclick="exportarComparacao()">Exportar divergências (.xlsx)</button>
+        </div>`);
+    }, 300);
+  }
+}
+
+function mostrarDetalheComparacao(limite=15) {
+  const dados = window._ultimaComparacao;
+  if (!dados || !dados.produtosComDiff.length) { addAgentMsg('Nenhuma divergência para detalhar.'); return; }
+  const lista = dados.produtosComDiff.slice(0, limite);
+  let html = `<div class="diff-table"><table>`;
+  lista.forEach(prod => {
+    html += `<tr><td colspan="3" class="diff-prod-head">${prod.nome} <span style="color:var(--t5);font-weight:normal">(${prod.chave})</span></td></tr>`;
+    html += `<tr><th>Coluna</th><th>Manual</th><th>Agente</th></tr>`;
+    prod.diffs.forEach(d => {
+      html += `<tr class="diff-cell-ne">
+        <td>${d.coluna}</td>
+        <td><div class="dv-manual">${d.manual||'<em>(vazio)</em>'}</div></td>
+        <td><div class="dv-agente">${d.agente||'<em>(vazio)</em>'}</div></td>
+      </tr>`;
+    });
+  });
+  html += `</table></div>`;
+  if (dados.produtosComDiff.length > limite) {
+    html += `<div style="font-size:11px;color:var(--t5);margin-top:6px">Mostrando ${limite} de ${dados.produtosComDiff.length} produtos com divergência. Exporte para ver todos.</div>`;
+  }
+  addAgentMsg(`<strong>Detalhe das divergências:</strong>`, html);
+}
+
+function exportarComparacao() {
+  const dados = window._ultimaComparacao;
+  if (!dados || !dados.produtosComDiff.length) { addAgentMsg('Nenhuma divergência para exportar.'); return; }
+  const linhas = [];
+  dados.produtosComDiff.forEach(prod => {
+    prod.diffs.forEach(d => {
+      linhas.push({
+        'Produto': prod.nome,
+        'Chave': prod.chave,
+        'Coluna': d.coluna,
+        'Valor Manual': d.manual,
+        'Valor Agente': d.agente,
+      });
+    });
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhas), 'Divergências');
+  // Aba resumo com ranking de colunas
+  const resumo = dados.ranking.map(([col,n]) => ({ 'Coluna': col, 'Produtos com divergência': n }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), 'Ranking por coluna');
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `JetSupply_Comparacao_${date}.xlsx`);
 }
 
 function reabrirRelatorio() {
