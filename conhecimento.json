@@ -1,5 +1,5 @@
 {
-  "versao": "3.3",
+  "versao": "3.5",
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
@@ -64,6 +64,16 @@
   ],
   "regras_globais": [],
   "historico": [
+    {
+      "data": "2026-07-14",
+      "usuario": "Matheus",
+      "acao": "v3.5 — 3 melhorias de UX: (1) URL de imagens e nome do usuário agora persistem no browser; (2) relatório de erros agrupado por tipo em vez de repetir a mesma mensagem por produto (ex: \"166 produtos sem marca\" em vez de 166 linhas); (3) botão \"Ver relatório\" para reabrir o último relatório sem precisar gerar de novo"
+    },
+    {
+      "data": "2026-07-14",
+      "usuario": "Matheus",
+      "acao": "v3.4 — adicionado botão \"Baixar as 3 juntas\" para baixar os 3 arquivos de uma vez, sem precisar clicar individualmente"
+    },
     {
       "data": "2026-07-14",
       "usuario": "Matheus",

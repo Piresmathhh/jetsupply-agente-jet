@@ -175,7 +175,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.3 · 14/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.5 · 14/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -218,11 +218,11 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
     </div>
     <div class="cfg-row">
       <label class="cfg-lbl">Seu nome (para histórico)</label>
-      <input type="text" id="user-name" class="cfg-inp" placeholder="Seu nome">
+      <input type="text" id="user-name" class="cfg-inp" placeholder="Seu nome" oninput="localStorage.setItem('jet_user_name', this.value)">
     </div>
     <div class="cfg-row">
       <label class="cfg-lbl">URL base imagens (R2)</label>
-      <input type="text" id="img-url" class="cfg-inp" placeholder="https://pub-....r2.dev">
+      <input type="text" id="img-url" class="cfg-inp" placeholder="https://pub-....r2.dev" oninput="localStorage.setItem('jet_img_url', this.value)">
     </div>
   </div>
   <div class="sb-sec" style="flex-shrink:0">
@@ -241,9 +241,11 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="chat" id="chat"></div>
   <div class="dl-bar" id="dl-bar">
     <p id="dl-msg">Arquivos prontos.</p>
+    <button class="dl-btn" onclick="downloadTodas()" style="background:var(--orange)">Baixar as 3 juntas</button>
     <button class="dl-btn" onclick="downloadArquivo(1)">1. Produto</button>
     <button class="dl-btn" onclick="downloadArquivo(2)">2. Variações</button>
     <button class="dl-btn" onclick="downloadArquivo(3)">3. Variações Valores</button>
+    <button class="dl-btn" onclick="reabrirRelatorio()" style="background:var(--navy)">Ver relatório</button>
   </div>
   <div class="inp-area">
     <div class="inp-row">
@@ -262,7 +264,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.3';
+const VERSION = 'v3.5';
 let products = [];
 let kb = null;
 let kbSha = null;
@@ -781,9 +783,13 @@ function gerarPlanilha() {
     }
   });
 
-  // Validações
+  // Validações — agrupadas para não poluir o relatório com repetição
   const eansSeen = {};
   const rows = [];
+  const semMarca = [];       // produtos sem marca preenchida
+  const semCategoria = [];   // produtos sem categoria preenchida
+  const marcaSemCod = {};    // marca → contagem de produtos afetados
+  const catSemCod = {};      // categoria → contagem de produtos afetados
 
   products.forEach((p, idx) => {
     // Progresso a cada 50
@@ -803,17 +809,17 @@ function gerarPlanilha() {
     const ean  = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
 
     // Validações
-    if (!marc) errosGeracao.push(`Produto ${p['ID']||'?'} (${p['Código']||'?'}): sem marca`);
-    if (!cat) errosGeracao.push(`Produto ${p['ID']||'?'}: sem categoria (Grupo setorial vazio)`);
+    if (!marc) semMarca.push(p['ID']||'?');
+    if (!cat) semCategoria.push(p['ID']||'?');
     if (ean) {
       if (eansSeen[ean]) errosGeracao.push(`EAN duplicado: ${ean} nos produtos ${eansSeen[ean]} e ${p['ID']}`);
       else eansSeen[ean] = p['ID'];
     }
 
     const marcaCod = getMarcaCodigo(marc);
-    if (!marcaCod && marc) errosGeracao.push(`Marca "${marc}" não tem código Zydon mapeado`);
+    if (!marcaCod && marc) marcaSemCod[marc] = (marcaSemCod[marc]||0) + 1;
 
-    if (!catCod && cat) errosGeracao.push(`Categoria "${cat}" não tem código Zydon mapeado`);
+    if (!catCod && cat) catSemCod[cat] = (catSemCod[cat]||0) + 1;
 
     const grpCod = p[COL_AGRUPAMENTO];
     const eanVariacao = grpCod && gruposEan[grpCod] ? gruposEan[grpCod].join('; ') : ean;
@@ -942,12 +948,19 @@ function gerarPlanilha() {
   wb3 = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb3, XLSX.utils.json_to_sheet(valoresVar.length?valoresVar:[]), 'Valores de Variações de Produto');
 
+  // Consolidar avisos agrupados (evita repetir a mesma mensagem centenas de vezes)
+  if (semMarca.length) errosGeracao.push(`${semMarca.length} produto(s) sem marca preenchida (ex: ID ${semMarca.slice(0,3).join(', ')}${semMarca.length>3?'...':''})`);
+  if (semCategoria.length) errosGeracao.push(`${semCategoria.length} produto(s) sem categoria preenchida (Grupo setorial vazio) (ex: ID ${semCategoria.slice(0,3).join(', ')}${semCategoria.length>3?'...':''})`);
+  Object.entries(marcaSemCod).forEach(([marca, n]) => errosGeracao.push(`Marca "${marca}" sem código Zydon mapeado — afeta ${n} produto(s)`));
+  Object.entries(catSemCod).forEach(([cat, n]) => errosGeracao.push(`Categoria "${cat}" sem código Zydon mapeado — afeta ${n} produto(s)`));
+
   // Atualizar progresso para 100%
   updateProgress(progDiv, products.length, products.length);
 
   // Mostrar barra de download
   const date = new Date().toISOString().slice(0,10);
   window._dlDate = date;
+  window._ultimoRelatorio = errosGeracao.slice(); // guardar para reabrir depois
   const dl = document.getElementById('dl-bar');
   document.getElementById('dl-msg').textContent = `✓ ${products.length} produtos · ${variacoesFinal.length} variações · ${sims.length} similares · ${errosGeracao.length} aviso(s)`;
   dl.classList.add('show');
@@ -955,13 +968,30 @@ function gerarPlanilha() {
   // Mensagem com relatório de erros
   let msg = `Planilhas geradas com sucesso:<br><strong>${products.length}</strong> produtos · <strong>${variacoesFinal.length}</strong> variações · <strong>${sims.length}</strong> similares`;
   if (errosGeracao.length) {
-    msg += `<div class="report-wrap" style="margin-top:8px">
-      <div class="report-head">⚠ ${errosGeracao.length} aviso(s) encontrado(s)</div>
-      <div class="report-body">${errosGeracao.slice(0,10).map(e=>`<div class="report-item">· ${e}</div>`).join('')}${errosGeracao.length>10?`<div class="report-item" style="color:var(--t5)">...e mais ${errosGeracao.length-10} avisos</div>`:''}</div>
-    </div>`;
+    msg += buildReportHtml(errosGeracao);
   }
   msg += `<br><br>Clique nos botões abaixo para baixar cada arquivo na ordem correta.`;
   addAgentMsg(msg);
+}
+
+function buildReportHtml(erros) {
+  return `<div class="report-wrap" style="margin-top:8px">
+      <div class="report-head">⚠ ${erros.length} aviso(s) encontrado(s)</div>
+      <div class="report-body">${erros.slice(0,15).map(e=>`<div class="report-item">· ${e}</div>`).join('')}${erros.length>15?`<div class="report-item" style="color:var(--t5)">...e mais ${erros.length-15} avisos</div>`:''}</div>
+    </div>`;
+}
+
+function reabrirRelatorio() {
+  const erros = window._ultimoRelatorio || [];
+  if (!erros.length) { addAgentMsg('Nenhum aviso na última geração — tudo certo!'); return; }
+  addAgentMsg(`<strong>Relatório da última geração:</strong>` + buildReportHtml(erros));
+}
+
+function downloadTodas() {
+  const date = window._dlDate || new Date().toISOString().slice(0,10);
+  if (wb1) XLSX.writeFile(wb1, `JetSupply_Produto_${date}.xlsx`);
+  setTimeout(() => { if (wb2) XLSX.writeFile(wb2, `JetSupply_Variacoes_${date}.xlsx`); }, 400);
+  setTimeout(() => { if (wb3) XLSX.writeFile(wb3, `JetSupply_Variacoes_Valores_${date}.xlsx`); }, 800);
 }
 
 function downloadArquivo(n) {
@@ -1127,8 +1157,12 @@ function checkKeys() {
 // ══════════════════════════════════════════════════════════════════
 const _saved = localStorage.getItem('jet_gh_token');
 const _savedClaude = localStorage.getItem('jet_claude_key');
+const _savedImgUrl = localStorage.getItem('jet_img_url');
+const _savedUserName = localStorage.getItem('jet_user_name');
 if (_saved) document.getElementById('gh-token').value = _saved;
 if (_savedClaude) document.getElementById('claude-key').value = _savedClaude;
+if (_savedImgUrl) document.getElementById('img-url').value = _savedImgUrl;
+if (_savedUserName) document.getElementById('user-name').value = _savedUserName;
 if (_saved) setTimeout(loadKB, 600);
 
 addAgentMsg(
