@@ -175,7 +175,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.1 · 13/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.2 · 13/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -262,7 +262,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.1';
+const VERSION = 'v3.2';
 let products = [];
 let kb = null;
 let kbSha = null;
@@ -467,7 +467,7 @@ async function loadKB() {
     if (r.ok) {
       const d = await r.json();
       kbSha = d.sha;
-      kb = JSON.parse(atob(d.content.replace(/\n/g,'')));
+      kb = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
       const nMarcas = Object.keys(kb.marcas||{}).length;
       const nMarcasZydon = Object.keys(kb.marcas_zydon||{}).length;
       setGhStatus('ok', `Base carregada · ${nMarcas} marcas cadastradas · ${nMarcasZydon} marcas Zydon`);
@@ -817,7 +817,7 @@ function gerarPlanilha() {
 
     rows.push({
       'Código': String(p['ID']||''),
-      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO' ? true : false,
+      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO' ? 'TRUE' : 'FALSE',
       'Nome': nome,
       'SKU': String(p['Código']||''),
       'Descrição Curta': '',
@@ -890,7 +890,7 @@ function gerarPlanilha() {
         'Valores': 1,
         'VARIATION_DEPTH': p['Profundidade (cm)']||'',
         'Código variação': String(p['ID']||''),
-        'Status': true,
+        'Status': 'TRUE',
         'SKU': String(p['Código']||''),
         'PACKAGING_WIDTH': p['Largura (cm)']||'',
         'PACKAGING_DEPTH': p['Profundidade (cm)']||'',
