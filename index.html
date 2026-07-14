@@ -19,7 +19,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1);font-size:14px;line-height:1.5;height:100vh;overflow:hidden}
-.app{display:grid;grid-template-columns:280px 1fr;grid-template-rows:52px 1fr;height:100vh}
+.app{display:grid;grid-template-columns:288px 1fr;grid-template-rows:52px 1fr;height:100vh}
 
 /* Topbar */
 .topbar{grid-column:1/-1;background:var(--navy);display:flex;align-items:center;padding:0 16px;gap:12px}
@@ -29,8 +29,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .topbar-sub{font-size:10px;color:var(--on-soft);margin-top:1px}
 .topbar-r{margin-left:auto;display:flex;align-items:center;gap:10px}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--on-faint);flex-shrink:0}
-.status-dot.ok{background:#4ade80}
-.status-dot.warn{background:#fbbf24}
+.status-dot.ok{background:#4ade80}.status-dot.warn{background:#fbbf24}
 .status-txt{font-size:11px;color:var(--on-soft)}
 .sync-btn{padding:4px 10px;border-radius:var(--rbt);border:1px solid var(--on-faint);background:transparent;color:var(--on-soft);font-size:11px;cursor:pointer;font-family:inherit}
 .sync-btn:hover{border-color:var(--on-navy);color:var(--on-navy)}
@@ -47,7 +46,6 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .file-ok{background:var(--green-l);border:1px solid #86efac;border-radius:var(--rb);padding:9px 11px}
 .file-ok-name{font-size:12px;font-weight:bold;color:var(--green)}
 .file-ok-sub{font-size:11px;color:var(--green);margin-top:1px}
-
 .cfg-row{margin-bottom:7px}
 .cfg-lbl{font-size:11px;color:var(--t4);display:block;margin-bottom:3px}
 .cfg-inp{width:100%;padding:5px 8px;border:1px solid var(--border-c);border-radius:var(--rbt);font-size:12px;background:var(--bg);color:var(--t1);outline:none;font-family:inherit}
@@ -74,10 +72,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 /* Main */
 .main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 .chat{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
-
-.msg{max-width:720px}
-.msg-a{align-self:flex-start}
-.msg-u{align-self:flex-end}
+.msg{max-width:760px}
+.msg-a{align-self:flex-start}.msg-u{align-self:flex-end}
 .msg-lbl{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;color:var(--t5);margin-bottom:3px;padding:0 2px}
 .msg-u .msg-lbl{text-align:right}
 .bubble{padding:11px 14px;border-radius:var(--rc);font-size:13px;line-height:1.6;color:var(--t2)}
@@ -92,12 +88,24 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .preview tr:last-child td{border-bottom:none}
 .td-old{color:var(--t5);text-decoration:line-through;font-size:10px}
 .td-new{color:var(--t1);font-weight:bold;margin-top:1px}
-.td-warn{background:#fffbeb}
 .td-pend{background:var(--amber-l)}
 .badge{display:inline-block;font-size:10px;font-weight:bold;padding:1px 6px;border-radius:10px}
 .b-ok{background:var(--green-l);color:var(--green)}
 .b-pend{background:var(--amber-l);color:var(--amber)}
 .b-err{background:var(--red-l);color:var(--red)}
+
+/* Relatório de erros */
+.report-wrap{border:1px solid var(--border-c);border-radius:var(--rb);overflow:hidden;margin-top:8px}
+.report-head{background:var(--red-l);padding:7px 12px;font-size:12px;font-weight:bold;color:var(--red)}
+.report-body{padding:8px 12px;font-size:11px}
+.report-item{padding:3px 0;border-bottom:1px solid var(--border);color:var(--t2)}
+.report-item:last-child{border-bottom:none}
+
+/* Progress */
+.progress-wrap{background:var(--surface);border:1px solid var(--border-c);border-radius:var(--rb);padding:12px 14px;margin-top:8px}
+.progress-bar-bg{background:var(--border-c);border-radius:4px;height:6px;margin:6px 0}
+.progress-bar{background:var(--orange);border-radius:4px;height:6px;transition:width .3s}
+.progress-txt{font-size:11px;color:var(--t4)}
 
 .act-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
 .act-btn{padding:6px 13px;border-radius:20px;border:1px solid var(--border-c);background:var(--surface);font-size:12px;cursor:pointer;color:var(--navy);font-family:inherit;font-weight:bold;transition:all .15s}
@@ -106,20 +114,11 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .act-btn.pri:hover{opacity:.9}
 .act-btn.sec{background:var(--navy);color:#fff;border-color:transparent}
 
-/* Relatório */
-.report{border:1px solid var(--border-c);border-radius:var(--rb);overflow:hidden;margin-top:8px}
-.report-head{background:var(--navy);padding:8px 12px;font-size:12px;font-weight:bold;color:var(--on-navy);display:flex;justify-content:space-between;align-items:center}
-.report-stats{display:flex;gap:12px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--soft)}
-.stat{text-align:center}
-.stat-n{font-size:18px;font-weight:bold}
-.stat-l{font-size:10px;color:var(--t5);margin-top:1px}
-.n-ok{color:var(--green)}.n-pend{color:var(--amber)}.n-err{color:var(--red)}
-
 /* DL bar */
-.dl-bar{background:var(--green-l);border-top:1px solid #86efac;padding:9px 20px;display:none;align-items:center;gap:10px}
+.dl-bar{background:var(--green-l);border-top:1px solid #86efac;padding:9px 20px;display:none;align-items:center;gap:10px;flex-wrap:wrap}
 .dl-bar.show{display:flex}
 .dl-bar p{font-size:12px;color:var(--green);flex:1;font-weight:bold}
-.dl-btn{padding:7px 16px;background:var(--green);color:#fff;border:none;border-radius:var(--rbt);font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit}
+.dl-btn{padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--rbt);font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;margin-right:4px}
 
 /* Input */
 .inp-area{padding:10px 16px 14px;border-top:1px solid var(--border);background:var(--surface)}
@@ -140,7 +139,12 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .typing span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
 
-/* Base viewer */
+/* Alert de validação */
+.alert{border-radius:var(--rb);padding:10px 13px;font-size:12px;margin-top:8px;line-height:1.5}
+.alert-warn{background:var(--amber-l);border:1px solid #fbbf24;color:var(--amber)}
+.alert-err{background:var(--red-l);border:1px solid var(--red);color:var(--red)}
+.alert-ok{background:var(--green-l);border:1px solid #86efac;color:var(--green)}
+
 .base-card{background:var(--soft);border:1px solid var(--border-c);border-radius:var(--rb);padding:10px 12px;margin-top:8px;font-size:11px}
 .base-marca{font-weight:bold;color:var(--navy);margin-bottom:4px;font-size:12px}
 .base-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:3px}
@@ -171,7 +175,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v1.8 · 13/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.0 · 13/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -192,7 +196,6 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </label>
     </div>
   </div>
-
   <div class="sb-sec">
     <div class="sb-lbl">Configurações</div>
     <div class="cfg-row">
@@ -219,10 +222,9 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
     </div>
     <div class="cfg-row">
       <label class="cfg-lbl">URL base imagens (R2)</label>
-      <input type="text" id="img-url" class="cfg-inp" placeholder="https://cdn.jetsupply.com.br">
+      <input type="text" id="img-url" class="cfg-inp" placeholder="https://pub-....r2.dev">
     </div>
   </div>
-
   <div class="sb-sec" style="flex-shrink:0">
     <div class="sb-lbl" style="margin-bottom:0;display:flex;justify-content:space-between;align-items:center">
       Pendências de curadoria
@@ -238,8 +240,10 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 <main class="main">
   <div class="chat" id="chat"></div>
   <div class="dl-bar" id="dl-bar">
-    <p id="dl-msg">Planilha pronta.</p>
-    <button class="dl-btn" id="dl-btn">Baixar 3 planilhas Zydon</button>
+    <p id="dl-msg">Arquivos prontos.</p>
+    <button class="dl-btn" onclick="downloadArquivo(1)">1. Produto</button>
+    <button class="dl-btn" onclick="downloadArquivo(2)">2. Variações</button>
+    <button class="dl-btn" onclick="downloadArquivo(3)">3. Variações Valores</button>
   </div>
   <div class="inp-area">
     <div class="inp-row">
@@ -255,25 +259,36 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 </div>
 
 <script>
-// ── Configuração ─────────────────────────────────────────────────────
-const CONFIG = {
-  GH_TOKEN: '',  // cada usuário preenche na primeira vez
-  GH_REPO:  'Piresmathhh/jetsupply-agente-jet',
-};
-
-// ── Estado global ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════════════════════════════
+const VERSION = 'v3.0';
 let products = [];
 let kb = null;
 let kbSha = null;
 let pendentes = [];
+let chatHistory = [];
+let wb1 = null, wb2 = null, wb3 = null; // workbooks gerados
+let errosGeracao = [];
 
-// ── Formatação de nome ────────────────────────────────────────────────
-const UPPER_GLOBAL = new Set(['VCA','VCC','CA','CC','AC','DC','VA','KW','KVA','MW','HZ','KHZ','MHZ','IP','IK','NBR','ABNT','IEC','NR','1P','2P','3P','4P','5P','DIN','NEMA','UL','CE']);
+// Colunas obrigatórias para validar o arquivo Signus
+const COLUNAS_OBRIGATORIAS = ['ID','Código','Nome','Marca','Situação','Grupo setorial','Cód. agrupamento'];
+
+// ══════════════════════════════════════════════════════════════════
+// MAPA DE CATEGORIAS EMBUTIDO (Signus → código Zydon)
+// Fonte única: sincronizado com conhecimento.json
+// ══════════════════════════════════════════════════════════════════
+const CATS_ZYDON = {"MATERIAIS ELÉTRICOS":488,"DISJUNTORES":489,"DISJUNTORES CAIXA MOLDADA":490,"ACESSÓRIOS":566,"1P MONOPOLAR":561,"2P BIPOLAR":537,"3P TRIPOLAR":563,"4P TETRAPOLAR":538,"DISJUNTORES MINI":494,"DISJUNTORES A VÁCUO":502,"3P TRIPOLAR EXTRAÍVEL":516,"3P TRIPOLAR FIXO":517,"4P TETRAPOLAR EXTRAÍVEL":518,"4P TETRAPOLAR FIXO":519,"DISJUNTORES ABERTO":508,"DISJUNTORES A GÁS":514,"DISJUNTORES MOTOR":520,"DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS":539,"CLASSE I":540,"CLASSE I + II":545,"CLASSE II":550,"CLASSE II + III":555,"CLASSE III":560,"FUSÍVEIS":565,"BASE PARA FUSÍVEL":567,"EXTRATOR DE FUSÍVEL":568,"INDICADOR DE FUSÃO":569,"PORTA-FUSÍVEL":570,"SUPORTE PARA FUSÍVEL":571,"AUTOMOTIVO":572,"LÂMINA":573,"MAXI":574,"MICRO":575,"MINI LÂMINA":576,"CILÍNDRICO":577,"DIAZED":583,"HH - ALTA TENSÃO":586,"LIMITADOR DE CORRENTE":587,"NEOZED":589,"NH":592,"VIDRO":597,"RÁPIDO":598,"RETARDADO":599,"IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS":526,"TIPO A":527,"TIPO AC":530,"TIPO B":533,"TIPO F":536,"DISJUNTOR MINI 1P MONOPOLAR":495,"DISJUNTOR MINI 2P BIPOLAR":496,"DISJUNTOR MINI 3P TRIPOLAR":497,"DISJUNTOR MINI 4P TETRAPOLAR":498,"DISJUNTOR CAIXA MOLDADA 1P MONOPOLAR":501,"DISJUNTOR CAIXA MOLDADA 2P BIPOLAR":491,"DISJUNTOR CAIXA MOLDADA 3P TRIPOLAR":492,"DISJUNTOR CAIXA MOLDADA 4P TETRAPOLAR":493,"DISJUNTOR MOTOR 1P MONOPOLAR":522,"DISJUNTOR MOTOR 2P BIPOLAR":523,"DISJUNTOR MOTOR 3P TRIPOLAR":524,"DISJUNTOR MOTOR 4P TETRAPOLAR":525};
+
+// ══════════════════════════════════════════════════════════════════
+// FORMATAÇÃO DE NOMES
+// ══════════════════════════════════════════════════════════════════
+const UPPER_GLOBAL = new Set(['VCA','VCC','CA','CC','AC','DC','VA','KW','KVA','MW','HZ','KHZ','MHZ','IP','IK','NBR','ABNT','IEC','NR','1P','2P','3P','4P','5P','DIN','NEMA','UL','CE','CV','HP','RPM','BAR','PSI']);
 const LOWER_CONN   = new Set(['de','do','da','dos','das','e','a','o','em','para','com','por','na','no','nas','nos']);
 
 function getMarcaConfig(marcaNome) {
   if (!kb) return null;
-  const key = Object.keys(kb.marcas || {}).find(k => k.toLowerCase() === (marcaNome||'').toLowerCase());
+  const key = Object.keys(kb.marcas||{}).find(k => k.toLowerCase()===(marcaNome||'').toLowerCase());
   return key ? kb.marcas[key] : null;
 }
 
@@ -281,10 +296,10 @@ function getSiglasUpper(marcaNome) {
   const cfg = getMarcaConfig(marcaNome);
   const siglas = new Set(UPPER_GLOBAL);
   if (cfg) {
-    (cfg.siglas_modelos || []).forEach(s => siglas.add(s.toUpperCase()));
-    (cfg.unidades_upper || []).forEach(u => siglas.add(u.toUpperCase()));
+    (cfg.siglas_modelos||[]).forEach(s => siglas.add(s.toUpperCase()));
+    (cfg.unidades_upper||[]).forEach(u => siglas.add(u.toUpperCase()));
   }
-  if (kb) (kb.unidades_globais || []).forEach(u => siglas.add(u.toUpperCase()));
+  if (kb) (kb.unidades_globais||[]).forEach(u => siglas.add(u.toUpperCase()));
   return siglas;
 }
 
@@ -315,102 +330,165 @@ function formatName(raw, marcaNome) {
   }
   let result = out.join('').replace(/\s{2,}/g,' ').trim();
   // Garantir que a marca no final fique maiúscula
-  if (marcaNome) {
-    const marcaUp = marcaNome.toUpperCase();
-    result = result.replace(new RegExp(`\\b${marcaNome}\\b`, 'gi'), marcaUp);
-  }
+  if (marcaNome) result = result.replace(new RegExp(`\\b${marcaNome}\\b`, 'gi'), marcaNome.toUpperCase());
+  // Aplicar regras
   if (kb) {
-    for (const r of (kb.regras_globais || [])) {
-      result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
-    }
+    for (const r of (kb.regras_globais||[])) result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
     const cfg = getMarcaConfig(marcaNome);
-    if (cfg) for (const r of (cfg.regras_nome || [])) {
-      result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
-    }
+    if (cfg) for (const r of (cfg.regras_nome||[])) result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
   }
   return result;
 }
 
-function limparPlanilha() {
-  products = [];
-  pendentes = [];
-  document.getElementById('upload-area').innerHTML =
-    `<label class="upload-z" for="file-in">
-      <input type="file" id="file-in" accept=".xlsx,.xls">
-      <strong>Selecionar arquivo</strong>
-      <p>Exportação do Signus (.xlsx)</p>
-    </label>`;
-  document.getElementById('file-in').addEventListener('change', handleFileUpload);
-  document.getElementById('dl-bar').classList.remove('show');
-  renderPendentes();
-  addAgentMsg('Planilha removida. Faça o upload de uma nova quando quiser.');
+// ══════════════════════════════════════════════════════════════════
+// MOTOR DE ORDENAÇÃO DE VARIAÇÕES
+// ══════════════════════════════════════════════════════════════════
+const ORDEM_VESTUARIO = ['PP','P','M','G','GG','XGG','EGG','G1','G2','G3'];
+
+function extrairValorVariacao(produto) {
+  const nome = produto['Nome'] || '';
+  // Corrente elétrica: 10A, 2A, 63A...
+  const mA = nome.match(/\b(\d+(?:[.,]\d+)?)\s*A\b/i);
+  if (mA) return { valor: mA[1].replace(',','.') + 'A', tipo: 'corrente', num: parseFloat(mA[1].replace(',','.')) };
+  // Medida decimal: 0.5, 1.5, 2.5...
+  const mDec = nome.match(/\b(\d+[.,]\d+)\b/);
+  if (mDec) return { valor: mDec[1], tipo: 'medida', num: parseFloat(mDec[1].replace(',','.')) };
+  // Tamanho numérico simples: 2, 4, 6...
+  const mNum = nome.match(/\b(\d+)\b/);
+  if (mNum) return { valor: mNum[1], tipo: 'numerico', num: parseInt(mNum[1]) };
+  // Vestuário: PP, P, M, G, GG...
+  for (const tam of ORDEM_VESTUARIO) {
+    if (new RegExp(`\\b${tam}\\b`).test(nome.toUpperCase())) return { valor: tam, tipo: 'vestuario', num: ORDEM_VESTUARIO.indexOf(tam) };
+  }
+  return { valor: String(produto['Código']||''), tipo: 'fallback', num: 9999 };
 }
 
-// ── GitHub API ────────────────────────────────────────────────────────
-function ghToken() { return CONFIG.GH_TOKEN || document.getElementById('gh-token')?.value.trim() || ''; }
-function ghRepo()  { return CONFIG.GH_REPO  || document.getElementById('gh-repo')?.value.trim()  || ''; }
+function getCatCodigo(nomecat) {
+  if (!nomecat) return '';
+  const upper = nomecat.toUpperCase();
+  if (CATS_ZYDON[upper]) return CATS_ZYDON[upper];
+  if (kb?.categorias_zydon_por_nome?.[upper]) return kb.categorias_zydon_por_nome[upper];
+  const key = Object.keys(CATS_ZYDON).find(k => k.includes(upper) || upper.includes(k));
+  return key ? CATS_ZYDON[key] : '';
+}
+
+function marcaConhecida(marca) {
+  if (!marca || !kb) return false;
+  return Object.keys(kb.marcas||{}).some(k => k.toLowerCase()===marca.toLowerCase());
+}
+
+function getMarcaCodigo(nomeMarca) {
+  if (!nomeMarca || !kb?.marcas_zydon) return '';
+  if (kb.marcas_zydon[nomeMarca]) return kb.marcas_zydon[nomeMarca];
+  const key = Object.keys(kb.marcas_zydon).find(k =>
+    k.toLowerCase().includes(nomeMarca.toLowerCase()) ||
+    nomeMarca.toLowerCase().includes(k.toLowerCase())
+  );
+  return key ? kb.marcas_zydon[key] : '';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VALIDAÇÃO DO ARQUIVO
+// ══════════════════════════════════════════════════════════════════
+function validarArquivo(data) {
+  const erros = [];
+  if (!data || data.length === 0) { erros.push('Arquivo vazio.'); return erros; }
+  const colunas = Object.keys(data[0]);
+  const faltando = COLUNAS_OBRIGATORIAS.filter(c => !colunas.includes(c));
+  if (faltando.length) erros.push(`Colunas obrigatórias ausentes: ${faltando.join(', ')}. Este não parece ser uma exportação válida do Signus.`);
+  return erros;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GITHUB API
+// ══════════════════════════════════════════════════════════════════
+function ghToken() { return document.getElementById('gh-token')?.value.trim() || ''; }
+function ghRepo()  { return document.getElementById('gh-repo')?.value.trim() || ''; }
 function ghHeaders() {
-  return {
-    'Authorization': `token ${ghToken()}`,
-    'Accept': 'application/vnd.github.v3+json',
-    'Content-Type': 'application/json'
-  };
+  return { 'Authorization':`token ${ghToken()}`, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' };
 }
 
 async function loadKB() {
-  const repo = ghRepo();
-  const token = document.getElementById('gh-token').value.trim();
+  const repo = ghRepo(), token = ghToken();
   if (!repo || !token) return;
   try {
     const r = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, { headers: ghHeaders() });
+    if (r.status === 401) {
+      // Token expirado ou inválido — limpar e avisar
+      localStorage.removeItem('jet_gh_token');
+      document.getElementById('gh-token').value = '';
+      setGhStatus('', 'Token inválido ou expirado — cole um novo');
+      addAgentMsg('O <strong>GitHub Token</strong> expirou ou é inválido. Solicite um novo com o Matheus e cole na barra lateral.');
+      return;
+    }
     if (r.ok) {
       const d = await r.json();
       kbSha = d.sha;
       kb = JSON.parse(atob(d.content.replace(/\n/g,'')));
-      setGhStatus('ok', `Base carregada · ${Object.keys(kb.marcas||{}).length} marcas cadastradas · ${Object.keys(kb.marcas_zydon||{}).length} marcas Zydon`);
+      const nMarcas = Object.keys(kb.marcas||{}).length;
+      const nMarcasZydon = Object.keys(kb.marcas_zydon||{}).length;
+      setGhStatus('ok', `Base carregada · ${nMarcas} marcas cadastradas · ${nMarcasZydon} marcas Zydon`);
       document.getElementById('sync-btn').style.display = '';
     } else if (r.status === 404) {
-      // Criar arquivo inicial
       await saveKB(defaultKB(), 'Base inicializada');
       setGhStatus('ok', 'Base criada no repositório');
     }
-  } catch(e) {
-    setGhStatus('err', 'Erro ao conectar ao GitHub');
-  }
+  } catch(e) { setGhStatus('', 'Erro ao conectar ao GitHub'); }
 }
 
 function defaultKB() {
   return {
-    versao:'1.0',
-    marcas:{ WEG:{ nome_exibicao:'WEG', siglas_modelos:['MDW','CFW','HGF','CWM','SSW','RW','BSW'], unidades_upper:['VCA','VCC'], regras_nome:[] } },
-    categorias:{}, unidades_globais:['A','V','W','VA','KW','KVA','MW','HP','CV','HZ','RPM','VCA','VCC','IP','IK','BAR','PSI'],
-    regras_globais:[], historico:[{data:new Date().toISOString().slice(0,10), usuario: userName(), acao:'Base inicializada'}]
+    versao: '3.0',
+    mapeamento_campos: {
+      codigo_zydon: { origem:'ID', descricao:'ID único do produto no Signus' },
+      sku_zydon: { origem:'Código', descricao:'Código comercial do produto no Signus' },
+      categoria_zydon: { origem:'Grupo setorial', descricao:'Nível mais específico da hierarquia do Signus' },
+    },
+    codigos_zydon: {
+      unidade_padrao: { codigo:1, abreviacao:'UN' },
+      centro_distribuicao: { codigo:3, nome:'CD - Espírito Santo - Serra' },
+    },
+    marcas: { WEG:{ nome_exibicao:'WEG', siglas_modelos:['MDW','CFW','HGF','CWM','SSW'], unidades_upper:['VCA','VCC'], regras_nome:[] } },
+    marcas_zydon: {},
+    categorias: {},
+    categorias_zydon: {},
+    categorias_zydon_por_nome: {},
+    unidades_globais: ['A','V','W','VA','KW','KVA','MW','HP','CV','HZ','RPM','VCA','VCC','IP','IK','BAR','PSI'],
+    regras_globais: [],
+    imagens: {
+      url_base: '',
+      bucket: 'jetsupply-imagens',
+      padrao_nome: 'Código do produto (ex: 10076405.jpg)',
+      multiplas: 'principal + _1 até _10',
+    },
+    historico: [{ data: new Date().toISOString().slice(0,10), usuario: userName(), acao: 'Base inicializada v3.0' }]
   };
 }
 
 async function saveKB(data, msg) {
-  const repo = ghRepo();
-  const token = document.getElementById('gh-token').value.trim();
+  const repo = ghRepo(), token = ghToken();
   if (!repo || !token) return false;
-  const body = { message: `[Agente Jet] ${msg}`, content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))) };
+  // Incrementar versão da base
+  data.versao = VERSION;
+  const body = { message:`[Agente Jet ${VERSION}] ${msg}`, content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))) };
   if (kbSha) body.sha = kbSha;
   try {
     const r = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, {
-      method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body)
+      method:'PUT', headers: ghHeaders(), body: JSON.stringify(body)
     });
-    if (r.ok) {
-      const d = await r.json();
-      kbSha = d.content.sha;
-      kb = data;
-      return true;
+    if (r.status === 409) {
+      // Conflito de SHA — re-fetch e tentar novamente
+      await loadKB();
+      body.sha = kbSha;
+      const r2 = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, {
+        method:'PUT', headers: ghHeaders(), body: JSON.stringify(body)
+      });
+      if (r2.ok) { const d = await r2.json(); kbSha = d.content.sha; kb = data; return true; }
+      return false;
     }
+    if (r.ok) { const d = await r.json(); kbSha = d.content.sha; kb = data; return true; }
   } catch(e) {}
   return false;
-}
-
-async function syncGitHub() {
-  setGhStatus('warn', 'Sincronizando...');
-  await loadKB();
 }
 
 async function learnAndSave(updates, histMsg) {
@@ -418,57 +496,65 @@ async function learnAndSave(updates, histMsg) {
   Object.assign(kb, updates);
   kb.historico = kb.historico || [];
   kb.historico.unshift({ data: new Date().toISOString().slice(0,10), usuario: userName(), acao: histMsg });
-  if (kb.historico.length > 100) kb.historico = kb.historico.slice(0, 100);
+  if (kb.historico.length > 100) kb.historico = kb.historico.slice(0,100);
   const ok = await saveKB(kb, histMsg);
-  if (ok) setGhStatus('ok', `Base atualizada · ${Object.keys(kb.marcas||{}).length} marcas`);
+  if (ok) setGhStatus('ok', `Base atualizada · ${Object.keys(kb.marcas||{}).length} marcas cadastradas`);
   return ok;
 }
 
-function userName() { return document.getElementById('user-name').value.trim() || 'Usuário'; }
+async function syncGitHub() { setGhStatus('warn','Sincronizando...'); await loadKB(); }
+function userName() { return document.getElementById('user-name')?.value.trim() || 'Usuário'; }
 function setGhStatus(st, txt) {
   const dot = document.getElementById('gh-dot');
   dot.className = 'status-dot' + (st==='ok'?' ok':st==='warn'?' warn':'');
   document.getElementById('gh-txt').textContent = txt;
 }
 
-// ── Verificação de marca desconhecida ─────────────────────────────────
-function marcaConhecida(marca) {
-  if (!marca || !kb) return false;
-  return Object.keys(kb.marcas||{}).some(k => k.toLowerCase() === marca.toLowerCase());
-}
-
+// ══════════════════════════════════════════════════════════════════
+// ANÁLISE DE PENDÊNCIAS
+// ══════════════════════════════════════════════════════════════════
 function analisarProduto(p) {
-  const marca = p['Marca'] || '';
   const issues = [];
+  const marca = p['Marca'] || '';
   if (marca && !marcaConhecida(marca)) issues.push({ tipo:'marca', valor:marca });
   const cat = p['Grupo setorial'] || '';
-  // Só pede mapeamento de categoria se não conseguir resolver automaticamente
-  if (cat && kb && kb.categorias && !kb.categorias[cat]) {
+  if (cat) {
     const upper = cat.toUpperCase();
-    const jaConhece = CATS_ZYDON[upper] ||
-      (kb?.categorias_zydon_por_nome?.[upper]) ||
-      Object.keys(CATS_ZYDON).some(k => k.includes(upper) || upper.includes(k));
+    const jaConhece = CATS_ZYDON[upper] || kb?.categorias_zydon_por_nome?.[upper] ||
+      Object.keys(CATS_ZYDON).some(k => k.includes(upper) || upper.includes(k)) ||
+      kb?.categorias?.[cat];
     if (!jaConhece) issues.push({ tipo:'categoria', valor:cat });
   }
   return issues;
 }
 
-// ── Upload ────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// UPLOAD
+// ══════════════════════════════════════════════════════════════════
 function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async function(ev) {
-    const wb = XLSX.read(ev.target.result, { type:'array' });
-    products = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const wbRaw = XLSX.read(ev.target.result, { type:'array' });
+    const data = XLSX.utils.sheet_to_json(wbRaw.Sheets[wbRaw.SheetNames[0]]);
+
+    // Validar arquivo
+    const errosVal = validarArquivo(data);
+    if (errosVal.length) {
+      document.getElementById('upload-area').innerHTML =
+        `<label class="upload-z" for="file-in"><input type="file" id="file-in" accept=".xlsx,.xls"><strong>Selecionar arquivo</strong><p>Exportação do Signus (.xlsx)</p></label>`;
+      document.getElementById('file-in').addEventListener('change', handleFileUpload);
+      addAgentMsg(`<div class="alert alert-err">⚠ Arquivo inválido:<br>${errosVal.join('<br>')}</div>`);
+      return;
+    }
+
+    products = data;
     document.getElementById('upload-area').innerHTML =
       `<div class="file-ok">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div class="file-ok-name">${file.name}</div>
-            <div class="file-ok-sub">${products.length} produtos</div>
-          </div>
-          <button onclick="limparPlanilha()" title="Remover planilha" style="background:none;border:none;cursor:pointer;color:#1A7A4A;font-size:18px;padding:2px 4px;line-height:1" >×</button>
+          <div><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${products.length} produtos</div></div>
+          <button onclick="limparPlanilha()" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
         </div>
       </div>`;
     await processarLote();
@@ -476,6 +562,16 @@ function handleFileUpload(e) {
   reader.readAsArrayBuffer(file);
 }
 document.getElementById('file-in').addEventListener('change', handleFileUpload);
+
+function limparPlanilha() {
+  products = []; pendentes = []; wb1 = wb2 = wb3 = null; errosGeracao = [];
+  document.getElementById('upload-area').innerHTML =
+    `<label class="upload-z" for="file-in"><input type="file" id="file-in" accept=".xlsx,.xls"><strong>Selecionar arquivo</strong><p>Exportação do Signus (.xlsx)</p></label>`;
+  document.getElementById('file-in').addEventListener('change', handleFileUpload);
+  document.getElementById('dl-bar').classList.remove('show');
+  renderPendentes();
+  addAgentMsg('Planilha removida. Faça o upload de uma nova quando quiser.');
+}
 
 async function processarLote() {
   if (!products.length) return;
@@ -487,62 +583,50 @@ async function processarLote() {
 
   for (const p of products) {
     const issues = analisarProduto(p);
-    const nome = formatName(p['Nome']||'', p['Marca']||'');
-    if (issues.length) {
-      novos_pend.push({ produto: p, issues, nomeFormatado: nome });
-    } else {
-      processados.push({ ...p, _nomeFormatado: nome });
-    }
+    if (issues.length) novos_pend.push({ produto:p, issues, nomeFormatado: formatName(p['Nome']||'', p['Marca']||'') });
+    else processados.push(p);
   }
   pendentes = novos_pend;
 
-  const nOk = processados.length;
-  const nPend = pendentes.length;
-
+  const nOk = processados.length, nPend = pendentes.length;
   addAgentMsg(
     `Lote processado: <strong>${products.length} produtos</strong><br><br>` +
     `<strong style="color:var(--green)">${nOk} prontos</strong> — regras conhecidas aplicadas<br>` +
     `<strong style="color:var(--amber)">${nPend} pendentes</strong> — ${nPend > 0 ? 'veja as dúvidas na barra lateral' : 'nenhuma dúvida!'}`,
     nOk > 0 ? buildPreview(products.slice(0,5)) : ''
   );
-
   renderPendentes();
-
   if (nOk > 0) {
     setTimeout(() => {
       const area = document.getElementById('chat');
       const div = document.createElement('div');
       div.className = 'msg msg-a';
-      div.innerHTML = `<div class="msg-lbl">Agente Jet</div><div class="bubble">
-        <div class="act-row">
-          <button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button>
-          <button class="act-btn" onclick="sendQuick('Mostrar todos os produtos formatados')">Ver todos</button>
-        </div></div>`;
-      area.appendChild(div);
-      area.scrollTop = area.scrollHeight;
+      div.innerHTML = `<div class="msg-lbl">Agente Jet</div><div class="bubble"><div class="act-row">
+        <button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button>
+        <button class="act-btn" onclick="sendQuick('Mostrar todos os produtos')">Ver todos</button>
+      </div></div>`;
+      area.appendChild(div); area.scrollTop = area.scrollHeight;
     }, 300);
   }
 }
 
 function buildPreview(rows) {
-  const marcas = [...new Set(rows.map(r=>r['Marca']||'').filter(Boolean))];
   const thead = `<tr><th>Nome formatado</th><th>Marca</th><th>Status</th></tr>`;
   const tbody = rows.map(r => {
     const nome = formatName(r['Nome']||'', r['Marca']||'');
     const issues = analisarProduto(r);
-    const cls = issues.length ? 'td-pend' : '';
-    const badge = issues.length
-      ? `<span class="badge b-pend">pendente</span>`
-      : `<span class="badge b-ok">pronto</span>`;
-    return `<tr class="${cls}">
-      <td><div class="td-old">${(r['Nome']||'').slice(0,60)}</div><div class="td-new">${nome.slice(0,60)}</div></td>
+    const badge = issues.length ? `<span class="badge b-pend">pendente</span>` : `<span class="badge b-ok">pronto</span>`;
+    return `<tr class="${issues.length?'td-pend':''}">
+      <td><div class="td-old">${(r['Nome']||'').slice(0,55)}</div><div class="td-new">${nome.slice(0,55)}</div></td>
       <td style="white-space:nowrap;color:var(--t4)">${r['Marca']||''}</td>
-      <td>${badge}</td>
-    </tr>`;
+      <td>${badge}</td></tr>`;
   }).join('');
   return `<div class="preview"><table>${thead}<tbody>${tbody}</tbody></table></div>`;
 }
 
+// ══════════════════════════════════════════════════════════════════
+// RENDERIZAR PENDÊNCIAS
+// ══════════════════════════════════════════════════════════════════
 function renderPendentes() {
   const area = document.getElementById('pend-area');
   const count = document.getElementById('pend-count');
@@ -552,66 +636,44 @@ function renderPendentes() {
     return;
   }
   count.textContent = `${pendentes.length} pendente${pendentes.length>1?'s':''}`;
-
-  // Agrupar por marca desconhecida
-  const porMarca = {};
-  const porCat = {};
-  pendentes.forEach(p => {
-    p.issues.forEach(issue => {
-      if (issue.tipo === 'marca') {
-        if (!porMarca[issue.valor]) porMarca[issue.valor] = [];
-        porMarca[issue.valor].push(p);
-      }
-      if (issue.tipo === 'categoria') {
-        if (!porCat[issue.valor]) porCat[issue.valor] = [];
-        porCat[issue.valor].push(p);
-      }
-    });
-  });
-
+  const porMarca = {}, porCat = {};
+  pendentes.forEach(p => p.issues.forEach(issue => {
+    if (issue.tipo==='marca') { if (!porMarca[issue.valor]) porMarca[issue.valor]=[]; porMarca[issue.valor].push(p); }
+    if (issue.tipo==='categoria') { if (!porCat[issue.valor]) porCat[issue.valor]=[]; porCat[issue.valor].push(p); }
+  }));
   let html = '';
-
-  // Pendências de marca
   Object.entries(porMarca).forEach(([marca, prods]) => {
-    const marcaId = marca.replace(/[^a-zA-Z0-9]/g,'_');
+    const id = marca.replace(/[^a-zA-Z0-9]/g,'_');
     html += `<div class="pend-item">
-      <div class="pend-head">
-        <div class="pend-head-txt">⚠ Marca nova: ${marca} (${prods.length} prod.)</div>
-      </div>
+      <div class="pend-head"><div class="pend-head-txt">⚠ Marca nova: ${marca} (${prods.length} prod.)</div></div>
       <div class="pend-body">
         <div class="pend-q">Como escrever o nome desta marca?</div>
-        <input class="pend-inp" id="pend-nome-${marcaId}" placeholder="Ex: Schneider Electric" value="${marca}">
+        <input class="pend-inp" id="pend-nome-${id}" value="${marca}">
         <div class="pend-q" style="margin-top:6px">Siglas maiúsculas (vírgula):</div>
-        <input class="pend-inp" id="pend-siglas-${marcaId}" placeholder="Ex: NSX, IC60, A9...">
-        <button class="pend-save" onclick="salvarMarca('${marca}','${marcaId}')">Salvar e aplicar</button>
+        <input class="pend-inp" id="pend-siglas-${id}" placeholder="Ex: NSX, IC60, A9...">
+        <button class="pend-save" onclick="salvarMarca('${marca}','${id}')">Salvar</button>
         <button class="pend-skip" onclick="pularMarca('${marca}')">Pular</button>
       </div>
     </div>`;
   });
-
-  // Pendências de categoria
   Object.entries(porCat).forEach(([cat, prods]) => {
-    const catId = cat.replace(/[^a-zA-Z0-9]/g,'_');
+    const id = cat.replace(/[^a-zA-Z0-9]/g,'_');
     html += `<div class="pend-item">
-      <div class="pend-head">
-        <div class="pend-head-txt">📂 Categoria nova: ${cat.length>28?cat.slice(0,28)+'…':cat} (${prods.length} prod.)</div>
-      </div>
+      <div class="pend-head"><div class="pend-head-txt">📂 Categoria nova: ${cat.length>30?cat.slice(0,30)+'…':cat} (${prods.length} prod.)</div></div>
       <div class="pend-body">
-        <div class="pend-q">Como chamar esta categoria na Zydon?</div>
-        <input class="pend-inp" id="pend-cat-${catId}" placeholder="Ex: Disjuntores Miniatura" value="${cat}">
-        <button class="pend-save" onclick="salvarCategoria('${cat}','${catId}')">Salvar</button>
+        <div class="pend-q">Como chamar na Zydon?</div>
+        <input class="pend-inp" id="pend-cat-${id}" value="${cat}">
+        <button class="pend-save" onclick="salvarCategoria('${cat}','${id}')">Salvar</button>
         <button class="pend-skip" onclick="pularCategoria('${cat}')">Pular</button>
       </div>
     </div>`;
   });
-
   area.innerHTML = html || '<div class="pend-empty">Sem pendências.<br>Tudo processado!</div>';
 }
 
 async function salvarMarca(marcaOriginal, marcaId) {
-  const id = marcaId || marcaOriginal.replace(/[^a-zA-Z0-9]/g,'_');
-  const nomeExib = document.getElementById(`pend-nome-${id}`)?.value.trim() || marcaOriginal;
-  const siglasRaw = document.getElementById(`pend-siglas-${id}`)?.value.trim() || '';
+  const nomeExib = document.getElementById(`pend-nome-${marcaId}`)?.value.trim() || marcaOriginal;
+  const siglasRaw = document.getElementById(`pend-siglas-${marcaId}`)?.value.trim() || '';
   const siglas = siglasRaw.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
   if (!kb) kb = defaultKB();
   kb.marcas = kb.marcas || {};
@@ -619,18 +681,13 @@ async function salvarMarca(marcaOriginal, marcaId) {
   const ok = await learnAndSave(kb, `Adicionou marca: ${nomeExib}`);
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marcaOriginal));
   renderPendentes();
-  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${ok?' Base sincronizada no GitHub.':' Erro ao sincronizar.'}`);
-  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo certo! Pode gerar a planilha.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button></div>`),400);
+  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${ok?' GitHub sincronizado.':' Erro ao sincronizar.'}`);
+  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
 }
-
-function pularMarca(marca) {
-  pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca));
-  renderPendentes();
-}
+function pularMarca(marca) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca)); renderPendentes(); }
 
 async function salvarCategoria(catOriginal, catId) {
-  const id = catId || catOriginal.replace(/[^a-zA-Z0-9]/g,'_');
-  const nomeZydon = document.getElementById(`pend-cat-${id}`)?.value.trim() || catOriginal;
+  const nomeZydon = document.getElementById(`pend-cat-${catId}`)?.value.trim() || catOriginal;
   if (!kb) kb = defaultKB();
   kb.categorias = kb.categorias || {};
   kb.categorias[catOriginal] = nomeZydon;
@@ -638,53 +695,34 @@ async function salvarCategoria(catOriginal, catId) {
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===catOriginal));
   renderPendentes();
   addAgentMsg(`Categoria <strong>"${catOriginal}"</strong> → <strong>"${nomeZydon}"</strong> salva.${ok?' GitHub sincronizado.':''}`);
-  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo certo! Pode gerar a planilha.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilha Zydon</button></div>`),400);
+  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
 }
+function pularCategoria(cat) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===cat)); renderPendentes(); }
 
-function pularCategoria(cat) {
-  pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===cat));
-  renderPendentes();
-}
-
-// ── Gerar planilha ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// GERAÇÃO DAS PLANILHAS
+// ══════════════════════════════════════════════════════════════════
 function gerarPlanilha() {
   if (!products.length) { addAgentMsg('Nenhuma planilha carregada.'); return; }
-  const imgBase = (document.getElementById('img-url').value||'').trim().replace(/\/$/,'');
 
-  // Buscar códigos reais da Zydon na base de conhecimento
+  const imgBase = (document.getElementById('img-url').value||'').trim().replace(/\/$/,'');
   const codZydon = kb?.codigos_zydon || {};
   const marcasZydon = kb?.marcas_zydon || {};
   const catZydonMap = kb?.categorias || {};
 
-  function getMarcaCodigo(nomeMarca) {
-    if (!nomeMarca) return '';
-    // Busca exata
-    if (marcasZydon[nomeMarca]) return marcasZydon[nomeMarca];
-    // Busca parcial
-    const key = Object.keys(marcasZydon).find(k =>
-      k.toLowerCase().includes(nomeMarca.toLowerCase()) ||
-      nomeMarca.toLowerCase().includes(k.toLowerCase())
-    );
-    return key ? marcasZydon[key] : '';
-  }
+  errosGeracao = [];
 
-  // Mapa de categorias Zydon embutido (Signus → código Zydon)
-  const CATS_ZYDON = {"MATERIAIS ELÉTRICOS":488,"DISJUNTORES":489,"DISJUNTORES CAIXA MOLDADA":490,"ACESSÓRIOS":566,"1P MONOPOLAR":561,"2P BIPOLAR":537,"3P TRIPOLAR":563,"4P TETRAPOLAR":538,"DISJUNTORES MINI":494,"DISJUNTORES A VÁCUO":502,"3P TRIPOLAR EXTRAÍVEL":516,"3P TRIPOLAR FIXO":517,"4P TETRAPOLAR EXTRAÍVEL":518,"4P TETRAPOLAR FIXO":519,"DISJUNTORES ABERTO":508,"DISJUNTORES A GÁS":514,"DISJUNTORES MOTOR":520,"DPS - DISPOSITIVO DE PROTEÇÃO CONTRA SURTOS":539,"CLASSE I":540,"CLASSE I + II":545,"CLASSE II":550,"CLASSE II + III":555,"CLASSE III":560,"FUSÍVEIS":565,"BASE PARA FUSÍVEL":567,"EXTRATOR DE FUSÍVEL":568,"INDICADOR DE FUSÃO":569,"PORTA-FUSÍVEL":570,"SUPORTE PARA FUSÍVEL":571,"AUTOMOTIVO":572,"LÂMINA":573,"MAXI":574,"MICRO":575,"MINI LÂMINA":576,"CILÍNDRICO":577,"AM":590,"AR":593,"GL/GG":594,"GPV":595,"GR":596,"DIAZED":583,"HH - ALTA TENSÃO":586,"LIMITADOR DE CORRENTE":587,"RETARDADO":599,"NEOZED":589,"NH":592,"VIDRO":597,"RÁPIDO":598,"IDR - INTERRUPTORES DIFERENCIAIS RESIDUAIS":526,"TIPO A":527,"TIPO AC":530,"TIPO B":533,"TIPO F":536,"DISJUNTOR MINI 1P MONOPOLAR":495,"DISJUNTOR MINI 2P BIPOLAR":496,"DISJUNTOR MINI 3P TRIPOLAR":497,"DISJUNTOR MINI 4P TETRAPOLAR":498,"DISJUNTOR CAIXA MOLDADA 1P MONOPOLAR":501,"DISJUNTOR CAIXA MOLDADA 2P BIPOLAR":491,"DISJUNTOR CAIXA MOLDADA 3P TRIPOLAR":492,"DISJUNTOR CAIXA MOLDADA 4P TETRAPOLAR":493,"DISJUNTOR MOTOR 1P MONOPOLAR":522,"DISJUNTOR MOTOR 2P BIPOLAR":523,"DISJUNTOR MOTOR 3P TRIPOLAR":524,"DISJUNTOR MOTOR 4P TETRAPOLAR":525};
+  // Progresso
+  const progDiv = addProgressMsg(products.length);
 
-  function getCatCodigo(nomecat) {
-    if (!nomecat) return '';
-    const upper = nomecat.toUpperCase();
-    // 1. Mapa embutido (tem precedência)
-    if (CATS_ZYDON[upper]) return CATS_ZYDON[upper];
-    // 2. Base de conhecimento do GitHub
-    if (kb?.categorias_zydon_por_nome?.[upper]) return kb.categorias_zydon_por_nome[upper];
-    // 3. Busca parcial no mapa embutido
-    const key = Object.keys(CATS_ZYDON).find(k => k.includes(upper) || upper.includes(k));
-    if (key) return CATS_ZYDON[key];
-    return '';
-  }
+  // Agrupar por Cód. agrupamento
+  const grupos = {};
+  products.forEach(p => {
+    const g = p['Cód. agrupamento'];
+    if (g) { if (!grupos[g]) grupos[g]=[]; grupos[g].push(p); }
+  });
 
-  // Agrupar por Cód. agrupamento para montar EAN_VARIACAO
+  // EAN_VARIACAO por grupo
   const gruposEan = {};
   products.forEach(p => {
     const g = p['Cód. agrupamento'];
@@ -695,162 +733,151 @@ function gerarPlanilha() {
     }
   });
 
-  const rows = products.map(p => {
+  // Validações
+  const eansSeen = {};
+  const rows = [];
+
+  products.forEach((p, idx) => {
+    // Progresso a cada 50
+    if (idx % 50 === 0) updateProgress(progDiv, idx, products.length);
+
     const nome = formatName(p['Nome']||'', p['Marca']||'');
     const marc = p['Marca']||'';
     const cat  = p['Grupo setorial']||'';
+    const catNomeZydon = catZydonMap[cat] || cat;
     const gen  = p['Gênero']||'';
     const lin  = p['Linha de produto']||'';
     const un   = p['Unidade de medida']||'';
     const pG   = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
     const ean  = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
 
-    // Códigos reais da Zydon
+    // Validações
+    if (!marc) errosGeracao.push(`Produto ${p['ID']||'?'} (${p['Código']||'?'}): sem marca`);
+    if (!cat) errosGeracao.push(`Produto ${p['ID']||'?'}: sem categoria (Grupo setorial vazio)`);
+    if (ean) {
+      if (eansSeen[ean]) errosGeracao.push(`EAN duplicado: ${ean} nos produtos ${eansSeen[ean]} e ${p['ID']}`);
+      else eansSeen[ean] = p['ID'];
+    }
+
     const marcaCod = getMarcaCodigo(marc);
-    const unCod    = codZydon.unidade_padrao?.codigo || '';
-    const cdCod    = codZydon.centro_distribuicao?.codigo || '';
-    const cdNome   = 'CD - Espírito Santo - Serra';
+    if (!marcaCod && marc) errosGeracao.push(`Marca "${marc}" não tem código Zydon mapeado`);
 
-    // Categoria — buscar código real da Zydon
-    const catNomeZydon = catZydonMap[cat] || cat;
     const catCod = getCatCodigo(catNomeZydon) || getCatCodigo(cat);
+    if (!catCod && cat) errosGeracao.push(`Categoria "${cat}" não tem código Zydon mapeado`);
 
-    // EAN_VARIACAO — todos os EANs do agrupamento separados por ;
     const grpCod = p['Cód. agrupamento'];
     const eanVariacao = grpCod && gruposEan[grpCod] ? gruposEan[grpCod].join('; ') : ean;
 
-    return {
-      'Imagem Principal': imgBase?`${imgBase}/${p['Código']||''}.jpg`:'',
+    rows.push({
       'Código': String(p['ID']||''),
-      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO'?true:false,
-      'Nome': nome, 'SKU': String(p['Código']||''),
-      'Descrição Curta': nome,
-      'Descrição Longa': String(p['Descrição']||'').replace(/_x000D_/g,'').replace(/\r/g,'').trim(),
-      'EAN/GTIN': ean, 'Marca (Código)': marcaCod, 'Marca (Nome)': marc,
-      'Vídeo':'','Preço': 0,'Estoque': 0,
-      'Centro de Distribuição Padrão (Código)': cdCod,'Centro de Distribuição Padrão (Nome)': cdNome,
-      'Desconto Máximo (%)': 0,'Estoque Mínimo': 0,'Quantidade Mínima p/ Venda': 0,'Múltiplo p/ Venda': 0,
-      'Unidade Padrão (Código)': unCod,'Unidade Padrão (Abreviação)': un,
-      'Categoria (Código)': catCod,'Categoria (Nome)': catNomeZydon,
-      'Peso (g)': pG, 'Largura (cm)': p['Largura (cm)']||'',
-      'Altura (cm)': p['Altura (cm)']||'', 'Profundidade (cm)': p['Profundidade (cm)']||'',
-      'Peso da Embalagem (g)': pG,'Largura da Embalagem (cm)': p['Largura (cm)']||'',
-      'Altura da Embalagem (cm)': p['Altura (cm)']||'','Profundidade da Embalagem (cm)': p['Profundidade (cm)']||'',
-      'Destaque':'','Título do SEO': nome,'Descrição do SEO': nome,
-      'Palavras-chave do SEO': [marc,cat,gen].filter(Boolean).join(', '),
-      'Acréscimo Máximo': 0,'Tags': [lin,gen].filter(Boolean).join(', '),
-      'EAN_VARIACAO - Campo para inclusão de todos os códigos de barras das variações ': eanVariacao,
-    };
+      'Ativo': String(p['Situação']||'').toUpperCase()==='ATIVO' ? true : false,
+      'Nome': nome,
+      'SKU': String(p['Código']||''),
+      'Descrição Curta': '',
+      'Descrição Longa': '',
+      'EAN/GTIN': ean,
+      'Marca (Código)': marcaCod,
+      'Marca (Nome)': marc,
+      'Vídeo': '',
+      'Preço': 0,
+      'Estoque': 0,
+      'Centro de Distribuição Padrão (Código)': codZydon.centro_distribuicao?.codigo || 3,
+      'Centro de Distribuição Padrão (Nome)': codZydon.centro_distribuicao?.nome || 'CD - Espírito Santo - Serra',
+      'Desconto Máximo (%)': 0,
+      'Estoque Mínimo': 0,
+      'Quantidade Mínima p/ Venda': 0,
+      'Múltiplo p/ Venda': 0,
+      'Unidade Padrão (Código)': codZydon.unidade_padrao?.codigo || 1,
+      'Unidade Padrão (Abreviação)': un,
+      'Categoria (Código)': catCod,
+      'Categoria (Nome)': catNomeZydon,
+      'Peso (g)': pG,
+      'Largura (cm)': p['Largura (cm)']||'',
+      'Altura (cm)': p['Altura (cm)']||'',
+      'Profundidade (cm)': p['Profundidade (cm)']||'',
+      'Peso da Embalagem (g)': pG,
+      'Largura da Embalagem (cm)': p['Largura (cm)']||'',
+      'Altura da Embalagem (cm)': p['Altura (cm)']||'',
+      'Profundidade da Embalagem (cm)': p['Profundidade (cm)']||'',
+      'Destaque': '',
+      'Título do SEO': nome,
+      'Descrição do SEO': nome,
+      'Palavras-chave do SEO': [marc, catNomeZydon, gen].filter(Boolean).join(', '),
+      'Acréscimo Máximo': 0,
+      'Tags': [lin, gen].filter(Boolean).join(', '),
+      'EAN_VARIACAO': eanVariacao,
+    });
   });
 
-  const grupos={};
-  products.forEach(p=>{ const g=p['Cód. agrupamento']; if(g){if(!grupos[g])grupos[g]=[];grupos[g].push(p);}});
-  const sims=[]; let sid=1;
-  Object.values(grupos).forEach(grp=>{
-    if(grp.length<2)return;
-    for(let i=0;i<grp.length;i++) for(let j=i+1;j<grp.length;j++)
-      [[grp[i],grp[j]],[grp[j],grp[i]]].forEach(([a,b])=>{
+  // Similares
+  const sims = []; let sid = 1;
+  Object.values(grupos).forEach(grp => {
+    if (grp.length < 2) return;
+    for (let i=0;i<grp.length;i++) for (let j=i+1;j<grp.length;j++)
+      [[grp[i],grp[j]],[grp[j],grp[i]]].forEach(([a,b]) => {
         sims.push({'Código':sid++,'Produto (Código)':String(a['ID']||''),'Produto (Nome)':formatName(a['Nome']||'',a['Marca']||''),'Produto Similar (Código)':String(b['ID']||''),'Produto Similar (Nome)':formatName(b['Nome']||'',b['Marca']||'')});
       });
   });
 
-  // ── Gerar aba Variações ───────────────────────────────────────────
-  // Ordenação natural: extrai número do início do valor de variação
-  function naturalOrder(valor) {
-    if (!valor) return 9999;
-    const m = String(valor).match(/^(\d+(?:[.,]\d+)?)/);
-    return m ? parseFloat(m[1].replace(',','.')) : 9999;
-  }
-
-  // Identificar o atributo de variação de cada grupo (ex: Corrente elétrica)
-  // A diferença entre os produtos do grupo revela o atributo
-  function extrairValorVariacao(produto, grupoBase) {
-    // Tentar extrair do nome: diferença entre produtos do mesmo grupo
-    // Usa o campo Corrente elétrica se existir, senão extrai do nome
-    const corrente = produto['Corrente elétrica'] || produto['Corrente'] || '';
-    if (corrente) return String(corrente);
-    // Fallback: extrair do nome (ex: "10A" do nome completo)
-    const nome = produto['Nome'] || '';
-    const m = nome.match(/\b(\d+(?:[.,]\d+)?A)\b/i);
-    return m ? m[1].toUpperCase() : String(produto['Código'] || '');
-  }
-
+  // Variações
   const variacoes = [];
   Object.entries(grupos).forEach(([grpCod, grp]) => {
-    if (grp.length < 1) return;
-
-    // Produto pai = primeiro do grupo (ou poderia ser o de menor corrente)
-    // O Código do produto pai é o Cód. agrupamento
-    const pai = grp[0];
-    const codPai = String(pai['ID'] || '');
-    const nomePai = formatName(pai['Nome']||'', pai['Marca']||'');
-
-    // Extrair valores de variação e ordenar naturalmente
-    const comValor = grp.map(p => ({
-      produto: p,
-      valor: extrairValorVariacao(p, grp)
-    }));
-    comValor.sort((a, b) => naturalOrder(a.valor) - naturalOrder(b.valor));
-
+    const comValor = grp.map(p => ({ produto:p, info: extrairValorVariacao(p) }));
+    comValor.sort((a,b) => a.info.num - b.info.num);
     comValor.forEach((item, idx) => {
       const p = item.produto;
       const pG = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
       const ean = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
       variacoes.push({
-        'Código': String(p['ID']||''),
-        'Código produto': codPai,
-        'NOME': formatName(p['Nome']||'', p['Marca']||''),
-        'SKU': String(p['Código']||''),
-        'Status': true,
-        'ORDER': idx + 1,
-        'Valores': item.valor,
         'PRICE': 0,
-        'STOCK': 0,
-        'VARIATION_WEIGHT': pG,
-        'VARIATION_WIDTH': p['Largura (cm)']||'',
         'VARIATION_HEIGHT': p['Altura (cm)']||'',
-        'VARIATION_DEPTH': p['Profundidade (cm)']||'',
-        'PACKAGING_WEIGHT': pG,
-        'PACKAGING_WIDTH': p['Largura (cm)']||'',
+        'ORDER': idx + 1,
+        'Código': String(p['ID']||''),
+        'NOME': formatName(p['Nome']||'', p['Marca']||''),
+        'STOCK': 0,
+        'VARIATION_WIDTH': p['Largura (cm)']||'',
         'PACKAGING_HEIGHT': p['Altura (cm)']||'',
+        'Código produto': String(grpCod||''),
+        'PACKAGING_WEIGHT': pG,
+        'VARIATION_WEIGHT': pG,
+        'Valores': 1,
+        'VARIATION_DEPTH': p['Profundidade (cm)']||'',
+        'Código variação': String(p['ID']||''),
+        'Status': true,
+        'SKU': String(p['Código']||''),
+        'PACKAGING_WIDTH': p['Largura (cm)']||'',
         'PACKAGING_DEPTH': p['Profundidade (cm)']||'',
         'EAN_VARIACAO': ean,
-        'Código variação': String(p['ID']||''),
+        // Guardar valor para arquivo 3
+        '_valor': item.info.valor,
+        '_order': idx + 1,
       });
     });
   });
 
-  // Gerar aba Imagens — varrer código principal + _1 até _10 por produto
+  // Imagens
   const imgs = [];
-  let imgSeq = 1;
-
   for (const p of products) {
-    const cod = p['Código'] || '';
-    const id  = String(p['ID'] || '');
+    const cod = p['Código']||'', id = String(p['ID']||'');
     const nome = formatName(p['Nome']||'', p['Marca']||'');
     if (!imgBase || !cod) continue;
-
-    // Imagem principal (sem sufixo)
-    imgs.push({
-      'Código': imgs.length + 1,
-      'Produto (Código)': id,
-      'Produto (Nome)': nome,
-      'Imagem': `${imgBase}/${cod}.jpg`,
-    });
-
-    // Imagens extras _1 até _10
-    for (let n = 1; n <= 10; n++) {
-      imgs.push({
-        'Código': imgs.length + 1,
-        'Produto (Código)': id,
-        'Produto (Nome)': nome,
-        'Imagem': `${imgBase}/${cod}_${n}.jpg`,
-      });
-    }
+    imgs.push({ 'Código':'', 'Produto (Código)':id, 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}.jpg` });
+    for (let n=1; n<=10; n++) imgs.push({ 'Código':'', 'Produto (Código)':id, 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}_${n}.jpg` });
   }
 
-  // ── Arquivo 1: Produto (planilha principal) ──────────────────────
-  const wb1 = XLSX.utils.book_new();
+  // Variações Valores
+  const valoresVar = variacoes.map(v => ({
+    'PRODUCT_VARIATION_ID': v['Código variação'],
+    'VALUE': v['_valor'],
+    'ID': v['Código variação'],
+    'VARIATION_ID': v['_order'],
+  }));
+
+  // Limpar campos internos
+  const variacoesFinal = variacoes.map(v => { const c = {...v}; delete c._valor; delete c._order; return c; });
+
+  // Montar workbooks
+  wb1 = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(rows), 'Produtos');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Unidades Alternativas');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Ficha Técnica');
@@ -859,39 +886,72 @@ function gerarPlanilha() {
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(imgs), 'Imagens');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Complementos');
 
-  // ── Arquivo 2: Variações ─────────────────────────────────────────
-  const wb2 = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb2, XLSX.utils.json_to_sheet(variacoes.length?variacoes:[]), 'Variações produtos');
+  wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, XLSX.utils.json_to_sheet(variacoesFinal.length?variacoesFinal:[]), 'Variações produtos');
 
-  // ── Arquivo 3: Variações Valores ─────────────────────────────────
-  const valoresVar = [];
-  variacoes.forEach(v => {
-    valoresVar.push({
-      'PRODUCT_VARIATION_ID': v['Código variação'],
-      'VALUE': v['Valores'],
-      'ID': v['Código variação'],
-      'VARIATION_ID': v['ORDER'],
-    });
-  });
-  const wb3 = XLSX.utils.book_new();
+  wb3 = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb3, XLSX.utils.json_to_sheet(valoresVar.length?valoresVar:[]), 'Valores de Variações de Produto');
 
-  const date = new Date().toISOString().slice(0,10);
-  const dl = document.getElementById('dl-bar');
-  document.getElementById('dl-msg').textContent = `✓ ${products.length} produtos · ${variacoes.length} variações · ${sims.length} similares — 3 arquivos prontos`;
-  dl.classList.add('show');
-  document.getElementById('dl-btn').onclick = () => {
-    XLSX.writeFile(wb1, `JetSupply_Produto_${date}.xlsx`);
-    setTimeout(() => XLSX.writeFile(wb2, `JetSupply_Variacoes_${date}.xlsx`), 500);
-    setTimeout(() => XLSX.writeFile(wb3, `JetSupply_Variacoes_Valores_${date}.xlsx`), 1000);
-  };
+  // Atualizar progresso para 100%
+  updateProgress(progDiv, products.length, products.length);
 
-  addAgentMsg(`Planilha gerada:<br>
-    <strong>${products.length}</strong> produtos · <strong>${variacoes.length}</strong> variações (ORDER calculado) · <strong>${sims.length}</strong> similares · <strong>${imgs.length}</strong> linhas de imagem.
-    ${pendentes.length?' <span style="color:var(--amber)">'+pendentes.length+' produto(s) com pendências.</span>':''}`);
+  // Mostrar barra de download
+  const date = new Date().toISOString().slice(0,10);
+  window._dlDate = date;
+  const dl = document.getElementById('dl-bar');
+  document.getElementById('dl-msg').textContent = `✓ ${products.length} produtos · ${variacoesFinal.length} variações · ${sims.length} similares · ${errosGeracao.length} aviso(s)`;
+  dl.classList.add('show');
+
+  // Mensagem com relatório de erros
+  let msg = `Planilhas geradas com sucesso:<br><strong>${products.length}</strong> produtos · <strong>${variacoesFinal.length}</strong> variações · <strong>${sims.length}</strong> similares`;
+  if (errosGeracao.length) {
+    msg += `<div class="report-wrap" style="margin-top:8px">
+      <div class="report-head">⚠ ${errosGeracao.length} aviso(s) encontrado(s)</div>
+      <div class="report-body">${errosGeracao.slice(0,10).map(e=>`<div class="report-item">· ${e}</div>`).join('')}${errosGeracao.length>10?`<div class="report-item" style="color:var(--t5)">...e mais ${errosGeracao.length-10} avisos</div>`:''}</div>
+    </div>`;
+  }
+  msg += `<br><br>Clique nos botões abaixo para baixar cada arquivo na ordem correta.`;
+  addAgentMsg(msg);
 }
 
-// ── Chat ──────────────────────────────────────────────────────────────
+function downloadArquivo(n) {
+  const date = window._dlDate || new Date().toISOString().slice(0,10);
+  if (n===1 && wb1) XLSX.writeFile(wb1, `JetSupply_Produto_${date}.xlsx`);
+  if (n===2 && wb2) XLSX.writeFile(wb2, `JetSupply_Variacoes_${date}.xlsx`);
+  if (n===3 && wb3) XLSX.writeFile(wb3, `JetSupply_Variacoes_Valores_${date}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════════════════════════════
+function addProgressMsg(total) {
+  const area = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg msg-a'; div.id = 'progress-msg';
+  div.innerHTML = `<div class="msg-lbl">Agente Jet</div><div class="bubble">
+    <div class="progress-wrap">
+      <div class="progress-txt">Gerando planilhas... 0 / ${total}</div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+    </div></div>`;
+  area.appendChild(div); area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+function updateProgress(div, current, total) {
+  if (!div) return;
+  const pct = Math.round(current/total*100);
+  const bar = div.querySelector('#prog-bar');
+  const txt = div.querySelector('.progress-txt');
+  if (bar) bar.style.width = pct + '%';
+  if (txt) txt.textContent = `Gerando planilhas... ${current} / ${total} (${pct}%)`;
+  if (current >= total) {
+    setTimeout(() => { const p = document.getElementById('progress-msg'); if(p) p.remove(); }, 500);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHAT
+// ══════════════════════════════════════════════════════════════════
 function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
 function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,80)+'px'; }
 function sendQuick(t){ document.getElementById('inp').value=t; send(); }
@@ -902,21 +962,15 @@ async function send() {
   if (!txt) return;
   inp.value=''; inp.style.height='auto';
   addUserMsg(txt);
-  document.getElementById('send-btn').disabled=true;
-
+  document.getElementById('send-btn').disabled = true;
   const low = txt.toLowerCase();
 
-  if (low.includes('gerar planilha')||low==='gerar'){ gerarPlanilha(); document.getElementById('send-btn').disabled=false; return; }
-  if (low.includes('ver todos')||low.includes('mostrar todos')){
-    addAgentMsg(`<strong>${products.length} produtos</strong>:`, buildPreview(products.slice(0,20)));
-    document.getElementById('send-btn').disabled=false; return;
-  }
-  if (low.includes('base de conhecimento')||low.includes('marcas conhecidas')){
-    showBase(); document.getElementById('send-btn').disabled=false; return;
-  }
+  if (low.includes('gerar')||low.includes('gerar planilha')) { gerarPlanilha(); document.getElementById('send-btn').disabled=false; return; }
+  if (low.includes('ver todos')||low.includes('mostrar todos')) { addAgentMsg(`<strong>${products.length} produtos:</strong>`, buildPreview(products.slice(0,30))); document.getElementById('send-btn').disabled=false; return; }
+  if (low.includes('base de conhecimento')||low.includes('ver base')) { showBase(); document.getElementById('send-btn').disabled=false; return; }
 
-  // Regra rápida: "X vira Y"
-  const ruleM = txt.match(/[""']?(.+?)[""']?\s+(?:vira|→|->|por|muda para|muda pra|substituir por)\s+[""']?(.+?)[""']?$/i);
+  // Regra rápida
+  const ruleM = txt.match(/[""']?(.+?)[""']?\s+(?:vira|→|->|muda para|muda pra|substituir por)\s+[""']?(.+?)[""']?$/i);
   if (ruleM) {
     const de=ruleM[1].trim(), para=ruleM[2].trim();
     if (!kb) kb=defaultKB();
@@ -924,14 +978,14 @@ async function send() {
     kb.regras_globais=kb.regras_globais.filter(r=>r.de.toLowerCase()!==de.toLowerCase());
     kb.regras_globais.push({de,para});
     await learnAndSave(kb,`Regra: "${de}" → "${para}"`);
-    addAgentMsg(`Regra salva e sincronizada: <strong>"${de}"</strong> → <strong>"${para}"</strong>`);
+    addAgentMsg(`Regra salva: <strong>"${de}"</strong> → <strong>"${para}"</strong>`);
     document.getElementById('send-btn').disabled=false; return;
   }
 
   // Claude API
   const key = document.getElementById('claude-key').value.trim() || localStorage.getItem('jet_claude_key') || '';
-  if (!key.startsWith('sk-ant-')){
-    addAgentMsg('Configure a <strong>chave API Claude</strong> para perguntas livres.');
+  if (!key.startsWith('sk-ant-')) {
+    addAgentMsg('Configure a <strong>Chave API Claude</strong> para perguntas livres.');
     document.getElementById('send-btn').disabled=false; return;
   }
   showTyping();
@@ -944,106 +998,83 @@ async function send() {
 }
 
 function showBase() {
-  if (!kb || !Object.keys(kb.marcas||{}).length) { addAgentMsg('Base ainda vazia. Processe um lote para começar.'); return; }
-  let html = '<strong>Base de conhecimento atual:</strong>';
+  if (!kb || !Object.keys(kb.marcas||{}).length) { addAgentMsg('Base ainda vazia.'); return; }
+  let html = `<strong>Base de conhecimento — ${VERSION}</strong><br><br>`;
+  html += `<strong>Marcas cadastradas:</strong>`;
   Object.entries(kb.marcas).forEach(([k,v])=>{
-    html += `<div class="base-card">
-      <div class="base-marca">${v.nome_exibicao||k}</div>
-      <div class="base-row">${(v.siglas_modelos||[]).map(s=>`<span class="base-chip">${s}</span>`).join('')||'<span style="color:var(--t5);font-size:11px">sem siglas cadastradas</span>'}</div>
-    </div>`;
+    html += `<div class="base-card"><div class="base-marca">${v.nome_exibicao||k}</div>
+      <div class="base-row">${(v.siglas_modelos||[]).map(s=>`<span class="base-chip">${s}</span>`).join('')||'<span style="color:var(--t5)">sem siglas</span>'}</div></div>`;
   });
-  html += `<div style="font-size:11px;color:var(--t5);margin-top:6px">${Object.keys(kb.marcas).length} marcas · ${(kb.regras_globais||[]).length} regras globais</div>`;
+  html += `<br><strong>Marcas Zydon:</strong> ${Object.keys(kb.marcas_zydon||{}).length}<br>`;
+  html += `<strong>Categorias:</strong> ${Object.keys(kb.categorias_zydon||{}).length}<br>`;
+  html += `<strong>Regras globais:</strong> ${(kb.regras_globais||[]).length}<br>`;
+  html += `<strong>CD padrão:</strong> ${kb.codigos_zydon?.centro_distribuicao?.codigo} — ${kb.codigos_zydon?.centro_distribuicao?.nome}<br>`;
+  html += `<strong>Unidade padrão:</strong> ${kb.codigos_zydon?.unidade_padrao?.codigo} (${kb.codigos_zydon?.unidade_padrao?.abreviacao})`;
   addAgentMsg(html);
 }
 
 function buildContext() {
-  const marcas = Object.keys(kb?.marcas||{}).join(', ') || 'nenhuma ainda';
+  const marcas = Object.keys(kb?.marcas||{}).join(', ') || 'nenhuma';
   const map = kb?.mapeamento_campos || {};
-  return `Você é o Agente Jet da Jet Supply — assistente de curadoria de produtos para importação na plataforma Zydon B2B.
-
-Jet Supply: distribuidora B2B de MRO, +45.000 produtos, +300 marcas.
-ERP: Signus → Plataforma: Zydon.
-
-MAPEAMENTO DE CAMPOS (regra fixa):
-- Código Zydon = ${map.codigo_zydon?.origem||'ID'} do Signus (${map.codigo_zydon?.descricao||'ID único imutável'})
-- SKU Zydon = ${map.sku_zydon?.origem||'Código'} do Signus (${map.sku_zydon?.descricao||'referência comercial'})
-- Categoria Zydon = ${map.categoria_zydon?.origem||'Grupo setorial'} do Signus (${map.categoria_zydon?.descricao||'nível mais específico'})
-- Nome Zydon = ${map.nome_zydon?.descricao||'Nome formatado com regras de negócio'}
-
-Marcas conhecidas: ${marcas}
-Regras ativas: ${(kb?.regras_globais||[]).map(r=>`"${r.de}"→"${r.para}"`).join(', ')||'nenhuma'}
-Produtos carregados: ${products.length} | Pendências: ${pendentes.length}
-
-INSTRUÇÕES:
-- Responda em português brasileiro, direto e curto (máximo 4 linhas)
-- NUNCA use markdown: sem **, ##, ---, listas com -
-- Linguagem simples e conversacional
-- Mantenha contexto da conversa
-- Se sugerir regra: "X" → "Y"`;
+  return `Você é o Agente Jet da Jet Supply (${VERSION}) — curadoria de produtos Signus → Zydon B2B.
+Jet Supply: distribuidora MRO, +45.000 produtos, +300 marcas.
+Código Zydon = ID Signus | SKU = Código Signus | Categoria = Grupo setorial.
+Marcas cadastradas: ${marcas}
+Regras: ${(kb?.regras_globais||[]).map(r=>`"${r.de}"→"${r.para}"`).join(', ')||'nenhuma'}
+Produtos: ${products.length} | Pendências: ${pendentes.length}
+INSTRUÇÕES: Responda em pt-BR, direto, máx 4 linhas. Sem markdown (**, ##, ---). Se sugerir regra: "X" → "Y".`;
 }
 
-// ── Histórico de conversa ─────────────────────────────────────────────
-let chatHistory = [];
-
-// ── Renderizar markdown simples ───────────────────────────────────────
-function renderMd(text) {
-  return text
-    .replace(/^#{1,3}\s+(.+)$/gm, '<strong>$1</strong>')  // headers → negrito
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')      // **bold**
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')                  // *italic*
-    .replace(/`(.+?)`/g, '<code style="background:var(--bg);padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
-    .replace(/^---+$/gm, '')                                // remove ---
-    .replace(/^\s*[-•]\s+(.+)$/gm, '· $1')                // listas → ·
-    .replace(/\n{3,}/g, '\n\n')                            // max 2 quebras
-    .replace(/\n/g, '<br>');
-}
 async function callClaude(key, msg) {
-  chatHistory.push({ role: 'user', content: msg });
+  chatHistory.push({ role:'user', content:msg });
   if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
-
   const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5',
-      max_tokens: 500,
-      system: buildContext(),
-      messages: chatHistory
-    })
+    method:'POST',
+    headers:{ 'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model:'claude-haiku-4-5', max_tokens:500, system:buildContext(), messages:chatHistory })
   });
-  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message||`HTTP ${r.status}`); }
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`HTTP ${r.status}`); }
   const reply = (await r.json()).content[0].text;
-  chatHistory.push({ role: 'assistant', content: reply });
+  chatHistory.push({ role:'assistant', content:reply });
   return reply;
 }
 
-// ── UI helpers ────────────────────────────────────────────────────────
+function renderMd(text) {
+  return text
+    .replace(/^#{1,3}\s+(.+)$/gm,'<strong>$1</strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code style="background:var(--bg);padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
+    .replace(/^---+$/gm,'')
+    .replace(/^\s*[-•]\s+(.+)$/gm,'· $1')
+    .replace(/\n{3,}/g,'\n\n')
+    .replace(/\n/g,'<br>');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════════
 function addUserMsg(t){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-u'; d.innerHTML=`<div class="msg-lbl">Você</div><div class="bubble">${t}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
-function addAgentMsg(h,ex=''){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-a'; d.innerHTML=`<div class="msg-lbl">Agente Jet</div><div class="bubble">${h}${ex}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
+function addAgentMsg(h,ex=''){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-a'; d.innerHTML=`<div class="msg-lbl">Agente Jet</div><div class="bubble">${h}${ex}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; return d; }
 function showTyping(){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-a'; d.id='typ'; d.innerHTML=`<div class="msg-lbl">Agente Jet</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
 function removeTyping(){ const t=document.getElementById('typ'); if(t)t.remove(); }
 function toggleVis(id){ const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; }
 
 function checkKeys() {
   const tok = ghToken();
-  const rep = ghRepo();
   const claudeKey = document.getElementById('claude-key').value.trim();
   if (tok) localStorage.setItem('jet_gh_token', tok);
   if (claudeKey) localStorage.setItem('jet_claude_key', claudeKey);
-  if (tok && rep) {
+  if (tok && ghRepo()) {
     setGhStatus('warn','Conectando...');
     clearTimeout(window._ghTimer);
     window._ghTimer = setTimeout(loadKB, 800);
   }
 }
 
-// ── Init ──────────────────────────────────────────────────────────────
-// Restaurar tokens salvos no browser (não precisa digitar toda vez)
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
 const _saved = localStorage.getItem('jet_gh_token');
 const _savedClaude = localStorage.getItem('jet_claude_key');
 if (_saved) document.getElementById('gh-token').value = _saved;
@@ -1051,12 +1082,12 @@ if (_savedClaude) document.getElementById('claude-key').value = _savedClaude;
 if (_saved) setTimeout(loadKB, 600);
 
 addAgentMsg(
-  `Olá! Sou o <strong>Agente Jet</strong> — curadoria de produtos da Jet Supply.<br><br>
-  Meu fluxo: processo o lote do Signus, aplico o que sei, e pergunto o que não sei. Cada resposta fica salva na base compartilhada para toda a equipe.<br><br>
-  ${(_saved && _savedClaude) ? 'Tokens detectados — conectando...' : 'Cole o <strong>GitHub Token</strong> e a <strong>Chave API Claude</strong> na barra lateral. Na primeira vez só — o browser salva automaticamente.'}`,
+  `Olá! Sou o <strong>Agente Jet ${VERSION}</strong> — curadoria de produtos da Jet Supply.<br><br>
+  Processo o lote do Signus, valido os dados, aplico o que sei e pergunto o que não sei. Gero 3 arquivos prontos para importar na Zydon com relatório de erros.<br><br>
+  ${(_saved && _savedClaude) ? 'Tokens detectados — conectando...' : 'Cole o <strong>GitHub Token</strong> e a <strong>Chave API Claude</strong> na barra lateral para começar.'}`,
   `<div class="act-row">
     <button class="act-btn" onclick="sendQuick('Base de conhecimento')">Ver base atual</button>
-    <button class="act-btn" onclick="sendQuick('Como funciona a curadoria?')">Como funciona?</button>
+    <button class="act-btn" onclick="sendQuick('Como funciona?')">Como funciona?</button>
   </div>`
 );
 </script>

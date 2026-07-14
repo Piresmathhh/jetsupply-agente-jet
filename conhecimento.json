@@ -1,5 +1,5 @@
 {
-  "versao": "1.0",
+  "versao": "3.0",
   "mapeamento_campos": {
     "codigo_zydon": {
       "origem": "ID",
@@ -20,10 +20,6 @@
     "codigo_generico_parceiros": {
       "origem": "Código genérico nos parceiros",
       "descricao": "Sigla do modelo do fabricante (ex: MDWC10) — NÃO é o SKU da Zydon"
-    },
-    "ean_variacao": {
-      "origem": "Código barras de todos os produtos do agrupamento",
-      "descricao": "Concatenação de todos os EANs das variações separados por ; — gerado automaticamente pelo Cód. agrupamento do Signus"
     }
   },
   "marcas": {
@@ -71,7 +67,7 @@
     {
       "data": "2026-07-13",
       "usuario": "Matheus",
-      "acao": "v1.8 — Ativo agora True/False, geração de 3 arquivos separados (Produto, Variações, Variações Valores), correção CD encoding"
+      "acao": "v3.0 — reescrita completa: validação de arquivo, tratamento de token expirado (401), retry de SHA no GitHub, barra de progresso, relatório de erros (EAN duplicado, marca/categoria sem código), motor de ordenação para corrente/medida/numérico/vestuário, versão da base incrementada automaticamente"
     },
     {
       "data": "2026-07-13",
@@ -131,6 +127,10 @@
     "centro_distribuicao": {
       "codigo": 3,
       "nome": "CD - Espírito Santo - Serra"
+    },
+    "categoria_padrao": {
+      "codigo": 495,
+      "nome": "1P Monopolar"
     }
   },
   "marcas_zydon": {
