@@ -203,6 +203,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .auth-msg.show{display:block}
 .auth-msg.err{background:var(--red-l);color:var(--red)}
 .auth-msg.ok{background:var(--green-l);color:var(--green)}
+.auth-remember{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3);margin:2px 0 10px;cursor:pointer;user-select:none}
+.auth-remember input{width:14px;height:14px;cursor:pointer;accent-color:var(--orange)}
+.auth-switch{font-size:12px;color:var(--t4);text-align:center;margin-top:12px}
+.auth-switch a{color:var(--navy);font-weight:bold;text-decoration:none;cursor:pointer}
+.auth-switch a:hover{text-decoration:underline}
+.auth-pending-icon{font-size:32px;text-align:center;margin-bottom:6px}
+.auth-pending-title{font-size:14px;font-weight:bold;color:var(--navy);text-align:center;margin-bottom:8px}
+.auth-pending-text{font-size:12px;color:var(--t3);text-align:center;line-height:1.6}
 .user-chip{font-size:11px;color:var(--on-soft)}
 .logout-btn{padding:4px 10px;border-radius:var(--rbt);border:1px solid var(--on-faint);background:transparent;color:var(--on-soft);font-size:11px;cursor:pointer;font-family:inherit}
 .logout-btn:hover{border-color:var(--on-navy);color:var(--on-navy)}
@@ -229,17 +237,56 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <path fill="#15375B" d="M99.74,80.24c-27.76,30.11-65.26,38.9-83.76,19.64-11-11.45-12.81-30.25-6.63-49.94-12.52,25.48-12.85,51.85,1.33,66.62,19.48,20.28,58.96,11.03,88.18-20.68,21.11-22.91,31.09-51.26,27.66-72.88-1.12,18.35-10.44,39.52-26.79,57.25"/>
       <path fill="#15375B" d="M124.96,9.36c.12-1.68,1.57-2.94,3.25-2.82,1.68.12,2.94,1.57,2.82,3.25-.12,1.68-1.57,2.94-3.25,2.82-1.68-.12-2.94-1.57-2.82-3.25M128.66,0s-10.9,8.02-7.44,23.87c-2.76,3.14-4.76,7.93-4.99,11.27-.06.78-.02,1.54.1,2.28,1.04-3.35,3.77-5.9,7.14-6.72.73,1.68,1.61,3.43,2.67,5.25,1.31-1.65,2.42-3.26,3.38-4.82,3.22,1.29,5.57,4.19,6.13,7.65.22-.71.37-1.47.42-2.25.23-3.34-1.08-8.36-3.37-11.86,5.64-15.21-4.03-24.67-4.03-24.67"/>
     </svg>
-    <div class="auth-sub">Entre com sua conta Jet Supply</div>
-    <div class="auth-row">
-      <label class="auth-lbl">E-mail</label>
-      <input type="email" id="auth-email" class="auth-inp" placeholder="voce@jetsupply.com" autocomplete="username">
+    <!-- Vista: login -->
+    <div id="auth-view-login">
+      <div class="auth-sub">Entre com sua conta Jet Supply</div>
+      <div class="auth-row">
+        <label class="auth-lbl">E-mail</label>
+        <input type="email" id="auth-email" class="auth-inp" placeholder="voce@jetsupply.com" autocomplete="username">
+      </div>
+      <div class="auth-row">
+        <label class="auth-lbl">Senha</label>
+        <input type="password" id="auth-password" class="auth-inp" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
+      </div>
+      <label class="auth-remember">
+        <input type="checkbox" id="auth-remember" checked>
+        Lembrar de mim neste navegador
+      </label>
+      <button class="auth-btn" id="auth-login-btn" onclick="authLogin()">Entrar</button>
+      <div class="auth-switch">Ainda não tem conta? <a onclick="showAuthView('signup')">Criar conta</a></div>
     </div>
-    <div class="auth-row">
-      <label class="auth-lbl">Senha</label>
-      <input type="password" id="auth-password" class="auth-inp" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
+
+    <!-- Vista: criar conta -->
+    <div id="auth-view-signup" style="display:none">
+      <div class="auth-sub">Criar sua conta Jet Supply</div>
+      <div class="auth-row">
+        <label class="auth-lbl">Seu nome</label>
+        <input type="text" id="signup-nome" class="auth-inp" placeholder="Como aparece no histórico" autocomplete="name">
+      </div>
+      <div class="auth-row">
+        <label class="auth-lbl">E-mail</label>
+        <input type="email" id="signup-email" class="auth-inp" placeholder="voce@jetsupply.com" autocomplete="username">
+      </div>
+      <div class="auth-row">
+        <label class="auth-lbl">Senha</label>
+        <input type="password" id="signup-password" class="auth-inp" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="auth-row">
+        <label class="auth-lbl">Confirmar senha</label>
+        <input type="password" id="signup-password-2" class="auth-inp" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')authSignup()">
+      </div>
+      <button class="auth-btn" id="auth-signup-btn" onclick="authSignup()">Criar conta</button>
+      <div class="auth-switch">Já tem conta? <a onclick="showAuthView('login')">Entrar</a></div>
     </div>
-    <button class="auth-btn" id="auth-login-btn" onclick="authLogin()">Entrar</button>
-    <button class="auth-btn-2" id="auth-signup-btn" onclick="authSignup()">Criar conta nova</button>
+
+    <!-- Vista: confirme seu e-mail -->
+    <div id="auth-view-pending" style="display:none">
+      <div class="auth-pending-icon">✉️</div>
+      <div class="auth-pending-title">Confirme seu e-mail</div>
+      <div class="auth-pending-text">Mandamos um link de confirmação para<br><strong id="auth-pending-email"></strong>.<br>Clique nele e depois volte aqui pra entrar.</div>
+      <button class="auth-btn-2" onclick="showAuthView('login')">Já confirmei, ir para o login</button>
+    </div>
+
     <div class="auth-msg" id="auth-msg"></div>
   </div>
 </div>
@@ -398,7 +445,22 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://alnhqvuezhcvgnfzdayr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbmhxdnVlemhjdmduZnpkYXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTg5NDAsImV4cCI6MjA5OTgzNDk0MH0.iHqBAUCw0l56IlqbbezGv9e1dUqgEQlqQ57Nkgu27VI';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// "Lembrar de mim": se marcado, a sessão fica em localStorage (sobrevive fechar o navegador);
+// se desmarcado, fica só em sessionStorage (some quando fecha a aba/navegador).
+const REMEMBER_KEY = 'jet_remember_me';
+function authBackingStorage() {
+  return localStorage.getItem(REMEMBER_KEY) === '0' ? window.sessionStorage : window.localStorage;
+}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: {
+      getItem: (k) => authBackingStorage().getItem(k),
+      setItem: (k, v) => authBackingStorage().setItem(k, v),
+      removeItem: (k) => authBackingStorage().removeItem(k),
+    },
+  },
+});
 let currentUser = null; // sessão atual do Supabase Auth
 
 // ══════════════════════════════════════════════════════════════════
@@ -603,29 +665,54 @@ function showAuthMsg(text, kind) {
   el.textContent = text;
   el.className = 'auth-msg show ' + (kind||'');
 }
+function hideAuthMsg() {
+  const el = document.getElementById('auth-msg');
+  el.className = 'auth-msg';
+}
+
+// Alterna entre as 3 vistas do cartão de login: 'login', 'signup', 'pending'
+function showAuthView(view) {
+  document.getElementById('auth-view-login').style.display = view==='login' ? '' : 'none';
+  document.getElementById('auth-view-signup').style.display = view==='signup' ? '' : 'none';
+  document.getElementById('auth-view-pending').style.display = view==='pending' ? '' : 'none';
+  hideAuthMsg();
+}
 
 async function authLogin() {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   if (!email || !password) { showAuthMsg('Preencha e-mail e senha.','err'); return; }
+  const remember = document.getElementById('auth-remember').checked;
+  localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0');
   document.getElementById('auth-login-btn').disabled = true;
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
   document.getElementById('auth-login-btn').disabled = false;
-  if (error) { showAuthMsg(error.message==='Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message, 'err'); return; }
+  if (error) {
+    const msg = error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.'
+      : error.message === 'Email not confirmed' ? 'Confirme seu e-mail antes de entrar — veja o link que mandamos pra sua caixa de entrada.'
+      : error.message;
+    showAuthMsg(msg, 'err');
+    return;
+  }
   await onAuthReady(data.session);
 }
 
 async function authSignup() {
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  if (!email || !password) { showAuthMsg('Preencha e-mail e senha.','err'); return; }
+  const nome = document.getElementById('signup-nome').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const password2 = document.getElementById('signup-password-2').value;
+  if (!nome || !email || !password || !password2) { showAuthMsg('Preencha todos os campos.','err'); return; }
   if (password.length < 6) { showAuthMsg('A senha precisa ter pelo menos 6 caracteres.','err'); return; }
+  if (password !== password2) { showAuthMsg('As senhas não são iguais.','err'); return; }
   document.getElementById('auth-signup-btn').disabled = true;
-  const { data, error } = await sb.auth.signUp({ email, password });
+  const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nome } } });
   document.getElementById('auth-signup-btn').disabled = false;
   if (error) { showAuthMsg(error.message,'err'); return; }
   if (data.session) { await onAuthReady(data.session); return; }
-  showAuthMsg('Conta criada! Confira seu e-mail para confirmar o cadastro antes de entrar.','ok');
+  // Confirmação de e-mail obrigatória: mostra a vista de "confira seu e-mail"
+  document.getElementById('auth-pending-email').textContent = email;
+  showAuthView('pending');
 }
 
 async function logout() {
@@ -634,8 +721,12 @@ async function logout() {
   kb = null;
   document.getElementById('app-root').style.display = 'none';
   document.getElementById('auth-overlay').style.display = 'flex';
-  document.getElementById('auth-email').value = '';
   document.getElementById('auth-password').value = '';
+  document.getElementById('signup-nome').value = '';
+  document.getElementById('signup-email').value = '';
+  document.getElementById('signup-password').value = '';
+  document.getElementById('signup-password-2').value = '';
+  showAuthView('login');
 }
 
 // Chamado assim que temos uma sessão válida (login, cadastro ou sessão salva)
@@ -646,9 +737,9 @@ async function onAuthReady(session) {
   document.getElementById('user-chip').textContent = currentUser.email;
   document.getElementById('user-chip').style.display = '';
   document.getElementById('logout-btn').style.display = '';
-  // Se ainda não preencheu "seu nome", sugere a partir do e-mail
+  // Se ainda não preencheu "seu nome", usa o nome do cadastro ou o início do e-mail
   const nameInput = document.getElementById('user-name');
-  if (!nameInput.value) nameInput.value = currentUser.email.split('@')[0];
+  if (!nameInput.value) nameInput.value = currentUser.user_metadata?.nome || currentUser.email.split('@')[0];
   setBaseStatus('warn', 'Carregando base...');
   await loadKB();
   document.getElementById('sync-btn').style.display = '';
