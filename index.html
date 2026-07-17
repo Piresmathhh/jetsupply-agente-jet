@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agente Jet — Jet Supply</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --navy:#15375B;--orange:#EA5618;--bg:#F0F3F6;--surface:#FFFFFF;
@@ -120,6 +122,18 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .dl-bar p{font-size:12px;color:var(--green);flex:1;font-weight:bold}
 .dl-btn{padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--rbt);font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;margin-right:4px}
 
+/* Preparar Imagens */
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px}
+.img-card{border:1px solid var(--border-c);border-radius:var(--rb);overflow:hidden;background:var(--surface)}
+.img-card img{width:100%;height:90px;object-fit:cover;display:block;background:var(--bg)}
+.img-card-body{padding:6px 7px}
+.img-card-file{font-size:9px;color:var(--t5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.img-card-prod{font-size:10px;color:var(--t2);font-weight:bold;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.img-card-sel{width:100%;font-size:10px;padding:3px;border:1px solid var(--border-c);border-radius:4px;margin-top:4px;background:var(--bg);color:var(--t1)}
+.img-card.matched{border-color:#86efac}
+.img-card.unmatched{border-color:#fbbf24}
+.img-badge{display:inline-block;font-size:9px;font-weight:bold;padding:1px 5px;border-radius:8px;margin-top:3px}
+
 /* Comparação / Validação */
 .diff-summary{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
 .diff-stat{background:var(--soft);border:1px solid var(--border-c);border-radius:var(--rb);padding:8px 14px;text-align:center;min-width:90px}
@@ -170,10 +184,52 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .base-marca{font-weight:bold;color:var(--navy);margin-bottom:4px;font-size:12px}
 .base-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:3px}
 .base-chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1px 7px;color:var(--t3)}
+
+/* Login (Supabase Auth) */
+.auth-overlay{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:1000}
+.auth-card{background:var(--surface);border-radius:var(--rc);padding:28px 26px;width:320px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.auth-title{font-size:15px;font-weight:bold;color:var(--navy);margin-bottom:2px}
+.auth-sub{font-size:11px;color:var(--t5);margin-bottom:16px}
+.auth-row{margin-bottom:10px}
+.auth-lbl{font-size:11px;color:var(--t4);display:block;margin-bottom:3px}
+.auth-inp{width:100%;padding:8px 10px;border:1px solid var(--border-c);border-radius:var(--rbt);font-size:13px;background:var(--bg);color:var(--t1);outline:none;font-family:inherit}
+.auth-inp:focus{border-color:var(--navy)}
+.auth-btn{width:100%;padding:9px;border-radius:var(--rbt);border:none;background:var(--orange);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit;margin-top:4px}
+.auth-btn:hover{opacity:.9}
+.auth-btn:disabled{opacity:.5;cursor:default}
+.auth-btn-2{width:100%;padding:9px;border-radius:var(--rbt);border:1px solid var(--border-c);background:transparent;color:var(--navy);font-size:12px;cursor:pointer;font-family:inherit;margin-top:7px}
+.auth-btn-2:hover{border-color:var(--navy)}
+.auth-msg{font-size:11px;margin-top:9px;line-height:1.5;padding:8px 10px;border-radius:var(--rbt);display:none}
+.auth-msg.show{display:block}
+.auth-msg.err{background:var(--red-l);color:var(--red)}
+.auth-msg.ok{background:var(--green-l);color:var(--green)}
+.user-chip{font-size:11px;color:var(--on-soft)}
+.logout-btn{padding:4px 10px;border-radius:var(--rbt);border:1px solid var(--on-faint);background:transparent;color:var(--on-soft);font-size:11px;cursor:pointer;font-family:inherit}
+.logout-btn:hover{border-color:var(--on-navy);color:var(--on-navy)}
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- Login / Cadastro (Supabase Auth) -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-title">Agente Jet</div>
+    <div class="auth-sub">Entre com sua conta da equipe Jet Supply</div>
+    <div class="auth-row">
+      <label class="auth-lbl">E-mail</label>
+      <input type="email" id="auth-email" class="auth-inp" placeholder="voce@jetsupply.com" autocomplete="username">
+    </div>
+    <div class="auth-row">
+      <label class="auth-lbl">Senha</label>
+      <input type="password" id="auth-password" class="auth-inp" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
+    </div>
+    <button class="auth-btn" id="auth-login-btn" onclick="authLogin()">Entrar</button>
+    <button class="auth-btn-2" id="auth-signup-btn" onclick="authSignup()">Criar conta nova</button>
+    <div class="auth-msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<div class="app" id="app-root" style="display:none">
 
 <!-- Topbar -->
 <header class="topbar">
@@ -196,12 +252,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v3.9 · 14/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v4.0 · 14/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
-    <span class="status-txt" id="gh-txt">GitHub não configurado</span>
-    <button class="sync-btn" onclick="syncGitHub()" id="sync-btn" style="display:none">Sincronizar base</button>
+    <span class="status-txt" id="gh-txt">Conectando...</span>
+    <button class="sync-btn" onclick="syncBase()" id="sync-btn" style="display:none">Sincronizar base</button>
+    <span class="user-chip" id="user-chip" style="display:none"></span>
+    <button class="logout-btn" onclick="logout()" id="logout-btn" style="display:none">Sair</button>
   </div>
 </header>
 
@@ -225,17 +283,6 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
         <input type="password" id="claude-key" class="cfg-inp" placeholder="sk-ant-..." oninput="checkKeys()">
         <button class="cfg-btn" onclick="toggleVis('claude-key')">ver</button>
       </div>
-    </div>
-    <div class="cfg-row">
-      <label class="cfg-lbl">GitHub Token <span style="color:var(--orange)">*</span></label>
-      <div class="cfg-2">
-        <input type="password" id="gh-token" class="cfg-inp" placeholder="ghp_..." oninput="checkKeys()">
-        <button class="cfg-btn" onclick="toggleVis('gh-token')">ver</button>
-      </div>
-      <div style="font-size:10px;color:var(--t5);margin-top:3px;line-height:1.4">Peça o token com o Matheus.<br>Salvo só no seu browser.</div>
-    </div>
-    <div class="cfg-row" style="display:none">
-      <input type="text" id="gh-repo" class="cfg-inp" value="Piresmathhh/jetsupply-agente-jet">
     </div>
     <div class="cfg-row">
       <label class="cfg-lbl">Seu nome (para histórico)</label>
@@ -268,6 +315,31 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </div>
       <button class="act-btn pri" style="width:100%;margin-top:4px" onclick="compararPlanilhas()">Comparar campo a campo</button>
       <div style="font-size:10px;color:var(--t5);margin-top:6px;line-height:1.4">Casa as linhas pelo <strong>Código</strong> (ou SKU) e compara cada coluna entre as duas planilhas.</div>
+    </div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="toggleImgPrep()">
+      Preparar imagens do fornecedor
+      <span id="imgprep-toggle-icon" style="font-size:13px;color:var(--t4)">▾</span>
+    </div>
+    <div id="imgprep-area" style="display:none">
+      <div class="cfg-row">
+        <label class="cfg-lbl">Planilha Signus (produtos)</label>
+        <div id="imgprep-planilha-status" style="font-size:10px;color:var(--t5);margin-bottom:4px">Usa a planilha já carregada acima, ou selecione outra abaixo</div>
+        <label class="upload-z" for="imgprep-file-planilha" style="padding:8px">
+          <input type="file" id="imgprep-file-planilha" accept=".xlsx,.xls">
+          <strong style="font-size:11px" id="imgprep-planilha-name">Selecionar planilha</strong>
+        </label>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Fotos do fornecedor (selecione várias)</label>
+        <label class="upload-z" for="imgprep-file-fotos" style="padding:8px">
+          <input type="file" id="imgprep-file-fotos" accept="image/*" multiple>
+          <strong style="font-size:11px" id="imgprep-fotos-name">Selecionar fotos</strong>
+        </label>
+      </div>
+      <button class="act-btn pri" style="width:100%;margin-top:4px" onclick="processarImagensFornecedor()">Casar fotos com produtos</button>
+      <div style="font-size:10px;color:var(--t5);margin-top:6px;line-height:1.4">Tenta casar pelo <strong>Código genérico nos parceiros</strong> ou <strong>Código</strong>. O que não bater, você associa manualmente.</div>
     </div>
   </div>
   <div class="sb-sec" style="flex-shrink:0">
@@ -307,12 +379,19 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 
 <script>
 // ══════════════════════════════════════════════════════════════════
+// SUPABASE — conexão e autenticação
+// ══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://alnhqvuezhcvgnfzdayr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbmhxdnVlemhjdmduZnpkYXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTg5NDAsImV4cCI6MjA5OTgzNDk0MH0.iHqBAUCw0l56IlqbbezGv9e1dUqgEQlqQ57Nkgu27VI';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null; // sessão atual do Supabase Auth
+
+// ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v3.9';
+const VERSION = 'v5.0';
 let products = [];
 let kb = null;
-let kbSha = null;
 let pendentes = [];
 let chatHistory = [];
 let wb1 = null, wb2 = null, wb3 = null; // workbooks gerados
@@ -502,111 +581,183 @@ function validarArquivo(data) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// GITHUB API
+// AUTENTICAÇÃO (Supabase Auth) — substitui o token GitHub compartilhado
 // ══════════════════════════════════════════════════════════════════
-function ghToken() { return document.getElementById('gh-token')?.value.trim() || ''; }
-function ghRepo()  { return document.getElementById('gh-repo')?.value.trim() || ''; }
-function ghHeaders() {
-  return { 'Authorization':`token ${ghToken()}`, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' };
+function showAuthMsg(text, kind) {
+  const el = document.getElementById('auth-msg');
+  el.textContent = text;
+  el.className = 'auth-msg show ' + (kind||'');
 }
 
-async function loadKB() {
-  const repo = ghRepo(), token = ghToken();
-  if (!repo || !token) return;
-  try {
-    const r = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, { headers: ghHeaders() });
-    if (r.status === 401) {
-      // Token expirado ou inválido — limpar e avisar
-      localStorage.removeItem('jet_gh_token');
-      document.getElementById('gh-token').value = '';
-      setGhStatus('', 'Token inválido ou expirado — cole um novo');
-      addAgentMsg('O <strong>GitHub Token</strong> expirou ou é inválido. Solicite um novo com o Matheus e cole na barra lateral.');
-      return;
-    }
-    if (r.ok) {
-      const d = await r.json();
-      kbSha = d.sha;
-      kb = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
-      const nMarcas = Object.keys(kb.marcas||{}).length;
-      const nMarcasZydon = Object.keys(kb.marcas_zydon||{}).length;
-      setGhStatus('ok', `Base carregada · ${nMarcas} marcas cadastradas · ${nMarcasZydon} marcas Zydon`);
-      document.getElementById('sync-btn').style.display = '';
-    } else if (r.status === 404) {
-      await saveKB(defaultKB(), 'Base inicializada');
-      setGhStatus('ok', 'Base criada no repositório');
-    }
-  } catch(e) { setGhStatus('', 'Erro ao conectar ao GitHub'); }
+async function authLogin() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showAuthMsg('Preencha e-mail e senha.','err'); return; }
+  document.getElementById('auth-login-btn').disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  document.getElementById('auth-login-btn').disabled = false;
+  if (error) { showAuthMsg(error.message==='Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message, 'err'); return; }
+  await onAuthReady(data.session);
 }
 
-function defaultKB() {
+async function authSignup() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showAuthMsg('Preencha e-mail e senha.','err'); return; }
+  if (password.length < 6) { showAuthMsg('A senha precisa ter pelo menos 6 caracteres.','err'); return; }
+  document.getElementById('auth-signup-btn').disabled = true;
+  const { data, error } = await sb.auth.signUp({ email, password });
+  document.getElementById('auth-signup-btn').disabled = false;
+  if (error) { showAuthMsg(error.message,'err'); return; }
+  if (data.session) { await onAuthReady(data.session); return; }
+  showAuthMsg('Conta criada! Confira seu e-mail para confirmar o cadastro antes de entrar.','ok');
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  kb = null;
+  document.getElementById('app-root').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+}
+
+// Chamado assim que temos uma sessão válida (login, cadastro ou sessão salva)
+async function onAuthReady(session) {
+  currentUser = session.user;
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('app-root').style.display = '';
+  document.getElementById('user-chip').textContent = currentUser.email;
+  document.getElementById('user-chip').style.display = '';
+  document.getElementById('logout-btn').style.display = '';
+  // Se ainda não preencheu "seu nome", sugere a partir do e-mail
+  const nameInput = document.getElementById('user-name');
+  if (!nameInput.value) nameInput.value = currentUser.email.split('@')[0];
+  setBaseStatus('warn', 'Carregando base...');
+  await loadKB();
+  document.getElementById('sync-btn').style.display = '';
+  if (!window._welcomed) { window._welcomed = true; showWelcomeMsg(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BASE DE CONHECIMENTO (Supabase) — substitui o conhecimento.json no GitHub
+// ══════════════════════════════════════════════════════════════════
+function emptyKB() {
   return {
-    versao: '3.0',
-    mapeamento_campos: {
-      codigo_zydon: { origem:'ID', descricao:'ID único do produto no Signus' },
-      sku_zydon: { origem:'Código', descricao:'Código comercial do produto no Signus' },
-      categoria_zydon: { origem:'Grupo setorial', descricao:'Nível mais específico da hierarquia do Signus' },
-    },
-    codigos_zydon: {
-      unidade_padrao: { codigo:1, abreviacao:'UN' },
-      centro_distribuicao: { codigo:3, nome:'CD - Espírito Santo - Serra' },
-    },
-    marcas: { WEG:{ nome_exibicao:'WEG', siglas_modelos:['MDW','CFW','HGF','CWM','SSW'], unidades_upper:['VCA','VCC'], regras_nome:[] } },
-    marcas_zydon: {},
-    categorias: {},
-    categorias_zydon: {},
-    categorias_zydon_por_nome: {},
-    unidades_globais: ['A','V','W','VA','KW','KVA','MW','HP','CV','HZ','RPM','VCA','VCC','IP','IK','BAR','PSI'],
-    regras_globais: [],
-    imagens: {
-      url_base: '',
-      bucket: 'jetsupply-imagens',
-      padrao_nome: 'Código do produto (ex: 10076405.jpg)',
-      multiplas: 'principal + _1 até _10',
-    },
-    historico: [{ data: new Date().toISOString().slice(0,10), usuario: userName(), acao: 'Base inicializada v3.0' }]
+    versao: VERSION,
+    marcas: {}, marcas_zydon: {}, categorias: {}, categorias_zydon: {},
+    categorias_zydon_por_nome: {}, unidades_globais: [], regras_globais: [],
+    codigos_zydon: {}, historico: [],
   };
 }
 
-async function saveKB(data, msg) {
-  const repo = ghRepo(), token = ghToken();
-  if (!repo || !token) return false;
-  // Incrementar versão da base
-  data.versao = VERSION;
-  const body = { message:`[Agente Jet ${VERSION}] ${msg}`, content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))) };
-  if (kbSha) body.sha = kbSha;
+async function loadKB() {
   try {
-    const r = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, {
-      method:'PUT', headers: ghHeaders(), body: JSON.stringify(body)
+    const [marcasR, marcaRegrasR, marcasZydonR, catsZydonR, catMapR, regrasR, unidadesR, configR, histR] = await Promise.all([
+      sb.from('marcas').select('id,nome_exibicao,siglas_modelos,unidades_upper'),
+      sb.from('marca_regras_nome').select('marca_id,de,para'),
+      sb.from('marcas_zydon').select('nome,codigo'),
+      sb.from('categorias_zydon').select('codigo,nome,pai,caminho'),
+      sb.from('categoria_mappings').select('nome_signus,nome_zydon,codigo_zydon'),
+      sb.from('regras_globais').select('de,para'),
+      sb.from('unidades_globais').select('unidade'),
+      sb.from('configuracoes').select('chave,valor'),
+      sb.from('historico_alteracoes').select('usuario_nome,acao,criado_em').order('criado_em',{ascending:false}).limit(100),
+    ]);
+    const erro = [marcasR,marcaRegrasR,marcasZydonR,catsZydonR,catMapR,regrasR,unidadesR,configR,histR].find(r=>r.error);
+    if (erro) throw erro.error;
+
+    const novo = emptyKB();
+
+    (marcasR.data||[]).forEach(m => {
+      novo.marcas[m.nome_exibicao] = {
+        nome_exibicao: m.nome_exibicao,
+        siglas_modelos: m.siglas_modelos||[],
+        unidades_upper: m.unidades_upper||[],
+        regras_nome: (marcaRegrasR.data||[]).filter(r=>r.marca_id===m.id).map(r=>({de:r.de,para:r.para})),
+      };
     });
-    if (r.status === 409) {
-      // Conflito de SHA — re-fetch e tentar novamente
-      await loadKB();
-      body.sha = kbSha;
-      const r2 = await fetch(`https://api.github.com/repos/${repo}/contents/conhecimento.json`, {
-        method:'PUT', headers: ghHeaders(), body: JSON.stringify(body)
-      });
-      if (r2.ok) { const d = await r2.json(); kbSha = d.content.sha; kb = data; return true; }
-      return false;
-    }
-    if (r.ok) { const d = await r.json(); kbSha = d.content.sha; kb = data; return true; }
-  } catch(e) {}
-  return false;
+
+    (marcasZydonR.data||[]).forEach(m => { novo.marcas_zydon[m.nome] = m.codigo; });
+
+    (catsZydonR.data||[]).forEach(c => {
+      novo.categorias_zydon[String(c.codigo)] = { nome:c.nome, pai:c.pai, caminho:c.caminho };
+      if (c.nome) novo.categorias_zydon_por_nome[c.nome.toUpperCase()] = c.codigo;
+      if (c.caminho) novo.categorias_zydon_por_nome[c.caminho.toUpperCase()] = c.codigo;
+    });
+
+    (catMapR.data||[]).forEach(m => { novo.categorias[m.nome_signus] = m.nome_zydon; });
+
+    novo.regras_globais = (regrasR.data||[]).map(r => ({ de:r.de, para:r.para }));
+    novo.unidades_globais = (unidadesR.data||[]).map(u => u.unidade);
+
+    (configR.data||[]).forEach(c => { novo.codigos_zydon[c.chave] = c.valor; });
+
+    novo.historico = (histR.data||[]).map(h => ({
+      data: (h.criado_em||'').slice(0,10), usuario: h.usuario_nome||'Usuário', acao: h.acao,
+    }));
+
+    kb = novo;
+    const nMarcas = Object.keys(kb.marcas).length;
+    const nMarcasZydon = Object.keys(kb.marcas_zydon).length;
+    setBaseStatus('ok', `Base carregada · ${nMarcas} marcas cadastradas · ${nMarcasZydon} marcas Zydon`);
+  } catch(e) {
+    kb = kb || emptyKB();
+    setBaseStatus('', 'Erro ao carregar a base: ' + (e.message||e));
+  }
 }
 
-async function learnAndSave(updates, histMsg) {
-  if (!kb) kb = defaultKB();
-  Object.assign(kb, updates);
+async function syncBase() { setBaseStatus('warn','Sincronizando...'); await loadKB(); }
+
+async function registrarHistorico(acao) {
+  const nome = userName();
+  await sb.from('historico_alteracoes').insert({ usuario_id: currentUser?.id||null, usuario_nome: nome, acao });
+  if (!kb) kb = emptyKB();
   kb.historico = kb.historico || [];
-  kb.historico.unshift({ data: new Date().toISOString().slice(0,10), usuario: userName(), acao: histMsg });
+  kb.historico.unshift({ data: new Date().toISOString().slice(0,10), usuario: nome, acao });
   if (kb.historico.length > 100) kb.historico = kb.historico.slice(0,100);
-  const ok = await saveKB(kb, histMsg);
-  if (ok) setGhStatus('ok', `Base atualizada · ${Object.keys(kb.marcas||{}).length} marcas cadastradas`);
-  return ok;
 }
 
-async function syncGitHub() { setGhStatus('warn','Sincronizando...'); await loadKB(); }
-function userName() { return document.getElementById('user-name')?.value.trim() || 'Usuário'; }
-function setGhStatus(st, txt) {
+async function upsertMarca(nomeExib, siglas) {
+  if (!kb) kb = emptyKB();
+  const { error } = await sb.from('marcas').upsert(
+    { nome_exibicao: nomeExib, siglas_modelos: siglas, unidades_upper: [], criado_por: currentUser?.id||null },
+    { onConflict: 'nome_exibicao' }
+  );
+  if (error) { setBaseStatus('', 'Erro ao salvar marca: ' + error.message); return false; }
+  kb.marcas[nomeExib] = { nome_exibicao:nomeExib, siglas_modelos:siglas, unidades_upper:[], regras_nome:[] };
+  await registrarHistorico(`Adicionou marca: ${nomeExib}`);
+  setBaseStatus('ok', `Base atualizada · ${Object.keys(kb.marcas).length} marcas cadastradas`);
+  return true;
+}
+
+async function upsertCategoriaMapping(catOriginal, nomeZydon) {
+  if (!kb) kb = emptyKB();
+  const codigoZydon = getCatCodigo(nomeZydon) || null;
+  const { error } = await sb.from('categoria_mappings').upsert(
+    { nome_signus: catOriginal, nome_zydon: nomeZydon, codigo_zydon: codigoZydon, criado_por: currentUser?.id||null },
+    { onConflict: 'nome_signus' }
+  );
+  if (error) { setBaseStatus('', 'Erro ao salvar categoria: ' + error.message); return false; }
+  kb.categorias[catOriginal] = nomeZydon;
+  await registrarHistorico(`Mapeou categoria: "${catOriginal}" → "${nomeZydon}"`);
+  return true;
+}
+
+async function upsertRegraGlobal(de, para) {
+  if (!kb) kb = emptyKB();
+  await sb.from('regras_globais').delete().eq('de', de);
+  const { error } = await sb.from('regras_globais').insert({ de, para, criado_por: currentUser?.id||null });
+  if (error) { setBaseStatus('', 'Erro ao salvar regra: ' + error.message); return false; }
+  kb.regras_globais = (kb.regras_globais||[]).filter(r=>r.de.toLowerCase()!==de.toLowerCase());
+  kb.regras_globais.push({ de, para });
+  await registrarHistorico(`Regra: "${de}" → "${para}"`);
+  return true;
+}
+
+function userName() { return document.getElementById('user-name')?.value.trim() || currentUser?.email || 'Usuário'; }
+function setBaseStatus(st, txt) {
   const dot = document.getElementById('gh-dot');
   dot.className = 'status-dot' + (st==='ok'?' ok':st==='warn'?' warn':'');
   document.getElementById('gh-txt').textContent = txt;
@@ -682,7 +833,7 @@ function limparPlanilha() {
 async function processarLote() {
   if (!products.length) return;
   if (!kb) await loadKB();
-  if (!kb) kb = defaultKB();
+  if (!kb) kb = emptyKB();
 
   pendentes = [];
   const processados = [], novos_pend = [];
@@ -781,26 +932,20 @@ async function salvarMarca(marcaOriginal, marcaId) {
   const nomeExib = document.getElementById(`pend-nome-${marcaId}`)?.value.trim() || marcaOriginal;
   const siglasRaw = document.getElementById(`pend-siglas-${marcaId}`)?.value.trim() || '';
   const siglas = siglasRaw.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
-  if (!kb) kb = defaultKB();
-  kb.marcas = kb.marcas || {};
-  kb.marcas[nomeExib] = { nome_exibicao:nomeExib, siglas_modelos:siglas, unidades_upper:[], regras_nome:[] };
-  const ok = await learnAndSave(kb, `Adicionou marca: ${nomeExib}`);
+  const ok = await upsertMarca(nomeExib, siglas);
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marcaOriginal));
   renderPendentes();
-  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${ok?' GitHub sincronizado.':' Erro ao sincronizar.'}`);
+  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${ok?' Base sincronizada.':' Erro ao sincronizar.'}`);
   if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
 }
 function pularMarca(marca) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca)); renderPendentes(); }
 
 async function salvarCategoria(catOriginal, catId) {
   const nomeZydon = document.getElementById(`pend-cat-${catId}`)?.value.trim() || catOriginal;
-  if (!kb) kb = defaultKB();
-  kb.categorias = kb.categorias || {};
-  kb.categorias[catOriginal] = nomeZydon;
-  const ok = await learnAndSave(kb, `Mapeou categoria: "${catOriginal}" → "${nomeZydon}"`);
+  const ok = await upsertCategoriaMapping(catOriginal, nomeZydon);
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===catOriginal));
   renderPendentes();
-  addAgentMsg(`Categoria <strong>"${catOriginal}"</strong> → <strong>"${nomeZydon}"</strong> salva.${ok?' GitHub sincronizado.':''}`);
+  addAgentMsg(`Categoria <strong>"${catOriginal}"</strong> → <strong>"${nomeZydon}"</strong> salva.${ok?' Base sincronizada.':' Erro ao sincronizar.'}`);
   if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
 }
 function pularCategoria(cat) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===cat)); renderPendentes(); }
@@ -1088,6 +1233,201 @@ function buildReportHtml(erros) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// PREPARAR IMAGENS DO FORNECEDOR — casar foto com produto, renomear, redimensionar
+// ══════════════════════════════════════════════════════════════════
+let imgPrepProducts = null;   // linhas da planilha (reaproveita 'products' se já carregada)
+let imgPrepFiles = [];        // File[] das fotos selecionadas
+let imgPrepMatches = [];      // { file, produto, matched }
+
+function toggleImgPrep() {
+  const area = document.getElementById('imgprep-area');
+  const icon = document.getElementById('imgprep-toggle-icon');
+  const open = area.style.display !== 'none';
+  area.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '▾' : '▴';
+}
+
+document.getElementById('imgprep-file-planilha').addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('imgprep-planilha-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(ev.target.result, { type:'array' });
+    imgPrepProducts = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+document.getElementById('imgprep-file-fotos').addEventListener('change', function(e) {
+  imgPrepFiles = Array.from(e.target.files || []);
+  document.getElementById('imgprep-fotos-name').textContent = `${imgPrepFiles.length} foto(s) selecionada(s)`;
+});
+
+// Tenta casar o nome do arquivo com Código genérico nos parceiros ou Código do produto
+function buscarProdutoPorNomeArquivo(filename, listaProdutos) {
+  const base = filename.replace(/\.[^.]+$/, '').toUpperCase();
+  for (const p of listaProdutos) {
+    const codGen = String(p['Código genérico nos parceiros']||'').trim().toUpperCase();
+    const cod = String(p['Código']||'').trim().toUpperCase();
+    if (codGen && codGen.length >= 3 && base.includes(codGen)) return p;
+    if (cod && cod.length >= 3 && base.includes(cod)) return p;
+  }
+  return null;
+}
+
+function processarImagensFornecedor() {
+  const listaProdutos = imgPrepProducts || products;
+  if (!listaProdutos || !listaProdutos.length) {
+    addAgentMsg('<div class="alert alert-warn">⚠ Nenhuma planilha de produtos carregada. Suba a planilha do Signus primeiro (na seção principal ou aqui).</div>');
+    return;
+  }
+  if (!imgPrepFiles.length) {
+    addAgentMsg('<div class="alert alert-warn">⚠ Selecione as fotos do fornecedor antes de processar.</div>');
+    return;
+  }
+
+  imgPrepMatches = imgPrepFiles.map(file => {
+    const produto = buscarProdutoPorNomeArquivo(file.name, listaProdutos);
+    return { file, produto, matched: !!produto };
+  });
+
+  const matched = imgPrepMatches.filter(m => m.matched);
+  const unmatched = imgPrepMatches.filter(m => !m.matched);
+
+  let html = `<strong>Casamento de imagens:</strong> <span style="color:var(--green)">${matched.length} automático(s)</span>`;
+  if (unmatched.length) html += ` · <span style="color:var(--amber)">${unmatched.length} precisa(m) de associação manual</span>`;
+
+  addAgentMsg(html);
+  renderImgPrepGrid(listaProdutos);
+}
+
+function renderImgPrepGrid(listaProdutos) {
+  // Monta opções do <select> uma vez (reaproveitado em todos os cards não-casados)
+  const opts = listaProdutos.map(p =>
+    `<option value="${String(p['ID']||'')}">${(p['Nome']||'').slice(0,40)} (${p['Código']||''})</option>`
+  ).join('');
+
+  const cards = imgPrepMatches.map((m, idx) => {
+    const url = URL.createObjectURL(m.file);
+    if (m.matched) {
+      return `<div class="img-card matched" id="imgcard-${idx}">
+        <img src="${url}" alt="">
+        <div class="img-card-body">
+          <div class="img-card-file">${m.file.name}</div>
+          <div class="img-card-prod">${(m.produto['Nome']||'').slice(0,30)}</div>
+          <span class="img-badge" style="background:var(--green-l);color:var(--green)">✓ SKU ${m.produto['Código']||''}</span>
+        </div>
+      </div>`;
+    }
+    return `<div class="img-card unmatched" id="imgcard-${idx}">
+        <img src="${url}" alt="">
+        <div class="img-card-body">
+          <div class="img-card-file">${m.file.name}</div>
+          <select class="img-card-sel" onchange="associarImagemManual(${idx}, this.value)">
+            <option value="">Escolher produto...</option>
+            ${opts}
+          </select>
+        </div>
+      </div>`;
+  }).join('');
+
+  addAgentMsg(`<div class="img-grid">${cards}</div>`,
+    `<div class="act-row">
+      <button class="act-btn pri" onclick="gerarZipImagens()">Gerar ZIP com imagens prontas</button>
+    </div>`);
+}
+
+function associarImagemManual(idx, produtoId) {
+  const listaProdutos = imgPrepProducts || products;
+  const produto = listaProdutos.find(p => String(p['ID']||'') === String(produtoId));
+  if (!produto) return;
+  imgPrepMatches[idx].produto = produto;
+  imgPrepMatches[idx].matched = true;
+  const card = document.getElementById(`imgcard-${idx}`);
+  if (card) {
+    card.classList.remove('unmatched');
+    card.classList.add('matched');
+    const body = card.querySelector('.img-card-body');
+    body.innerHTML = `
+      <div class="img-card-file">${imgPrepMatches[idx].file.name}</div>
+      <div class="img-card-prod">${(produto['Nome']||'').slice(0,30)}</div>
+      <span class="img-badge" style="background:var(--green-l);color:var(--green)">✓ SKU ${produto['Código']||''} (manual)</span>`;
+  }
+}
+
+// Redimensiona a imagem no navegador via Canvas — sem precisar de servidor
+function redimensionarImagem(file, maxDim=1200, quality=0.85) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+          else { width = Math.round(width * maxDim / height); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao converter imagem')), 'image/jpeg', quality);
+      };
+      img.onerror = () => reject(new Error(`Não foi possível ler a imagem: ${file.name}`));
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function gerarZipImagens() {
+  const prontos = imgPrepMatches.filter(m => m.matched);
+  if (!prontos.length) {
+    addAgentMsg('<div class="alert alert-warn">⚠ Nenhuma imagem associada a um produto ainda.</div>');
+    return;
+  }
+
+  const progDiv = addProgressMsg(prontos.length);
+  const zip = new JSZip();
+
+  // Agrupar por SKU pra numerar corretamente quando o mesmo produto tem várias fotos
+  const porSku = {};
+  prontos.forEach(m => {
+    const sku = String(m.produto['Código']||'');
+    if (!porSku[sku]) porSku[sku] = [];
+    porSku[sku].push(m);
+  });
+
+  let processadas = 0, erros = 0;
+  for (const [sku, imgs] of Object.entries(porSku)) {
+    for (let i = 0; i < imgs.length; i++) {
+      try {
+        const blob = await redimensionarImagem(imgs[i].file);
+        const nome = i === 0 ? `${sku}.jpg` : `${sku}_${i}.jpg`;
+        zip.file(nome, blob);
+        processadas++;
+      } catch(e) {
+        erros++;
+      }
+      updateProgress(progDiv, processadas + erros, prontos.length);
+    }
+  }
+
+  const content = await zip.generateAsync({ type:'blob' });
+  const url = URL.createObjectURL(content);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `imagens_signus_${new Date().toISOString().slice(0,10)}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+  addAgentMsg(`<div class="alert alert-ok">✓ ZIP gerado com <strong>${processadas}</strong> imagem(ns) renomeada(s) e redimensionada(s) (máx. 1200px, JPEG).${erros?` <span style="color:var(--red)">${erros} falharam.</span>`:''}<br><br>Descompacta e coloca na pasta de imagens do Signus.</div>`);
+}
+
+// ══════════════════════════════════════════════════════════════════
 // VALIDAÇÃO — COMPARAR PLANILHA MANUAL vs GERADA PELO AGENTE
 // ══════════════════════════════════════════════════════════════════
 let valManualRows = null, valAgenteRows = null;
@@ -1348,11 +1688,7 @@ async function send() {
   const ruleM = txt.match(/[""']?(.+?)[""']?\s+(?:vira|→|->|muda para|muda pra|substituir por)\s+[""']?(.+?)[""']?$/i);
   if (ruleM) {
     const de=ruleM[1].trim(), para=ruleM[2].trim();
-    if (!kb) kb=defaultKB();
-    kb.regras_globais=kb.regras_globais||[];
-    kb.regras_globais=kb.regras_globais.filter(r=>r.de.toLowerCase()!==de.toLowerCase());
-    kb.regras_globais.push({de,para});
-    await learnAndSave(kb,`Regra: "${de}" → "${para}"`);
+    await upsertRegraGlobal(de, para);
     addAgentMsg(`Regra salva: <strong>"${de}"</strong> → <strong>"${para}"</strong>`);
     document.getElementById('send-btn').disabled=false; return;
   }
@@ -1436,39 +1772,44 @@ function removeTyping(){ const t=document.getElementById('typ'); if(t)t.remove()
 function toggleVis(id){ const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; }
 
 function checkKeys() {
-  const tok = ghToken();
   const claudeKey = document.getElementById('claude-key').value.trim();
-  if (tok) localStorage.setItem('jet_gh_token', tok);
   if (claudeKey) localStorage.setItem('jet_claude_key', claudeKey);
-  if (tok && ghRepo()) {
-    setGhStatus('warn','Conectando...');
-    clearTimeout(window._ghTimer);
-    window._ghTimer = setTimeout(loadKB, 800);
-  }
+}
+
+function showWelcomeMsg() {
+  addAgentMsg(
+    `Olá! Sou o <strong>Agente Jet ${VERSION}</strong> — curadoria de produtos da Jet Supply.<br><br>
+    Processo o lote do Signus, valido os dados, aplico o que sei e pergunto o que não sei. Gero 3 arquivos prontos para importar na Zydon com relatório de erros.<br><br>
+    ${localStorage.getItem('jet_claude_key') ? '' : 'Cole a <strong>Chave API Claude</strong> na barra lateral se quiser conversar livremente com o agente.'}`,
+    `<div class="act-row">
+      <button class="act-btn" onclick="sendQuick('Base de conhecimento')">Ver base atual</button>
+      <button class="act-btn" onclick="sendQuick('Como funciona?')">Como funciona?</button>
+    </div>`
+  );
 }
 
 // ══════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════
-const _saved = localStorage.getItem('jet_gh_token');
 const _savedClaude = localStorage.getItem('jet_claude_key');
 const _savedImgUrl = localStorage.getItem('jet_img_url');
 const _savedUserName = localStorage.getItem('jet_user_name');
-if (_saved) document.getElementById('gh-token').value = _saved;
 if (_savedClaude) document.getElementById('claude-key').value = _savedClaude;
 if (_savedImgUrl) document.getElementById('img-url').value = _savedImgUrl;
 if (_savedUserName) document.getElementById('user-name').value = _savedUserName;
-if (_saved) setTimeout(loadKB, 600);
 
-addAgentMsg(
-  `Olá! Sou o <strong>Agente Jet ${VERSION}</strong> — curadoria de produtos da Jet Supply.<br><br>
-  Processo o lote do Signus, valido os dados, aplico o que sei e pergunto o que não sei. Gero 3 arquivos prontos para importar na Zydon com relatório de erros.<br><br>
-  ${(_saved && _savedClaude) ? 'Tokens detectados — conectando...' : 'Cole o <strong>GitHub Token</strong> e a <strong>Chave API Claude</strong> na barra lateral para começar.'}`,
-  `<div class="act-row">
-    <button class="act-btn" onclick="sendQuick('Base de conhecimento')">Ver base atual</button>
-    <button class="act-btn" onclick="sendQuick('Como funciona?')">Como funciona?</button>
-  </div>`
-);
+// Restaura sessão do Supabase Auth se já estiver logado neste navegador
+sb.auth.getSession().then(({ data }) => {
+  if (data.session) onAuthReady(data.session);
+});
+// Mantém a sessão sincronizada (ex: token renovado, logout em outra aba)
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    document.getElementById('app-root').style.display = 'none';
+    document.getElementById('auth-overlay').style.display = 'flex';
+  }
+});
 </script>
 </body>
 </html>
