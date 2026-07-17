@@ -352,7 +352,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
     </div>
     <div class="cfg-row">
       <label class="cfg-lbl">URL base imagens (R2)</label>
-      <input type="text" id="img-url" class="cfg-inp" placeholder="https://pub-....r2.dev" oninput="localStorage.setItem('jet_img_url', this.value)">
+      <input type="text" id="img-url" class="cfg-inp" placeholder="https://pub-....r2.dev" oninput="localStorage.setItem('jet_img_url', this.value)" onchange="salvarUrlImagens(this.value)">
     </div>
   </div>
   <div class="sb-sec">
@@ -742,6 +742,9 @@ async function onAuthReady(session) {
   if (!nameInput.value) nameInput.value = currentUser.user_metadata?.nome || currentUser.email.split('@')[0];
   setBaseStatus('warn', 'Carregando base...');
   await loadKB();
+  // URL do R2 é config compartilhada da equipe: se já tem valor salvo no Supabase, prevalece sobre o local
+  const urlImgCompartilhada = kb.codigos_zydon?.url_base_imagens?.url;
+  if (urlImgCompartilhada) document.getElementById('img-url').value = urlImgCompartilhada;
   document.getElementById('sync-btn').style.display = '';
   if (!window._welcomed) { window._welcomed = true; showWelcomeMsg(); }
 }
@@ -815,6 +818,13 @@ async function loadKB() {
 }
 
 async function syncBase() { setBaseStatus('warn','Sincronizando...'); await loadKB(); }
+
+async function salvarUrlImagens(url) {
+  url = (url||'').trim();
+  await sb.from('configuracoes').upsert({ chave: 'url_base_imagens', valor: { url } }, { onConflict: 'chave' });
+  if (!kb) kb = emptyKB();
+  kb.codigos_zydon.url_base_imagens = { url };
+}
 
 async function registrarHistorico(acao) {
   const nome = userName();
