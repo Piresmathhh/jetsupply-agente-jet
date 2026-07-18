@@ -338,7 +338,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.6 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.7 · 18/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -650,7 +650,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.6';
+const VERSION = 'v5.7';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1031,7 +1031,10 @@ async function loadKB() {
     kb = novo;
     const nMarcas = Object.keys(kb.marcas).length;
     const nMarcasZydon = Object.keys(kb.marcas_zydon).length;
-    setBaseStatus('ok', `Base carregada · ${pl(nMarcas,'marca com regras','marcas com regras')} · ${pl(nMarcasZydon,'código de marca Zydon','códigos de marca Zydon')}`);
+    // "X de Y" deixa clara a relação: quantas das marcas do catálogo Zydon já têm
+    // regras próprias configuradas aqui (as duas contagens são de coisas diferentes,
+    // então mostrar como razão evita a leitura de que são a mesma coisa).
+    setBaseStatus('ok', `Base carregada · ${nMarcas} de ${pl(nMarcasZydon,'marca Zydon','marcas Zydon')} com regras configuradas`);
   } catch(e) {
     kb = kb || emptyKB();
     setBaseStatus('', 'Erro ao carregar a base: ' + (e.message||e));
@@ -1083,7 +1086,7 @@ async function upsertMarca(nomeExib, siglas) {
   if (error) { setBaseStatus('', 'Erro ao salvar marca: ' + error.message); return false; }
   kb.marcas[nomeExib] = { nome_exibicao:nomeExib, siglas_modelos:siglas, unidades_upper:[], regras_nome:[] };
   await registrarHistorico(`Adicionou marca: ${nomeExib}`);
-  setBaseStatus('ok', `Base atualizada · ${pl(Object.keys(kb.marcas).length,'marca com regras','marcas com regras')}`);
+  setBaseStatus('ok', `Base atualizada · ${Object.keys(kb.marcas).length} de ${pl(Object.keys(kb.marcas_zydon||{}).length,'marca Zydon','marcas Zydon')} com regras configuradas`);
   definirUltimaAcao({ tabela:'marcas', chave:{nome_exibicao:nomeExib}, before: antes||null, label: `marca "${nomeExib}"` });
   return true;
 }
@@ -1230,7 +1233,7 @@ function handleFileUpload(e) {
     document.getElementById('upload-area').innerHTML =
       `<div class="file-ok">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <div><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${products.length} produtos</div></div>
+          <div><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${pl(products.length,'produto','produtos')}</div></div>
           <button onclick="limparPlanilha()" aria-label="Remover planilha carregada" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
         </div>
       </div>`;
@@ -1275,7 +1278,7 @@ async function processarLote() {
 
   const nOk = processados.length, nPend = pendentes.length;
   addAgentMsg(
-    `Lote processado: <strong>${products.length} produtos</strong><br><br>` +
+    `Lote processado: <strong>${pl(products.length,'produto','produtos')}</strong><br><br>` +
     `<strong style="color:var(--green)">${nOk} prontos</strong> — regras conhecidas aplicadas<br>` +
     `<strong style="color:var(--amber)">${nPend} pendentes</strong> — ${nPend > 0 ? 'veja as dúvidas na barra lateral' : 'nenhuma dúvida!'}`,
     nOk > 0 ? buildPreview(products.slice(0,5)) : ''
@@ -1682,10 +1685,10 @@ async function gerarPlanilha() {
   XLSX.utils.book_append_sheet(wb3, XLSX.utils.json_to_sheet(valoresVar.length?valoresVar:[]), 'Valores de Variações de Produto');
 
   // Consolidar avisos agrupados (evita repetir a mesma mensagem centenas de vezes)
-  if (semMarca.length) errosGeracao.push(`${semMarca.length} produto(s) sem marca preenchida (ex: ID ${semMarca.slice(0,3).join(', ')}${semMarca.length>3?'...':''})`);
-  if (semCategoria.length) errosGeracao.push(`${semCategoria.length} produto(s) sem categoria preenchida (Grupo setorial vazio) (ex: ID ${semCategoria.slice(0,3).join(', ')}${semCategoria.length>3?'...':''})`);
-  Object.entries(marcaSemCod).forEach(([marca, n]) => errosGeracao.push(`Marca "${marca}" sem código Zydon mapeado — afeta ${n} produto(s)`));
-  Object.entries(catSemCod).forEach(([cat, n]) => errosGeracao.push(`Categoria "${cat}" sem código Zydon mapeado — afeta ${n} produto(s)`));
+  if (semMarca.length) errosGeracao.push(`${pl(semMarca.length,'produto','produtos')} sem marca preenchida (ex: ID ${semMarca.slice(0,3).join(', ')}${semMarca.length>3?'...':''})`);
+  if (semCategoria.length) errosGeracao.push(`${pl(semCategoria.length,'produto','produtos')} sem categoria preenchida (Grupo setorial vazio) (ex: ID ${semCategoria.slice(0,3).join(', ')}${semCategoria.length>3?'...':''})`);
+  Object.entries(marcaSemCod).forEach(([marca, n]) => errosGeracao.push(`Marca "${marca}" sem código Zydon mapeado — afeta ${pl(n,'produto','produtos')}`));
+  Object.entries(catSemCod).forEach(([cat, n]) => errosGeracao.push(`Categoria "${cat}" sem código Zydon mapeado — afeta ${pl(n,'produto','produtos')}`));
 
   // Atualizar progresso para 100%
   updateProgress(progDiv, products.length, products.length);
@@ -1695,11 +1698,12 @@ async function gerarPlanilha() {
   window._dlDate = date;
   window._ultimoRelatorio = errosGeracao.slice(); // guardar para reabrir depois
   const dl = document.getElementById('dl-bar');
-  document.getElementById('dl-msg').textContent = `✓ ${rows.length} produtos · ${variacoesFinal.length} SKUs em variações · ${errosGeracao.length} aviso(s)`;
+  document.getElementById('dl-msg').textContent = `✓ ${pl(rows.length,'produto','produtos')} · ${pl(variacoesFinal.length,'SKU','SKUs')} em variações · ${pl(errosGeracao.length,'aviso','avisos')}`;
   dl.classList.add('show');
 
   // Mensagem com relatório de erros
-  let msg = `Planilhas geradas com sucesso:<br><strong>${rows.length}</strong> produto(s) na aba Produtos (${Object.keys(grupos).length} família(s) + ${rows.length - Object.keys(grupos).length} avulso(s)) · <strong>${variacoesFinal.length}</strong> SKUs na aba Variações`;
+  const nAvulsos = rows.length - Object.keys(grupos).length;
+  let msg = `Planilhas geradas com sucesso:<br><strong>${pl(rows.length,'produto','produtos')}</strong> na aba Produtos (${pl(Object.keys(grupos).length,'família','famílias')} + ${pl(nAvulsos,'avulso','avulsos')}) · <strong>${pl(variacoesFinal.length,'SKU','SKUs')}</strong> na aba Variações`;
   if (errosGeracao.length) {
     msg += buildReportHtml(errosGeracao);
   }
@@ -1709,8 +1713,8 @@ async function gerarPlanilha() {
 
 function buildReportHtml(erros) {
   return `<div class="report-wrap" style="margin-top:8px">
-      <div class="report-head">⚠ ${erros.length} aviso(s) encontrado(s)</div>
-      <div class="report-body">${erros.slice(0,15).map(e=>`<div class="report-item">· ${e}</div>`).join('')}${erros.length>15?`<div class="report-item" style="color:var(--t5)">...e mais ${erros.length-15} avisos</div>`:''}</div>
+      <div class="report-head">⚠ ${pl(erros.length,'aviso encontrado','avisos encontrados')}</div>
+      <div class="report-body">${erros.slice(0,15).map(e=>`<div class="report-item">· ${e}</div>`).join('')}${erros.length>15?`<div class="report-item" style="color:var(--t5)">...e mais ${pl(erros.length-15,'aviso','avisos')}</div>`:''}</div>
     </div>`;
 }
 
@@ -1734,7 +1738,7 @@ document.getElementById('imgprep-file-planilha').addEventListener('change', func
 
 document.getElementById('imgprep-file-fotos').addEventListener('change', function(e) {
   imgPrepFiles = Array.from(e.target.files || []);
-  document.getElementById('imgprep-fotos-name').textContent = `${imgPrepFiles.length} foto(s) selecionada(s)`;
+  document.getElementById('imgprep-fotos-name').textContent = pl(imgPrepFiles.length,'foto selecionada','fotos selecionadas');
 });
 enableDragDrop('imgprep-file-planilha');
 enableDragDrop('imgprep-file-fotos');
@@ -1770,8 +1774,8 @@ function processarImagensFornecedor() {
   const matched = imgPrepMatches.filter(m => m.matched);
   const unmatched = imgPrepMatches.filter(m => !m.matched);
 
-  let html = `<strong>Casamento de imagens:</strong> <span style="color:var(--green)">${matched.length} automático(s)</span>`;
-  if (unmatched.length) html += ` · <span style="color:var(--amber)">${unmatched.length} precisa(m) de associação manual</span>`;
+  let html = `<strong>Casamento de imagens:</strong> <span style="color:var(--green)">${pl(matched.length,'automático','automáticos')}</span>`;
+  if (unmatched.length) html += ` · <span style="color:var(--amber)">${pl(unmatched.length,'precisa','precisam')} de associação manual</span>`;
 
   addAgentMsg(html, '', 'imgprep-results');
   renderImgPrepGrid(listaProdutos);
@@ -1900,7 +1904,7 @@ async function gerarZipImagens() {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-  addAgentMsg(`<div class="alert alert-ok">✓ ZIP gerado com <strong>${processadas}</strong> imagem(ns) renomeada(s) e redimensionada(s) (máx. 1200px, JPEG).${erros?` <span style="color:var(--red)">${erros} falharam.</span>`:''}<br><br>Descompacta e coloca na pasta de imagens do Signus.</div>`, '', 'imgprep-results');
+  addAgentMsg(`<div class="alert alert-ok">✓ ZIP gerado com <strong>${pl(processadas,'imagem renomeada e redimensionada','imagens renomeadas e redimensionadas')}</strong> (máx. 1200px, JPEG).${erros?` <span style="color:var(--red)">${pl(erros,'falhou','falharam')}.</span>`:''}<br><br>Descompacta e coloca na pasta de imagens do Signus.</div>`, '', 'imgprep-results');
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2006,8 +2010,8 @@ function compararPlanilhas() {
 
   if (soManual.length || soAgente.length) {
     html += `<div class="alert alert-warn">`;
-    if (soManual.length) html += `⚠ ${soManual.length} produto(s) existem só na planilha manual (o agente não gerou).<br>`;
-    if (soAgente.length) html += `⚠ ${soAgente.length} produto(s) existem só na planilha do agente (não estão na manual).`;
+    if (soManual.length) html += `⚠ ${pl(soManual.length,'produto existe','produtos existem')} só na planilha manual (o agente não gerou).<br>`;
+    if (soAgente.length) html += `⚠ ${pl(soAgente.length,'produto existe','produtos existem')} só na planilha do agente (não estão na manual).`;
     html += `</div>`;
   }
 
@@ -2016,7 +2020,7 @@ function compararPlanilhas() {
   if (ranking.length) {
     html += `<div class="diff-ranking">
       <div class="diff-ranking-head">Colunas que mais divergem — ajustar nessa ordem</div>
-      ${ranking.slice(0,15).map(([col,n]) => `<div class="diff-ranking-row"><span class="diff-ranking-col">${col}</span><span class="diff-ranking-n">${n} produto(s)</span></div>`).join('')}
+      ${ranking.slice(0,15).map(([col,n]) => `<div class="diff-ranking-row"><span class="diff-ranking-col">${col}</span><span class="diff-ranking-n">${pl(n,'produto','produtos')}</span></div>`).join('')}
     </div>`;
   } else {
     html += `<div class="alert alert-ok">✓ Nenhuma divergência encontrada — o agente está replicando exatamente o padrão manual!</div>`;
