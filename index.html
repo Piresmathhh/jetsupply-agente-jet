@@ -333,7 +333,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.1 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.2 · 18/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -466,23 +466,33 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 <section class="view-panel view-full" id="view-config">
   <div class="view-scroll">
     <div class="view-h1">Configurações</div>
-    <div class="view-sub">Essas configurações valem só nesse navegador.</div>
+    <div class="view-sub">Suas preferências pessoais e (se você for admin) as configurações compartilhadas com a equipe.</div>
     <div class="settings-card">
-      <div class="cfg-row">
-        <label class="cfg-lbl">Chave API Claude</label>
-        <div class="cfg-2">
-          <input type="password" id="claude-key" class="cfg-inp" placeholder="sk-ant-..." oninput="checkKeys()">
-          <button class="cfg-btn" onclick="toggleVis('claude-key')">ver</button>
-        </div>
-      </div>
-      <div class="cfg-row">
+      <div class="step-card-lbl">Pessoal</div>
+      <div class="cfg-row" style="margin-bottom:0">
         <label class="cfg-lbl">Seu nome (para histórico)</label>
         <input type="text" id="user-name" class="cfg-inp" placeholder="Seu nome" oninput="localStorage.setItem('jet_user_name', this.value)">
+      </div>
+    </div>
+
+    <div class="settings-card" id="admin-settings-card" style="display:none">
+      <div class="step-card-lbl">Compartilhado com a equipe (só admin edita)</div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Chave API Claude (compartilhada)</label>
+        <div class="cfg-2">
+          <input type="password" id="claude-key" class="cfg-inp" placeholder="sk-ant-..." oninput="checkKeys()" onchange="salvarClaudeKey(this.value)">
+          <button class="cfg-btn" onclick="toggleVis('claude-key')">ver</button>
+        </div>
       </div>
       <div class="cfg-row" style="margin-bottom:0">
         <label class="cfg-lbl">URL base imagens (R2)</label>
         <input type="text" id="img-url" class="cfg-inp" placeholder="https://pub-....r2.dev" oninput="localStorage.setItem('jet_img_url', this.value)" onchange="salvarUrlImagens(this.value)">
       </div>
+    </div>
+
+    <div class="settings-card" id="nonadmin-settings-note" style="display:none">
+      <div class="step-card-lbl">Compartilhado com a equipe</div>
+      <div style="font-size:12px;color:var(--t4);line-height:1.5">A chave da API Claude e a URL das imagens são configuradas pelo administrador e já funcionam automaticamente pra você — não precisa (e não dá) mexer aqui.</div>
     </div>
   </div>
 </section>
@@ -513,11 +523,21 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 let currentUser = null; // sessão atual do Supabase Auth
+let currentProfile = null; // { id, nome, is_admin } — carregado após login
+
+async function loadProfile() {
+  const { data } = await sb.from('profiles').select('id,nome,is_admin').eq('id', currentUser.id).maybeSingle();
+  currentProfile = data || { is_admin: false };
+  const adminCard = document.getElementById('admin-settings-card');
+  const nonAdminNote = document.getElementById('nonadmin-settings-note');
+  if (adminCard) adminCard.style.display = currentProfile.is_admin ? '' : 'none';
+  if (nonAdminNote) nonAdminNote.style.display = currentProfile.is_admin ? 'none' : '';
+}
 
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.1';
+const VERSION = 'v5.2';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -792,10 +812,13 @@ async function onAuthReady(session) {
   const nameInput = document.getElementById('user-name');
   if (!nameInput.value) nameInput.value = currentUser.user_metadata?.nome || currentUser.email.split('@')[0];
   setBaseStatus('warn', 'Carregando base...');
+  await loadProfile();
   await loadKB();
-  // URL do R2 é config compartilhada da equipe: se já tem valor salvo no Supabase, prevalece sobre o local
+  // URL do R2 e chave Claude são config compartilhada da equipe: se já tem valor salvo no Supabase, prevalece sobre o local
   const urlImgCompartilhada = kb.codigos_zydon?.url_base_imagens?.url;
   if (urlImgCompartilhada) document.getElementById('img-url').value = urlImgCompartilhada;
+  const claudeKeyCompartilhada = kb.codigos_zydon?.claude_api_key?.key;
+  if (claudeKeyCompartilhada && document.getElementById('claude-key')) document.getElementById('claude-key').value = claudeKeyCompartilhada;
   document.getElementById('sync-btn').style.display = '';
   if (!window._welcomed) { window._welcomed = true; showWelcomeMsg(); }
 }
@@ -875,6 +898,15 @@ async function salvarUrlImagens(url) {
   await sb.from('configuracoes').upsert({ chave: 'url_base_imagens', valor: { url } }, { onConflict: 'chave' });
   if (!kb) kb = emptyKB();
   kb.codigos_zydon.url_base_imagens = { url };
+}
+
+async function salvarClaudeKey(key) {
+  if (!currentProfile?.is_admin) return; // só admin — o banco também bloqueia via RLS
+  key = (key||'').trim();
+  const { error } = await sb.from('configuracoes').upsert({ chave: 'claude_api_key', valor: { key } }, { onConflict: 'chave' });
+  if (error) { addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui salvar a chave compartilhada: ${error.message}</div>`); return; }
+  if (!kb) kb = emptyKB();
+  kb.codigos_zydon.claude_api_key = { key };
 }
 
 async function registrarHistorico(acao) {
@@ -1861,7 +1893,7 @@ async function send() {
   }
 
   // Claude API
-  const key = document.getElementById('claude-key').value.trim() || localStorage.getItem('jet_claude_key') || '';
+  const key = kb?.codigos_zydon?.claude_api_key?.key || (document.getElementById('claude-key')?.value.trim()) || localStorage.getItem('jet_claude_key') || '';
   if (!key.startsWith('sk-ant-')) {
     addAgentMsg('Configure a <strong>Chave API Claude</strong> para perguntas livres.');
     document.getElementById('send-btn').disabled=false; return;
@@ -1956,7 +1988,12 @@ function showWelcomeMsg() {
   addAgentMsg(
     `Olá! Sou o <strong>Agente Jet ${VERSION}</strong> — curadoria de produtos da Jet Supply.<br><br>
     Processo o lote do Signus, valido os dados, aplico o que sei e pergunto o que não sei. Gero 3 arquivos prontos para importar na Zydon com relatório de erros.<br><br>
-    ${localStorage.getItem('jet_claude_key') ? '' : 'Cole a <strong>Chave API Claude</strong> na barra lateral se quiser conversar livremente com o agente.'}`,
+    ${(() => {
+      const temChave = kb?.codigos_zydon?.claude_api_key?.key || localStorage.getItem('jet_claude_key');
+      if (temChave) return '';
+      if (currentProfile?.is_admin) return 'Configure a <strong>Chave API Claude</strong> em Config se quiser que a equipe converse livremente com o agente.';
+      return '';
+    })()}`,
     `<div class="act-row">
       <button class="act-btn" onclick="sendQuick('Base de conhecimento')">Ver base atual</button>
       <button class="act-btn" onclick="sendQuick('Como funciona?')">Como funciona?</button>
@@ -1982,6 +2019,8 @@ sb.auth.getSession().then(({ data }) => {
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') {
     currentUser = null;
+    currentProfile = null;
+    window._welcomed = false;
     document.getElementById('app-root').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
   }
