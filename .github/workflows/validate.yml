@@ -1,0 +1,20 @@
+name: Validar sintaxe do index.html
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Checar sintaxe do JavaScript embutido em index.html
+        run: node scripts/check-syntax.js
