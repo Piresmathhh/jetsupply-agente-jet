@@ -333,7 +333,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.3 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.4 · 18/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -480,7 +480,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <div class="cfg-row">
         <label class="cfg-lbl">Chave API Claude (compartilhada)</label>
         <div class="cfg-2">
-          <input type="password" id="claude-key" class="cfg-inp" placeholder="sk-ant-..." oninput="checkKeys()" onchange="salvarClaudeKey(this.value)">
+          <input type="password" id="claude-key" class="cfg-inp" placeholder="sk-ant-..." onchange="salvarClaudeKey(this.value)">
           <button class="cfg-btn" onclick="toggleVis('claude-key')">ver</button>
         </div>
       </div>
@@ -544,7 +544,7 @@ async function loadProfile() {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.3';
+const VERSION = 'v5.4';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -846,8 +846,10 @@ async function onAuthReady(session) {
   // URL do R2 e chave Claude são config compartilhada da equipe: se já tem valor salvo no Supabase, prevalece sobre o local
   const urlImgCompartilhada = kb.codigos_zydon?.url_base_imagens?.url;
   if (urlImgCompartilhada) document.getElementById('img-url').value = urlImgCompartilhada;
-  const claudeKeyCompartilhada = kb.codigos_zydon?.claude_api_key?.key;
-  if (claudeKeyCompartilhada && document.getElementById('claude-key')) document.getElementById('claude-key').value = claudeKeyCompartilhada;
+  // A chave Claude em si nunca chega ao browser — só um marcador dizendo se já está configurada
+  const claudeKeyConfigurada = kb.codigos_zydon?.claude_key_status?.configured;
+  const claudeKeyInput = document.getElementById('claude-key');
+  if (claudeKeyInput) claudeKeyInput.placeholder = claudeKeyConfigurada ? '•••••••••••••• (configurada — digite pra trocar)' : 'sk-ant-...';
   document.getElementById('sync-btn').style.display = '';
   if (!window._welcomed) { window._welcomed = true; showWelcomeMsg(); }
 }
@@ -932,10 +934,18 @@ async function salvarUrlImagens(url) {
 async function salvarClaudeKey(key) {
   if (!currentProfile?.is_admin) return; // só admin — o banco também bloqueia via RLS
   key = (key||'').trim();
-  const { error } = await sb.from('configuracoes').upsert({ chave: 'claude_api_key', valor: { key } }, { onConflict: 'chave' });
-  if (error) { addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui salvar a chave compartilhada: ${error.message}</div>`); return; }
+  if (!key) return;
+  // A chave nunca é gravada direto do browser: vai pra uma Edge Function que a guarda
+  // numa tabela travada por RLS (só service_role lê), nunca numa tabela pública.
+  const { data, error } = await sb.functions.invoke('save-claude-key', { body: { key } });
+  if (error || data?.error) {
+    addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui salvar a chave compartilhada: ${data?.error || error.message}</div>`);
+    return;
+  }
   if (!kb) kb = emptyKB();
-  kb.codigos_zydon.claude_api_key = { key };
+  kb.codigos_zydon.claude_key_status = { configured: true };
+  const claudeKeyInput = document.getElementById('claude-key');
+  if (claudeKeyInput) { claudeKeyInput.value = ''; claudeKeyInput.placeholder = '•••••••••••••• (configurada — digite pra trocar)'; }
 }
 
 async function registrarHistorico(acao) {
@@ -1921,18 +1931,20 @@ async function send() {
     document.getElementById('send-btn').disabled=false; return;
   }
 
-  // Claude API
-  const key = kb?.codigos_zydon?.claude_api_key?.key || (document.getElementById('claude-key')?.value.trim()) || localStorage.getItem('jet_claude_key') || '';
-  if (!key.startsWith('sk-ant-')) {
-    addAgentMsg('Configure a <strong>Chave API Claude</strong> para perguntas livres.');
-    document.getElementById('send-btn').disabled=false; return;
-  }
+  // Claude API — a chave em si mora só no servidor (Edge Function claude-chat), nunca no browser
   showTyping();
   try {
-    const reply = await callClaude(key, txt);
+    const reply = await callClaude(txt);
     removeTyping();
     addAgentMsg(renderMd(reply));
-  } catch(e) { removeTyping(); addAgentMsg(`Erro: ${e.message}`); }
+  } catch(e) {
+    removeTyping();
+    if (e.message === 'no_key_configured') {
+      addAgentMsg('Configure a <strong>Chave API Claude</strong> para perguntas livres.');
+    } else {
+      addAgentMsg(`Erro: ${e.message}`);
+    }
+  }
   document.getElementById('send-btn').disabled=false;
 }
 
@@ -1964,16 +1976,12 @@ Produtos: ${products.length} | Pendências: ${pendentes.length}
 INSTRUÇÕES: Responda em pt-BR, direto, máx 4 linhas. Sem markdown (**, ##, ---). Se sugerir regra: "X" → "Y".`;
 }
 
-async function callClaude(key, msg) {
+async function callClaude(msg) {
   chatHistory.push({ role:'user', content:msg });
   if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-    body: JSON.stringify({ model:'claude-haiku-4-5', max_tokens:500, system:buildContext(), messages:chatHistory })
-  });
-  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`HTTP ${r.status}`); }
-  const reply = (await r.json()).content[0].text;
+  const { data, error } = await sb.functions.invoke('claude-chat', { body: { system: buildContext(), messages: chatHistory } });
+  if (error || data?.error) { chatHistory.pop(); throw new Error(data?.error || error.message); }
+  const reply = data.reply;
   chatHistory.push({ role:'assistant', content:reply });
   return reply;
 }
@@ -2008,17 +2016,12 @@ function showView(name) {
   if (nav) nav.classList.add('active');
 }
 
-function checkKeys() {
-  const claudeKey = document.getElementById('claude-key').value.trim();
-  if (claudeKey) localStorage.setItem('jet_claude_key', claudeKey);
-}
-
 function showWelcomeMsg() {
   addAgentMsg(
     `Olá! Sou o <strong>Agente Jet ${VERSION}</strong> — curadoria de produtos da Jet Supply.<br><br>
     Processo o lote do Signus, valido os dados, aplico o que sei e pergunto o que não sei. Gero 3 arquivos prontos para importar na Zydon com relatório de erros.<br><br>
     ${(() => {
-      const temChave = kb?.codigos_zydon?.claude_api_key?.key || localStorage.getItem('jet_claude_key');
+      const temChave = kb?.codigos_zydon?.claude_key_status?.configured;
       if (temChave) return '';
       if (currentProfile?.is_admin) return 'Configure a <strong>Chave API Claude</strong> em Config se quiser que a equipe converse livremente com o agente.';
       return '';
@@ -2033,10 +2036,8 @@ function showWelcomeMsg() {
 // ══════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════
-const _savedClaude = localStorage.getItem('jet_claude_key');
 const _savedImgUrl = localStorage.getItem('jet_img_url');
 const _savedUserName = localStorage.getItem('jet_user_name');
-if (_savedClaude) document.getElementById('claude-key').value = _savedClaude;
 if (_savedImgUrl) document.getElementById('img-url').value = _savedImgUrl;
 if (_savedUserName) document.getElementById('user-name').value = _savedUserName;
 
