@@ -338,7 +338,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.7 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.8 · 18/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -650,7 +650,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.7';
+const VERSION = 'v5.8';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1076,9 +1076,20 @@ async function registrarHistorico(acao) {
   if (kb.historico.length > 100) kb.historico = kb.historico.slice(0,100);
 }
 
+// Compara arrays sem se importar com ordem — usado só pra detectar se duas pessoas
+// mexeram na mesma marca com valores diferentes (edição concorrente).
+function arraysIguaisSemOrdem(a, b) {
+  const x = (a||[]).slice().sort(), y = (b||[]).slice().sort();
+  return x.length===y.length && x.every((v,i)=>v===y[i]);
+}
+
 async function upsertMarca(nomeExib, siglas) {
   if (!kb) kb = emptyKB();
   const { data: antes } = await sb.from('marcas').select('*').eq('nome_exibicao', nomeExib).maybeSingle();
+  // Se já existia (outra pessoa cadastrou essa marca entre o momento em que a
+  // pendência apareceu na tela e o clique em "Salvar") e as siglas são diferentes,
+  // é uma edição concorrente — avisamos em vez de sobrescrever silenciosamente.
+  const conflito = antes && !arraysIguaisSemOrdem(antes.siglas_modelos, siglas) ? antes : null;
   const { error } = await sb.from('marcas').upsert(
     { nome_exibicao: nomeExib, siglas_modelos: siglas, unidades_upper: [], criado_por: currentUser?.id||null },
     { onConflict: 'nome_exibicao' }
@@ -1088,13 +1099,14 @@ async function upsertMarca(nomeExib, siglas) {
   await registrarHistorico(`Adicionou marca: ${nomeExib}`);
   setBaseStatus('ok', `Base atualizada · ${Object.keys(kb.marcas).length} de ${pl(Object.keys(kb.marcas_zydon||{}).length,'marca Zydon','marcas Zydon')} com regras configuradas`);
   definirUltimaAcao({ tabela:'marcas', chave:{nome_exibicao:nomeExib}, before: antes||null, label: `marca "${nomeExib}"` });
-  return true;
+  return { ok: true, conflito };
 }
 
 async function upsertCategoriaMapping(catOriginal, nomeZydon) {
   if (!kb) kb = emptyKB();
   const codigoZydon = getCatCodigo(nomeZydon) || null;
   const { data: antes } = await sb.from('categoria_mappings').select('*').eq('nome_signus', catOriginal).maybeSingle();
+  const conflito = antes && antes.nome_zydon !== nomeZydon ? antes : null;
   const { error } = await sb.from('categoria_mappings').upsert(
     { nome_signus: catOriginal, nome_zydon: nomeZydon, codigo_zydon: codigoZydon, criado_por: currentUser?.id||null },
     { onConflict: 'nome_signus' }
@@ -1103,13 +1115,14 @@ async function upsertCategoriaMapping(catOriginal, nomeZydon) {
   kb.categorias[catOriginal] = nomeZydon;
   await registrarHistorico(`Mapeou categoria: "${catOriginal}" → "${nomeZydon}"`);
   definirUltimaAcao({ tabela:'categoria_mappings', chave:{nome_signus:catOriginal}, before: antes||null, label: `categoria "${catOriginal}"` });
-  return true;
+  return { ok: true, conflito };
 }
 
 async function upsertRegraGlobal(de, para) {
   if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor cadastrar essa regra.'); return false; }
   if (!kb) kb = emptyKB();
   const { data: antes } = await sb.from('regras_globais').select('*').eq('de', de).maybeSingle();
+  const conflito = antes && antes.para !== para ? antes : null;
   await sb.from('regras_globais').delete().eq('de', de);
   const { error } = await sb.from('regras_globais').insert({ de, para, criado_por: currentUser?.id||null });
   if (error) { setBaseStatus('', 'Erro ao salvar regra: ' + error.message); return false; }
@@ -1117,7 +1130,7 @@ async function upsertRegraGlobal(de, para) {
   kb.regras_globais.push({ de, para });
   await registrarHistorico(`Regra: "${de}" → "${para}"`);
   definirUltimaAcao({ tabela:'regras_globais', chave:{de}, before: antes||null, label: `regra "${de}" → "${para}"` });
-  return true;
+  return { ok: true, conflito };
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1415,10 +1428,11 @@ async function salvarMarca(marcaOriginal, marcaId) {
   const nomeExib = document.getElementById(`pend-nome-${marcaId}`)?.value.trim() || marcaOriginal;
   const siglasRaw = document.getElementById(`pend-siglas-${marcaId}`)?.value.trim() || '';
   const siglas = siglasRaw.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
-  const ok = await upsertMarca(nomeExib, siglas);
+  const res = await upsertMarca(nomeExib, siglas);
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marcaOriginal));
   renderPendentes();
-  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${ok?' Base sincronizada.':' Erro ao sincronizar.'}`);
+  addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${res?' Base sincronizada.':' Erro ao sincronizar.'}`);
+  if (res?.conflito) addAgentMsg(`<div class="alert alert-warn">⚠ Essa marca já tinha sido cadastrada por outra pessoa enquanto você resolvia essa pendência, com siglas: <strong>${(res.conflito.siglas_modelos||[]).join(', ')||'(nenhuma)'}</strong>. Sua versão substituiu a anterior. Se não era essa a intenção, use o botão "Desfazer" no topo.</div>`);
   if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
 }
 function pularMarca(marca) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca)); renderPendentes(); }
@@ -1426,10 +1440,11 @@ function pularMarca(marca) { pendentes = pendentes.filter(p => !p.issues.some(i 
 async function salvarCategoria(catOriginal, catId) {
   if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor resolver essa pendência.'); return; }
   const nomeZydon = document.getElementById(`pend-cat-${catId}`)?.value.trim() || catOriginal;
-  const ok = await upsertCategoriaMapping(catOriginal, nomeZydon);
+  const res = await upsertCategoriaMapping(catOriginal, nomeZydon);
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===catOriginal));
   renderPendentes();
-  addAgentMsg(`Categoria <strong>"${catOriginal}"</strong> → <strong>"${nomeZydon}"</strong> salva.${ok?' Base sincronizada.':' Erro ao sincronizar.'}`);
+  addAgentMsg(`Categoria <strong>"${catOriginal}"</strong> → <strong>"${nomeZydon}"</strong> salva.${res?' Base sincronizada.':' Erro ao sincronizar.'}`);
+  if (res?.conflito) addAgentMsg(`<div class="alert alert-warn">⚠ Essa categoria já tinha sido mapeada por outra pessoa enquanto você resolvia essa pendência, como: <strong>"${res.conflito.nome_zydon}"</strong>. Sua versão substituiu a anterior. Se não era essa a intenção, use o botão "Desfazer" no topo.</div>`);
   if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
 }
 function pularCategoria(cat) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===cat)); renderPendentes(); }
@@ -2162,8 +2177,9 @@ async function send() {
   const ruleM = txt.match(/[""']?(.+?)[""']?\s+(?:vira|→|->|muda para|muda pra|substituir por)\s+[""']?(.+?)[""']?$/i);
   if (ruleM) {
     const de=ruleM[1].trim(), para=ruleM[2].trim();
-    await upsertRegraGlobal(de, para);
+    const res = await upsertRegraGlobal(de, para);
     addAgentMsg(`Regra salva: <strong>"${de}"</strong> → <strong>"${para}"</strong>`);
+    if (res?.conflito) addAgentMsg(`<div class="alert alert-warn">⚠ Essa regra já existia com um valor diferente (<strong>"${res.conflito.para}"</strong>), possivelmente definido por outra pessoa. Foi substituída pela sua. Se não era essa a intenção, use o botão "Desfazer" no topo.</div>`);
     document.getElementById('send-btn').disabled=false; return;
   }
 
