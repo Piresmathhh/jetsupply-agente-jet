@@ -43,6 +43,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 .nav-item span{font-size:9px;line-height:1.2;font-weight:bold}
 .nav-item:hover{background:rgba(255,255,255,.06);color:var(--on-navy)}
 .nav-item.active{color:#fff;border-left-color:var(--orange);background:rgba(234,86,24,.14)}
+.nav-item:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
 
 /* View switching */
 .view-container{overflow:hidden;position:relative;background:var(--bg)}
@@ -337,11 +338,12 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.5 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.6 · 18/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
     <span class="status-txt" id="gh-txt">Conectando...</span>
+    <button class="sync-btn" onclick="desfazerUltimaAcao()" id="undo-btn" style="display:none"></button>
     <button class="sync-btn" onclick="syncBase()" id="sync-btn" style="display:none">Sincronizar base</button>
     <span class="user-chip" id="user-chip" style="display:none"></span>
     <button class="logout-btn" onclick="logout()" id="logout-btn" style="display:none">Sair</button>
@@ -400,7 +402,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
     </div>
   </aside>
   <main class="main">
-    <div class="chat" id="chat"></div>
+    <div class="chat" id="chat" aria-live="polite"></div>
     <div class="dl-bar" id="dl-bar">
       <p id="dl-msg">Arquivos prontos.</p>
       <button class="dl-btn" onclick="downloadTodas()" style="background:var(--orange)">Baixar as 3 juntas</button>
@@ -414,7 +416,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
         <div class="inp-wrap">
           <textarea class="inp" id="inp" rows="1" placeholder="Converse com o agente, corrija nomes, ensine marcas..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
         </div>
-        <button class="send" id="send-btn" onclick="send()" title="Enviar">
+        <button class="send" id="send-btn" onclick="send()" title="Enviar" aria-label="Enviar mensagem">
           <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
         </button>
       </div>
@@ -448,7 +450,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <button class="act-btn pri" style="width:100%;margin-top:10px" onclick="processarImagensFornecedor()">Casar fotos com produtos</button>
       <div style="font-size:10px;color:var(--t5);margin-top:8px;line-height:1.4">Tenta casar pelo <strong>Código genérico nos parceiros</strong> ou <strong>Código</strong>. O que não bater, você associa manualmente.</div>
     </div>
-    <div id="imgprep-results"></div>
+    <div class="step-card">
+      <div class="step-card-lbl">Dúvidas nesta etapa</div>
+      <div class="cfg-2">
+        <input type="text" id="imgprep-ask" class="cfg-inp" placeholder="Perguntar ao agente sobre imagens..." onkeydown="onAskKey(event,'imgprep-ask','imgprep-results')">
+        <button class="cfg-btn" onclick="askAgente('imgprep-ask','imgprep-results')">Perguntar</button>
+      </div>
+    </div>
+    <div id="imgprep-results" aria-live="polite"></div>
   </div>
 </section>
 
@@ -476,7 +485,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </label>
       <button class="act-btn pri" style="width:100%;margin-top:10px" onclick="compararPlanilhas()">Comparar campo a campo</button>
     </div>
-    <div id="validar-results"></div>
+    <div class="step-card">
+      <div class="step-card-lbl">Dúvidas nesta etapa</div>
+      <div class="cfg-2">
+        <input type="text" id="validar-ask" class="cfg-inp" placeholder="Perguntar ao agente sobre a validação..." onkeydown="onAskKey(event,'validar-ask','validar-results')">
+        <button class="cfg-btn" onclick="askAgente('validar-ask','validar-results')">Perguntar</button>
+      </div>
+    </div>
+    <div id="validar-results" aria-live="polite"></div>
   </div>
 </section>
 
@@ -509,7 +525,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
         <label class="cfg-lbl">Chave API Claude (compartilhada)</label>
         <div class="cfg-2">
           <input type="password" id="claude-key" class="cfg-inp" placeholder="sk-ant-..." onchange="salvarClaudeKey(this.value)">
-          <button class="cfg-btn" onclick="toggleVis('claude-key')">ver</button>
+          <button class="cfg-btn" onclick="toggleVis('claude-key')" aria-label="Mostrar ou esconder a chave digitada">ver</button>
         </div>
       </div>
       <div class="cfg-row" style="margin-bottom:0">
@@ -521,6 +537,17 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
     <div class="settings-card" id="nonadmin-settings-note" style="display:none">
       <div class="step-card-lbl">Compartilhado com a equipe</div>
       <div style="font-size:12px;color:var(--t4);line-height:1.5">A chave da API Claude e a URL das imagens são configuradas pelo administrador e já funcionam automaticamente pra você — não precisa (e não dá) mexer aqui.</div>
+    </div>
+
+    <div class="settings-card" id="admin-users-card" style="display:none">
+      <div class="step-card-lbl">Acesso da equipe</div>
+      <div style="font-size:11px;color:var(--t5);margin-bottom:10px">Admin: acesso total, inclusive esta tela. Editor: cadastra marcas/categorias/regras e gera planilhas (o dia a dia de hoje). Comum: só visualiza, sem gravar nada.</div>
+      <div id="usuarios-list" style="font-size:12px">Carregando...</div>
+    </div>
+
+    <div class="settings-card" id="comum-readonly-note" style="display:none">
+      <div class="step-card-lbl">Modo somente leitura</div>
+      <div style="font-size:12px;color:var(--t4);line-height:1.5">Seu acesso é só-leitura: você pode ver a base e os relatórios, mas cadastro de marca/categoria/regra e geração de planilhas ficam bloqueados. Fale com um admin se precisar de mais acesso.</div>
     </div>
 
     <div class="settings-card" style="border-color:var(--red-l)">
@@ -561,18 +588,69 @@ let currentUser = null; // sessão atual do Supabase Auth
 let currentProfile = null; // { id, nome, is_admin } — carregado após login
 
 async function loadProfile() {
-  const { data } = await sb.from('profiles').select('id,nome,is_admin').eq('id', currentUser.id).maybeSingle();
-  currentProfile = data || { is_admin: false };
+  const { data } = await sb.from('profiles').select('id,nome,is_admin,role').eq('id', currentUser.id).maybeSingle();
+  currentProfile = data || { is_admin: false, role: 'comum' };
   const adminCard = document.getElementById('admin-settings-card');
   const nonAdminNote = document.getElementById('nonadmin-settings-note');
   if (adminCard) adminCard.style.display = currentProfile.is_admin ? '' : 'none';
   if (nonAdminNote) nonAdminNote.style.display = currentProfile.is_admin ? 'none' : '';
+  aplicarGateComum();
+  if (currentProfile.is_admin) carregarUsuarios();
+}
+
+// "comum" é um papel só-leitura (ninguém tem esse papel por padrão, mas admin pode
+// rebaixar alguém pra cá). A trava de verdade é o RLS no banco; isso aqui só avisa
+// a pessoa antes dela tentar salvar algo que vai ser recusado.
+function souSomenteLeitura() { return currentProfile?.role === 'comum'; }
+function aplicarGateComum() {
+  const aviso = document.getElementById('comum-readonly-note');
+  if (aviso) aviso.style.display = souSomenteLeitura() ? '' : 'none';
+}
+
+function roleLabel(r) { return r === 'admin' ? 'Admin' : r === 'comum' ? 'Comum (só leitura)' : 'Editor'; }
+
+// Só admin vê e usa isso — o card correspondente já fica escondido pra não-admin,
+// e o RLS no banco também bloqueia a escrita se alguém tentar contornar a UI.
+async function carregarUsuarios() {
+  const card = document.getElementById('admin-users-card');
+  const el = document.getElementById('usuarios-list');
+  if (card) card.style.display = '';
+  if (!el) return;
+  const { data, error } = await sb.from('profiles').select('id,nome,email,role').order('nome');
+  if (error || !data) { el.textContent = 'Erro ao carregar a equipe: ' + (error?.message || ''); return; }
+  el.innerHTML = data.map(u => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-weight:bold">${u.nome || u.email || 'Sem nome'}</div>
+        <div style="color:var(--t5);font-size:11px">${u.email||''}</div>
+      </div>
+      ${u.id === currentUser.id
+        ? `<span style="color:var(--t5);font-size:11px">${roleLabel(u.role)} (você)</span>`
+        : `<select class="cfg-inp" style="width:auto" onchange="mudarPapelUsuario('${u.id}', this.value)">
+             <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+             <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
+             <option value="comum" ${u.role==='comum'?'selected':''}>Comum (só leitura)</option>
+           </select>`
+      }
+    </div>
+  `).join('');
+}
+
+async function mudarPapelUsuario(userId, novoPapel) {
+  const isAdminNovo = novoPapel === 'admin';
+  const { error } = await sb.from('profiles').update({ role: novoPapel, is_admin: isAdminNovo }).eq('id', userId);
+  if (error) {
+    addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui mudar o papel: ${error.message}</div>`);
+    carregarUsuarios();
+    return;
+  }
+  await registrarHistorico(`Mudou o papel de um membro da equipe para ${roleLabel(novoPapel)}`);
 }
 
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.5';
+const VERSION = 'v5.6';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -879,7 +957,17 @@ async function onAuthReady(session) {
   const claudeKeyInput = document.getElementById('claude-key');
   if (claudeKeyInput) claudeKeyInput.placeholder = claudeKeyConfigurada ? '•••••••••••••• (configurada — digite pra trocar)' : 'sk-ant-...';
   document.getElementById('sync-btn').style.display = '';
-  if (!window._welcomed) { window._welcomed = true; showWelcomeMsg(); }
+  if (!window._welcomed) {
+    window._welcomed = true;
+    const historicoSalvo = loadChatHistory();
+    if (historicoSalvo.length) {
+      chatHistory = historicoSalvo;
+      addAgentMsg('<em style="color:var(--t5)">— conversa restaurada —</em>');
+      chatHistory.forEach(m => { if (m.role === 'user') addUserMsg(m.content); else addAgentMsg(renderMd(m.content)); });
+    } else {
+      showWelcomeMsg();
+    }
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -987,6 +1075,7 @@ async function registrarHistorico(acao) {
 
 async function upsertMarca(nomeExib, siglas) {
   if (!kb) kb = emptyKB();
+  const { data: antes } = await sb.from('marcas').select('*').eq('nome_exibicao', nomeExib).maybeSingle();
   const { error } = await sb.from('marcas').upsert(
     { nome_exibicao: nomeExib, siglas_modelos: siglas, unidades_upper: [], criado_por: currentUser?.id||null },
     { onConflict: 'nome_exibicao' }
@@ -995,12 +1084,14 @@ async function upsertMarca(nomeExib, siglas) {
   kb.marcas[nomeExib] = { nome_exibicao:nomeExib, siglas_modelos:siglas, unidades_upper:[], regras_nome:[] };
   await registrarHistorico(`Adicionou marca: ${nomeExib}`);
   setBaseStatus('ok', `Base atualizada · ${pl(Object.keys(kb.marcas).length,'marca com regras','marcas com regras')}`);
+  definirUltimaAcao({ tabela:'marcas', chave:{nome_exibicao:nomeExib}, before: antes||null, label: `marca "${nomeExib}"` });
   return true;
 }
 
 async function upsertCategoriaMapping(catOriginal, nomeZydon) {
   if (!kb) kb = emptyKB();
   const codigoZydon = getCatCodigo(nomeZydon) || null;
+  const { data: antes } = await sb.from('categoria_mappings').select('*').eq('nome_signus', catOriginal).maybeSingle();
   const { error } = await sb.from('categoria_mappings').upsert(
     { nome_signus: catOriginal, nome_zydon: nomeZydon, codigo_zydon: codigoZydon, criado_por: currentUser?.id||null },
     { onConflict: 'nome_signus' }
@@ -1008,18 +1099,53 @@ async function upsertCategoriaMapping(catOriginal, nomeZydon) {
   if (error) { setBaseStatus('', 'Erro ao salvar categoria: ' + error.message); return false; }
   kb.categorias[catOriginal] = nomeZydon;
   await registrarHistorico(`Mapeou categoria: "${catOriginal}" → "${nomeZydon}"`);
+  definirUltimaAcao({ tabela:'categoria_mappings', chave:{nome_signus:catOriginal}, before: antes||null, label: `categoria "${catOriginal}"` });
   return true;
 }
 
 async function upsertRegraGlobal(de, para) {
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor cadastrar essa regra.'); return false; }
   if (!kb) kb = emptyKB();
+  const { data: antes } = await sb.from('regras_globais').select('*').eq('de', de).maybeSingle();
   await sb.from('regras_globais').delete().eq('de', de);
   const { error } = await sb.from('regras_globais').insert({ de, para, criado_por: currentUser?.id||null });
   if (error) { setBaseStatus('', 'Erro ao salvar regra: ' + error.message); return false; }
   kb.regras_globais = (kb.regras_globais||[]).filter(r=>r.de.toLowerCase()!==de.toLowerCase());
   kb.regras_globais.push({ de, para });
   await registrarHistorico(`Regra: "${de}" → "${para}"`);
+  definirUltimaAcao({ tabela:'regras_globais', chave:{de}, before: antes||null, label: `regra "${de}" → "${para}"` });
   return true;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DESFAZER ÚLTIMA AÇÃO
+// ══════════════════════════════════════════════════════════════════
+let lastAction = null; // { tabela, chave, before, label }
+
+function definirUltimaAcao(acao) {
+  lastAction = acao;
+  const btn = document.getElementById('undo-btn');
+  if (btn) { btn.style.display = ''; btn.textContent = `↩ Desfazer: ${acao.label}`; }
+}
+
+async function desfazerUltimaAcao() {
+  if (!lastAction) return;
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor desfazer isso.'); return; }
+  const { tabela, chave, before, label } = lastAction;
+  const btn = document.getElementById('undo-btn');
+  try {
+    const { error } = before
+      ? await sb.from(tabela).update(before).match(chave)
+      : await sb.from(tabela).delete().match(chave);
+    if (error) throw error;
+    await registrarHistorico(`Desfez: ${label}`);
+    addAgentMsg(`✓ Desfeito: ${label}`);
+    lastAction = null;
+    if (btn) btn.style.display = 'none';
+    await loadKB();
+  } catch (e) {
+    addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui desfazer: ${e.message}</div>`);
+  }
 }
 
 function userName() { return document.getElementById('user-name')?.value.trim() || currentUser?.email || 'Usuário'; }
@@ -1105,7 +1231,7 @@ function handleFileUpload(e) {
       `<div class="file-ok">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${products.length} produtos</div></div>
-          <button onclick="limparPlanilha()" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
+          <button onclick="limparPlanilha()" aria-label="Remover planilha carregada" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
         </div>
       </div>`;
     await processarLote();
@@ -1282,6 +1408,7 @@ function renderPendentes() {
 }
 
 async function salvarMarca(marcaOriginal, marcaId) {
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor resolver essa pendência.'); return; }
   const nomeExib = document.getElementById(`pend-nome-${marcaId}`)?.value.trim() || marcaOriginal;
   const siglasRaw = document.getElementById(`pend-siglas-${marcaId}`)?.value.trim() || '';
   const siglas = siglasRaw.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
@@ -1294,6 +1421,7 @@ async function salvarMarca(marcaOriginal, marcaId) {
 function pularMarca(marca) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca)); renderPendentes(); }
 
 async function salvarCategoria(catOriginal, catId) {
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor resolver essa pendência.'); return; }
   const nomeZydon = document.getElementById(`pend-cat-${catId}`)?.value.trim() || catOriginal;
   const ok = await upsertCategoriaMapping(catOriginal, nomeZydon);
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===catOriginal));
@@ -2080,13 +2208,25 @@ Produtos: ${products.length} | Pendências: ${pendentes.length}
 INSTRUÇÕES: Responda em pt-BR, direto, máx 4 linhas. Sem markdown (**, ##, ---). Se sugerir regra: "X" → "Y".`;
 }
 
+// Guarda a conversa livre com o Claude por usuário, pra não perder o contexto num refresh.
+// Não persiste o resto do chat (planilhas geradas, pendências) porque isso depende do
+// arquivo carregado, que também some no refresh — restaurar só os balões ficaria órfão.
+function chatHistoryKey() { return currentUser ? `jet_chat_history_${currentUser.id}` : null; }
+function saveChatHistory() { const k = chatHistoryKey(); if (k) localStorage.setItem(k, JSON.stringify(chatHistory)); }
+function loadChatHistory() {
+  const k = chatHistoryKey();
+  if (!k) return [];
+  try { return JSON.parse(localStorage.getItem(k) || '[]'); } catch { return []; }
+}
+
 async function callClaude(msg) {
   chatHistory.push({ role:'user', content:msg });
   if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
   const { data, error } = await sb.functions.invoke('claude-chat', { body: { system: buildContext(), messages: chatHistory } });
-  if (error || data?.error) { chatHistory.pop(); throw new Error(data?.error || error.message); }
+  if (error || data?.error) { chatHistory.pop(); saveChatHistory(); throw new Error(data?.error || error.message); }
   const reply = data.reply;
   chatHistory.push({ role:'assistant', content:reply });
+  saveChatHistory();
   return reply;
 }
 
@@ -2105,7 +2245,32 @@ function renderMd(text) {
 // ══════════════════════════════════════════════════════════════════
 // UI HELPERS
 // ══════════════════════════════════════════════════════════════════
-function addUserMsg(t){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-u'; d.innerHTML=`<div class="msg-lbl">Você</div><div class="bubble">${t}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
+function addUserMsg(t,targetId='chat'){ const a=document.getElementById(targetId); if(!a) return; const d=document.createElement('div'); d.className='msg msg-u'; d.innerHTML=`<div class="msg-lbl">Você</div><div class="bubble">${t}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
+
+// Chat local do agente, usado nas telas Imagens/Validar (fora do chat principal da Planilha).
+async function askAgente(inputId, targetId) {
+  const inp = document.getElementById(inputId);
+  const txt = (inp?.value||'').trim();
+  if (!txt) return;
+  inp.value = '';
+  addUserMsg(txt, targetId);
+  const area = document.getElementById(targetId);
+  const typId = 'typ-' + targetId;
+  const typDiv = document.createElement('div');
+  typDiv.className = 'msg msg-a'; typDiv.id = typId;
+  typDiv.innerHTML = `<div class="msg-lbl">Agente Jet</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  area.appendChild(typDiv); area.scrollTop = area.scrollHeight;
+  try {
+    const reply = await callClaude(txt);
+    document.getElementById(typId)?.remove();
+    addAgentMsg(renderMd(reply), '', targetId);
+  } catch (e) {
+    document.getElementById(typId)?.remove();
+    if (e.message === 'no_key_configured') addAgentMsg('Configure a <strong>Chave API Claude</strong> em Config para perguntas livres.', '', targetId);
+    else addAgentMsg(`Erro: ${e.message}`, '', targetId);
+  }
+}
+function onAskKey(e, inputId, targetId) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askAgente(inputId, targetId); } }
 function addAgentMsg(h,ex='',targetId='chat'){ const a=document.getElementById(targetId); if(!a) return null; const d=document.createElement('div'); d.className='msg msg-a'; d.innerHTML=`<div class="msg-lbl">Agente Jet</div><div class="bubble">${h}${ex}</div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; return d; }
 function showTyping(){ const a=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg msg-a'; d.id='typ'; d.innerHTML=`<div class="msg-lbl">Agente Jet</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`; a.appendChild(d); a.scrollTop=a.scrollHeight; }
 function removeTyping(){ const t=document.getElementById('typ'); if(t)t.remove(); }
