@@ -333,7 +333,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.2 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.3 · 18/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -494,6 +494,13 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <div class="step-card-lbl">Compartilhado com a equipe</div>
       <div style="font-size:12px;color:var(--t4);line-height:1.5">A chave da API Claude e a URL das imagens são configuradas pelo administrador e já funcionam automaticamente pra você — não precisa (e não dá) mexer aqui.</div>
     </div>
+
+    <div class="settings-card" style="border-color:var(--red-l)">
+      <div class="step-card-lbl" style="color:var(--red)">Zona de risco</div>
+      <div style="font-size:12px;color:var(--t4);line-height:1.5;margin-bottom:10px">Excluir sua conta é permanente: você perde o acesso e precisa criar uma conta nova pra voltar a usar o Agente Jet. O histórico de alterações que você já fez fica registrado, mas sem vínculo com a sua conta.</div>
+      <button class="act-btn" style="border-color:var(--red);color:var(--red)" onclick="excluirConta()">Excluir minha conta</button>
+      <div id="del-conta-msg" style="font-size:12px;margin-top:8px"></div>
+    </div>
   </div>
 </section>
 
@@ -537,7 +544,7 @@ async function loadProfile() {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.2';
+const VERSION = 'v5.3';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -798,6 +805,28 @@ async function logout() {
   document.getElementById('signup-password').value = '';
   document.getElementById('signup-password-2').value = '';
   showAuthView('login');
+}
+
+async function excluirConta() {
+  const msgEl = document.getElementById('del-conta-msg');
+  msgEl.style.color = 'var(--red)';
+  const confirmado = prompt('Isso apaga sua conta pra sempre. Digite EXCLUIR (em maiúsculas) pra confirmar:');
+  if (confirmado !== 'EXCLUIR') {
+    if (confirmado !== null) { msgEl.textContent = 'Não confirmado — nada foi excluído.'; }
+    return;
+  }
+  msgEl.style.color = 'var(--t4)';
+  msgEl.textContent = 'Excluindo...';
+  try {
+    const { data, error } = await sb.functions.invoke('delete-account');
+    if (error || data?.error) throw new Error(data?.error || error.message);
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = 'Conta excluída. Até logo!';
+    setTimeout(() => { logout(); }, 1200);
+  } catch (e) {
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Erro ao excluir: ' + e.message;
+  }
 }
 
 // Chamado assim que temos uma sessão válida (login, cadastro ou sessão salva)
