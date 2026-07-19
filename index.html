@@ -366,7 +366,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.15 · 19/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.16 · 19/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -761,7 +761,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.15';
+const VERSION = 'v5.16';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2541,14 +2541,23 @@ async function salvarOrdemCategoriasNaBase() {
   const ref = catZydonOrdemMap;
   if (!ref || !ref.size) return;
   if (!kb) kb = emptyKB();
+  // "pai" é uma FK pra própria tabela — se a categoria apontar pra um pai que não
+  // existe nem no que já está salvo nem no lote que estamos subindo agora (caso
+  // raro de um arquivo da Zydon referenciar uma categoria de fora desse recorte),
+  // salva sem pai em vez de travar o lote inteiro inserindo tudo.
+  const codigosValidos = new Set(Object.keys(kb.categorias_zydon||{}));
+  for (const codigo of ref.keys()) codigosValidos.add(String(codigo));
+
   const rows = [];
+  const semPaiValido = [];
   for (const [codigo, info] of ref.entries()) {
     const existente = kb.categorias_zydon?.[codigo];
     const nome = catSignusFlat?.get(codigo)?.nome || existente?.nome || '';
     if (!nome) continue; // sem nome não dá pra gravar (coluna obrigatória)
+    let pai = info.pai ? Number(info.pai) : null;
+    if (pai !== null && !codigosValidos.has(String(pai))) { semPaiValido.push(codigo); pai = null; }
     rows.push({
-      codigo: Number(codigo), nome,
-      pai: info.pai ? Number(info.pai) : null,
+      codigo: Number(codigo), nome, pai,
       caminho: existente?.caminho || null,
       ordem: info.ordem,
     });
@@ -2558,7 +2567,9 @@ async function salvarOrdemCategoriasNaBase() {
   if (error) { addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui salvar: ${error.message}</div>`, '', 'cat-signus-results'); return; }
   rows.forEach(r => { kb.categorias_zydon[String(r.codigo)] = { nome:r.nome, pai:r.pai, caminho:r.caminho, ordem:r.ordem }; });
   await registrarHistorico(`Salvou o ORDER real de ${pl(rows.length,'categoria','categorias')} da Zydon na base do agente`);
-  addAgentMsg(`<div class="alert alert-ok">✓ ORDER de ${pl(rows.length,'categoria salva','categorias salvas')} na base do agente — da próxima vez não precisa subir esse arquivo de novo.</div>`, '', 'cat-signus-results');
+  let msg = `<div class="alert alert-ok">✓ ORDER de ${pl(rows.length,'categoria salva','categorias salvas')} na base do agente — da próxima vez não precisa subir esse arquivo de novo.</div>`;
+  if (semPaiValido.length) msg += `<div class="alert alert-warn">⚠ ${pl(semPaiValido.length,'categoria','categorias')} (código ${semPaiValido.join(', ')}) apontava pra um pai que não existe nesse lote — salvei sem pai, ajuste manualmente se precisar.</div>`;
+  addAgentMsg(msg, '', 'cat-signus-results');
   if (catSignusFlat) renderCategoriasResultado(catSignusFlat);
 }
 
