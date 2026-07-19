@@ -338,7 +338,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.8 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.9 · 18/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -428,7 +428,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 <section class="view-panel view-full" id="view-imagens">
   <div class="view-scroll">
     <div class="view-h1">Redimensionar imagens</div>
-    <div class="view-sub">Casa as fotos do fornecedor com os produtos da planilha, renomeia pelo SKU e redimensiona (máx. 1200px, JPEG) — tudo no navegador, sem subir nada pra fora.</div>
+    <div class="view-sub">Casa as fotos do fornecedor com os produtos da planilha, renomeia pelo SKU e redimensiona (máx. 1000px, JPEG) — tudo no navegador, sem subir nada pra fora.</div>
     <div class="step-card">
       <div class="step-card-lbl">1. Planilha Signus (produtos)</div>
       <div style="font-size:11px;color:var(--t5);margin-bottom:8px" id="imgprep-planilha-status">Usa a planilha já carregada na aba Planilha, ou selecione outra abaixo</div>
@@ -650,7 +650,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.8';
+const VERSION = 'v5.9';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1758,12 +1758,19 @@ document.getElementById('imgprep-file-fotos').addEventListener('change', functio
 enableDragDrop('imgprep-file-planilha');
 enableDragDrop('imgprep-file-fotos');
 
+// Remove tudo que não é letra/número antes de comparar — cada fábrica usa separador
+// diferente no nome do arquivo (hífen, underscore, espaço), então "ABC-123" e
+// "abc_123_foto1.jpg" precisam bater mesmo com pontuação diferente.
+function normalizarParaComparar(s) {
+  return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 // Tenta casar o nome do arquivo com Código genérico nos parceiros ou Código do produto
 function buscarProdutoPorNomeArquivo(filename, listaProdutos) {
-  const base = filename.replace(/\.[^.]+$/, '').toUpperCase();
+  const base = normalizarParaComparar(filename.replace(/\.[^.]+$/, ''));
   for (const p of listaProdutos) {
-    const codGen = String(p['Código genérico nos parceiros']||'').trim().toUpperCase();
-    const cod = String(p['Código']||'').trim().toUpperCase();
+    const codGen = normalizarParaComparar(p['Código genérico nos parceiros']);
+    const cod = normalizarParaComparar(p['Código']);
     if (codGen && codGen.length >= 3 && base.includes(codGen)) return p;
     if (cod && cod.length >= 3 && base.includes(cod)) return p;
   }
@@ -1851,7 +1858,7 @@ function associarImagemManual(idx, produtoId) {
 }
 
 // Redimensiona a imagem no navegador via Canvas — sem precisar de servidor
-function redimensionarImagem(file, maxDim=1200, quality=0.85) {
+function redimensionarImagem(file, maxDim=1000, quality=0.85) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1919,7 +1926,7 @@ async function gerarZipImagens() {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-  addAgentMsg(`<div class="alert alert-ok">✓ ZIP gerado com <strong>${pl(processadas,'imagem renomeada e redimensionada','imagens renomeadas e redimensionadas')}</strong> (máx. 1200px, JPEG).${erros?` <span style="color:var(--red)">${pl(erros,'falhou','falharam')}.</span>`:''}<br><br>Descompacta e coloca na pasta de imagens do Signus.</div>`, '', 'imgprep-results');
+  addAgentMsg(`<div class="alert alert-ok">✓ ZIP gerado com <strong>${pl(processadas,'imagem renomeada e redimensionada','imagens renomeadas e redimensionadas')}</strong> (máx. 1000px, JPEG).${erros?` <span style="color:var(--red)">${pl(erros,'falhou','falharam')}.</span>`:''}<br><br>Descompacta e coloca na pasta de imagens do Signus.</div>`, '', 'imgprep-results');
 }
 
 // ══════════════════════════════════════════════════════════════════
