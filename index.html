@@ -366,7 +366,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.14 · 19/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.15 · 19/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -761,7 +761,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.14';
+const VERSION = 'v5.15';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1184,7 +1184,7 @@ async function loadKB() {
       sb.from('marcas').select('id,nome_exibicao,siglas_modelos,unidades_upper'),
       sb.from('marca_regras_nome').select('marca_id,de,para'),
       sb.from('marcas_zydon').select('nome,codigo'),
-      sb.from('categorias_zydon').select('codigo,nome,pai,caminho'),
+      sb.from('categorias_zydon').select('codigo,nome,pai,caminho,ordem'),
       sb.from('categoria_mappings').select('nome_signus,nome_zydon,codigo_zydon'),
       sb.from('regras_globais').select('de,para'),
       sb.from('unidades_globais').select('unidade'),
@@ -1210,7 +1210,7 @@ async function loadKB() {
     (marcasZydonR.data||[]).forEach(m => { novo.marcas_zydon[m.nome] = m.codigo; });
 
     (catsZydonR.data||[]).forEach(c => {
-      novo.categorias_zydon[String(c.codigo)] = { nome:c.nome, pai:c.pai, caminho:c.caminho };
+      novo.categorias_zydon[String(c.codigo)] = { nome:c.nome, pai:c.pai, caminho:c.caminho, ordem:c.ordem };
       if (c.nome) novo.categorias_zydon_por_nome[c.nome.toUpperCase()] = c.codigo;
       if (c.caminho) novo.categorias_zydon_por_nome[c.caminho.toUpperCase()] = c.codigo;
     });
@@ -2438,6 +2438,12 @@ function renderCategoriasResultado(mapa) {
       </div>
     </div>`;
   }
+  if (catZydonOrdemMap && catZydonOrdemMap.size && currentProfile?.is_admin) {
+    html += `<div class="alert alert-ok" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <span>✓ Li o ORDER real de ${catZydonOrdemMap.size} categorias do arquivo da Zydon. Salvar na base do agente evita ter que subir esse arquivo de novo da próxima vez.</span>
+      <button class="act-btn pri" onclick="salvarOrdemCategoriasNaBase()">Salvar ORDER na base do agente</button>
+    </div>`;
+  }
   html += `<div class="act-row" style="margin-top:10px">
     <button class="act-btn pri" onclick="gerarArquivoCategoriaZydon()">Gerar Importa Categoria.xlsx (todas as ${mapa.size})</button>
   </div>`;
@@ -2446,29 +2452,68 @@ function renderCategoriasResultado(mapa) {
   window._categoriasTodas = Array.from(mapa.entries()).map(([id, info]) => ({ id, ...info }));
 }
 
+// A Zydon não só guarda um número de ORDER por categoria — o arquivo dela
+// lista as linhas na própria sequência da árvore: cada categoria aparece
+// logo depois do pai, e os irmãos entre si já saem na ordem do ORDER deles
+// (é isso que dá pra ver pelas cores quando abre a planilha: cada bloco
+// colorido é um pai com os filhos dele logo abaixo, em sequência). Então não
+// basta calcular o ORDER certo — a ordem das LINHAS no arquivo gerado também
+// precisa seguir essa travessia em profundidade, senão continua parecendo
+// fora de ordem mesmo com o número certo na coluna.
+function ordenarLinhasComoArvore(rows) {
+  const porPai = new Map();
+  rows.forEach(r => {
+    const chave = r['Código pai'] || '__raiz__';
+    if (!porPai.has(chave)) porPai.set(chave, []);
+    porPai.get(chave).push(r);
+  });
+  for (const lista of porPai.values()) lista.sort((a,b) => (a['ORDER']||0) - (b['ORDER']||0));
+
+  const visitados = new Set();
+  const resultado = [];
+  function visitar(chavePai) {
+    const filhos = porPai.get(chavePai) || [];
+    filhos.forEach(r => {
+      if (visitados.has(r['Código'])) return;
+      visitados.add(r['Código']);
+      resultado.push(r);
+      visitar(r['Código']);
+    });
+  }
+  visitar('__raiz__');
+  // Órfãos: categoria cujo "Código pai" não está no próprio arquivo (ex: pai
+  // de outro ramo da árvore que não veio nesse lote) — inclui no final, sem
+  // perder nenhuma linha.
+  rows.forEach(r => { if (!visitados.has(r['Código'])) resultado.push(r); });
+  return resultado;
+}
+
 function gerarArquivoCategoriaZydon() {
   const todas = window._categoriasTodas || [];
   if (!todas.length) return;
   // ORDER na Zydon é a posição entre os irmãos (mesmo "Código pai"), definida pela
-  // Zydon — não dá pra derivar do treeview do Signus. Se o arquivo de referência
-  // (já cadastrado na Zydon) foi carregado, usamos o ORDER/pai exatos de lá pra
-  // quem já existe. Categorias genuinamente novas entram no final do grupo.
+  // Zydon — não dá pra derivar do treeview do Signus. Prioridade pra descobrir o
+  // pai/ORDER real de cada categoria: 1) arquivo da Zydon subido agora (mais
+  // fresco); 2) o que já foi salvo antes na base do agente; 3) categoria
+  // genuinamente nova — entra no final do grupo, sem outra forma de saber.
   const ref = catZydonOrdemMap;
   const maxOrdemPorPai = {};
-  if (ref) {
-    for (const info of ref.values()) {
-      const chave = info.pai || '__raiz__';
-      if (info.ordem !== null) maxOrdemPorPai[chave] = Math.max(maxOrdemPorPai[chave]||0, info.ordem);
-    }
-  }
+  const registrarMax = (pai, ordem) => {
+    const chave = pai || '__raiz__';
+    if (ordem !== null && ordem !== undefined && !isNaN(ordem)) maxOrdemPorPai[chave] = Math.max(maxOrdemPorPai[chave]||0, ordem);
+  };
+  if (ref) for (const info of ref.values()) registrarMax(info.pai, info.ordem);
+  for (const salvo of Object.values(kb?.categorias_zydon||{})) registrarMax(salvo.pai!=null ? String(salvo.pai) : null, salvo.ordem);
+
   const rows = todas.map(n => {
     const refInfo = ref?.get(String(n.id));
-    // Pra categoria que já existe na Zydon, o pai e o ORDER de lá são a verdade —
-    // o Signus pode ter reclassificado a árvore diferente da Zydon.
-    const pai = refInfo ? refInfo.pai : n.pai;
+    const salvo = kb?.categorias_zydon?.[String(n.id)];
+    const pai = refInfo ? refInfo.pai : (salvo && salvo.pai != null ? String(salvo.pai) : n.pai);
     let ordem;
     if (refInfo && refInfo.ordem !== null) {
       ordem = refInfo.ordem;
+    } else if (salvo && salvo.ordem !== null && salvo.ordem !== undefined) {
+      ordem = salvo.ordem;
     } else {
       const chave = pai || '__raiz__';
       maxOrdemPorPai[chave] = (maxOrdemPorPai[chave] || 0) + 1;
@@ -2486,9 +2531,35 @@ function gerarArquivoCategoriaZydon() {
       'SEO_META_KEYWORDS': '',
     };
   });
+  const rowsOrdenadas = ordenarLinhasComoArvore(rows);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Categorias');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsOrdenadas), 'Categorias');
   XLSX.writeFile(wb, `Zydon_Importa_Categoria_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function salvarOrdemCategoriasNaBase() {
+  const ref = catZydonOrdemMap;
+  if (!ref || !ref.size) return;
+  if (!kb) kb = emptyKB();
+  const rows = [];
+  for (const [codigo, info] of ref.entries()) {
+    const existente = kb.categorias_zydon?.[codigo];
+    const nome = catSignusFlat?.get(codigo)?.nome || existente?.nome || '';
+    if (!nome) continue; // sem nome não dá pra gravar (coluna obrigatória)
+    rows.push({
+      codigo: Number(codigo), nome,
+      pai: info.pai ? Number(info.pai) : null,
+      caminho: existente?.caminho || null,
+      ordem: info.ordem,
+    });
+  }
+  if (!rows.length) return;
+  const { error } = await sb.from('categorias_zydon').upsert(rows, { onConflict: 'codigo' });
+  if (error) { addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui salvar: ${error.message}</div>`, '', 'cat-signus-results'); return; }
+  rows.forEach(r => { kb.categorias_zydon[String(r.codigo)] = { nome:r.nome, pai:r.pai, caminho:r.caminho, ordem:r.ordem }; });
+  await registrarHistorico(`Salvou o ORDER real de ${pl(rows.length,'categoria','categorias')} da Zydon na base do agente`);
+  addAgentMsg(`<div class="alert alert-ok">✓ ORDER de ${pl(rows.length,'categoria salva','categorias salvas')} na base do agente — da próxima vez não precisa subir esse arquivo de novo.</div>`, '', 'cat-signus-results');
+  if (catSignusFlat) renderCategoriasResultado(catSignusFlat);
 }
 
 async function sincronizarCategoriasNaBase() {
