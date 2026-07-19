@@ -366,7 +366,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.13 · 19/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.14 · 19/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -545,6 +545,16 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
         <strong id="cat-signus-file-name">Selecionar arquivo</strong>
         <span class="upload-z-hint">ou arraste aqui</span>
       </label>
+    </div>
+    <div class="step-card">
+      <div class="step-card-lbl">Categoria já cadastrada na Zydon (opcional)</div>
+      <label class="upload-z" for="cat-zydon-file">
+        <input type="file" id="cat-zydon-file" accept=".xlsx,.xls">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>
+        <strong id="cat-zydon-file-name">Selecionar arquivo</strong>
+        <span class="upload-z-hint">"Importa Categoria" já existente na Zydon</span>
+      </label>
+      <div style="font-size:11px;color:var(--t5);margin-top:8px">Sem esse upload, o ORDER das categorias novas é sequencial dentro do grupo. Com esse upload, as categorias que já existem mantêm o ORDER exato de lá, e só as novas ganham posição no final do grupo.</div>
     </div>
     <div id="cat-signus-results"></div>
   </div>
@@ -751,7 +761,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.13';
+const VERSION = 'v5.14';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2351,6 +2361,27 @@ function downloadArquivo(n) {
 // curadoria de produtos — pensada pra onboarding de categoria nova.
 // ══════════════════════════════════════════════════════════════════
 let catSignusFlat = null; // Map id -> {nome, pai}
+let catZydonOrdemMap = null; // Map codigo (string) -> {pai, ordem} — vindo do arquivo real já cadastrado na Zydon
+
+function extrairOrdemCategoriasZydon(rows) {
+  const colCodigo = acharColuna(rows, ['Código','Codigo']);
+  const colPai = acharColuna(rows, ['Código pai','Codigo pai']);
+  const colOrder = acharColuna(rows, ['ORDER','Ordem']);
+  const mapa = new Map();
+  if (!colCodigo) return mapa;
+  (rows||[]).forEach(r => {
+    const cod = r[colCodigo];
+    if (cod === undefined || cod === '' || cod === null) return;
+    const codStr = String(cod).trim();
+    const pai = colPai ? r[colPai] : null;
+    const ordem = colOrder ? Number(r[colOrder]) : null;
+    mapa.set(codStr, {
+      pai: (pai!==undefined && pai!=='' && pai!==null) ? String(pai).trim() : null,
+      ordem: (ordem!==null && !isNaN(ordem)) ? ordem : null,
+    });
+  });
+  return mapa;
+}
 
 function flattenCategoriaTreeview(rows) {
   const mapa = new Map();
@@ -2418,20 +2449,39 @@ function renderCategoriasResultado(mapa) {
 function gerarArquivoCategoriaZydon() {
   const todas = window._categoriasTodas || [];
   if (!todas.length) return;
-  // ORDER na Zydon é a posição entre os irmãos (mesmo "Código pai"), na ordem em
-  // que aparecem no treeview do Signus — não é uma ordenação global por código.
-  const contadorPorPai = {};
+  // ORDER na Zydon é a posição entre os irmãos (mesmo "Código pai"), definida pela
+  // Zydon — não dá pra derivar do treeview do Signus. Se o arquivo de referência
+  // (já cadastrado na Zydon) foi carregado, usamos o ORDER/pai exatos de lá pra
+  // quem já existe. Categorias genuinamente novas entram no final do grupo.
+  const ref = catZydonOrdemMap;
+  const maxOrdemPorPai = {};
+  if (ref) {
+    for (const info of ref.values()) {
+      const chave = info.pai || '__raiz__';
+      if (info.ordem !== null) maxOrdemPorPai[chave] = Math.max(maxOrdemPorPai[chave]||0, info.ordem);
+    }
+  }
   const rows = todas.map(n => {
-    const chavePai = n.pai || '__raiz__';
-    contadorPorPai[chavePai] = (contadorPorPai[chavePai] || 0) + 1;
+    const refInfo = ref?.get(String(n.id));
+    // Pra categoria que já existe na Zydon, o pai e o ORDER de lá são a verdade —
+    // o Signus pode ter reclassificado a árvore diferente da Zydon.
+    const pai = refInfo ? refInfo.pai : n.pai;
+    let ordem;
+    if (refInfo && refInfo.ordem !== null) {
+      ordem = refInfo.ordem;
+    } else {
+      const chave = pai || '__raiz__';
+      maxOrdemPorPai[chave] = (maxOrdemPorPai[chave] || 0) + 1;
+      ordem = maxOrdemPorPai[chave];
+    }
     return {
       'Código': Number(n.id),
-      'Status': true,
-      'Código pai': n.pai ? Number(n.pai) : '',
+      'Status': 'true',
+      'Código pai': pai ? Number(pai) : '',
       'SEO_DESCRIPTION': '',
       'CHARACTERISTICS': '',
       'SEO_TITLE': '',
-      'ORDER': contadorPorPai[chavePai],
+      'ORDER': ordem,
       'Nome': n.nome,
       'SEO_META_KEYWORDS': '',
     };
@@ -2466,6 +2516,19 @@ document.getElementById('cat-signus-file').addEventListener('change', function(e
   reader.readAsArrayBuffer(file);
 });
 enableDragDrop('cat-signus-file');
+
+document.getElementById('cat-zydon-file').addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('cat-zydon-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(ev.target.result, { type:'array' });
+    catZydonOrdemMap = extrairOrdemCategoriasZydon(lerPrimeiraAbaUtil(wb));
+    if (catSignusFlat) renderCategoriasResultado(catSignusFlat);
+  };
+  reader.readAsArrayBuffer(file);
+});
+enableDragDrop('cat-zydon-file');
 
 // ══════════════════════════════════════════════════════════════════
 // CARACTERÍSTICAS SIGNUS x ZYDON — compara o que o Signus manda (por
@@ -2642,7 +2705,7 @@ function gerarVariacoesCaracteristicasZydon(rows) {
         'Valores': 1,
         'VARIATION_DEPTH': colProf ? (r[colProf]||'') : '',
         'Código variação': id,
-        'Status': true,
+        'Status': 'true',
         'SKU': colSku ? String(r[colSku]||'') : '',
         'PACKAGING_WIDTH': colLargura ? (r[colLargura]||'') : '',
         'PACKAGING_DEPTH': colProf ? (r[colProf]||'') : '',
