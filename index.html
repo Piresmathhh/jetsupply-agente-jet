@@ -338,7 +338,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.9 · 18/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.10 · 19/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -650,7 +650,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.9';
+const VERSION = 'v5.10';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -669,6 +669,49 @@ const COLUNAS_OBRIGATORIAS = {
 };
 // Cód. agrupamento é importante mas não bloqueia (produto pode não ter variação)
 const COLUNAS_RECOMENDADAS = { 'Cód. agrupamento': ['cód. agrupamento','cod. agrupamento','código agrupamento','codigo agrupamento','cód agrupamento'] };
+
+// ══════════════════════════════════════════════════════════════════
+// NOVO TEMPLATE SIGNUS (18/07/2026) — traduz nomes técnicos (PROD_NOME,
+// MARCA_NOME, GRUPO_SETORIAL_NOME...) pros nomes em português que o resto
+// do app já espera (Nome, Marca, Grupo setorial...). Feito num lugar só,
+// na entrada, pra não precisar mexer em cada função que lê uma coluna —
+// e continua aceitando o formato antigo também, caso apareça de novo.
+// ══════════════════════════════════════════════════════════════════
+function normalizarLinhaSignus(p) {
+  const out = { ...p };
+  const primeiroPreenchido = (...campos) => {
+    for (const c of campos) { const v = p[c]; if (v !== undefined && v !== '' && v !== null) return v; }
+    return undefined;
+  };
+  const mapa = {
+    'ID': ['PROD_ID', 'ID'],
+    'Código': ['PROD_SKU', 'Código', 'Codigo'],
+    'Nome': ['PROD_NOME', 'Nome'],
+    'Marca': ['MARCA_NOME', 'Marca'],
+    'Situação': ['PROD_SITUACAO', 'Situação', 'Situacao'],
+    'Código barras': ['PROD_COD_BAR', 'Código barras'],
+    'Largura (cm)': ['LARGURA_CM', 'Largura (cm)'],
+    'Altura (cm)': ['ALTURA_CM', 'Altura (cm)'],
+    'Profundidade (cm)': ['PROFUNDIDADE_CM', 'Profundidade (cm)'],
+    'Peso': ['PESO_KG', 'Peso'],
+    'Unidade de medida': ['UNID_SIGLA', 'Unidade de medida'],
+    'Linha de produto': ['LINHA_NOME', 'Linha de produto'],
+    'Grupo setorial': ['GRUPO_SETORIAL_NOME', 'Grupo setorial'],
+    'Cód. agrupamento': ['PROD_COD_AGRUPAMENTO', 'Cód. agrupamento', 'Cod. agrupamento'],
+  };
+  for (const [chaveInterna, candidatos] of Object.entries(mapa)) {
+    const v = primeiroPreenchido(...candidatos);
+    if (v !== undefined) out[chaveInterna] = v;
+  }
+  // O novo formato já manda o código Zydon de categoria e marca resolvidos direto
+  // (CATEGORIA_TREEVIEW_ID/NOME, MARCA_ID) — guardamos à parte pra gerarPlanilha()
+  // e analisarProduto() preferirem isso em vez de tentar mapear pelo nome, só caindo
+  // no mapeamento manual (pendências) se isso não vier ou não bater com a base.
+  out['_categoria_treeview_id'] = (p['CATEGORIA_TREEVIEW_ID'] !== undefined && p['CATEGORIA_TREEVIEW_ID'] !== '') ? String(p['CATEGORIA_TREEVIEW_ID']).trim() : '';
+  out['_categoria_treeview_nome'] = p['CATEGORIA_TREEVIEW_NOME'] || '';
+  out['_marca_id_signus'] = (p['MARCA_ID'] !== undefined && p['MARCA_ID'] !== '') ? String(p['MARCA_ID']).trim() : '';
+  return out;
+}
 
 // ══════════════════════════════════════════════════════════════════
 // MAPA DE CATEGORIAS EMBUTIDO (Signus → código Zydon)
@@ -746,6 +789,15 @@ function formatName(raw, marcaNome) {
     if (cfg) for (const r of (cfg.regras_nome||[])) result = result.replace(new RegExp(r.de.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), r.para);
   }
   return result;
+}
+
+// Formata "WEG - MDWS" -> "Weg - Mdws" — mesmo estilo de capitalização do Nome, mas sem as
+// regras de substituição (é só o nome da linha de produto, exibido cru na aba Produtos).
+function formatLinha(raw) {
+  if (!raw) return '';
+  return String(raw).split(/\s*-\s*/).map(parte =>
+    parte.trim().split(/\s+/).filter(Boolean).map(w => capFirstAlphaLowerRest(w)).join(' ')
+  ).join(' - ');
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1181,13 +1233,19 @@ function analisarProduto(p) {
   const issues = [];
   const marca = p['Marca'] || '';
   if (marca && !marcaConhecida(marca)) issues.push({ tipo:'marca', valor:marca });
-  const cat = p['Grupo setorial'] || '';
-  if (cat) {
-    const upper = cat.toUpperCase();
-    const jaConhece = CATS_ZYDON[upper] || kb?.categorias_zydon_por_nome?.[upper] ||
-      Object.keys(CATS_ZYDON).some(k => k.includes(upper) || upper.includes(k)) ||
-      kb?.categorias?.[cat];
-    if (!jaConhece) issues.push({ tipo:'categoria', valor:cat });
+  // Se o Signus já mandou o código Zydon da categoria resolvido (CATEGORIA_TREEVIEW_ID) e ele
+  // bate com a base, não há pendência — só cai na checagem manual de sempre se isso não vier.
+  const catIdSignus = p['_categoria_treeview_id'] || '';
+  const catIdResolvida = !!(catIdSignus && (CATS_ZYDON_NOMES[catIdSignus] || kb?.categorias_zydon?.[catIdSignus]));
+  if (!catIdResolvida) {
+    const cat = p['Grupo setorial'] || '';
+    if (cat) {
+      const upper = cat.toUpperCase();
+      const jaConhece = CATS_ZYDON[upper] || kb?.categorias_zydon_por_nome?.[upper] ||
+        Object.keys(CATS_ZYDON).some(k => k.includes(upper) || upper.includes(k)) ||
+        kb?.categorias?.[cat];
+      if (!jaConhece) issues.push({ tipo:'categoria', valor:cat });
+    }
   }
   return issues;
 }
@@ -1225,7 +1283,7 @@ function handleFileUpload(e) {
   const reader = new FileReader();
   reader.onload = async function(ev) {
     const wbRaw = XLSX.read(ev.target.result, { type:'array' });
-    const data = XLSX.utils.sheet_to_json(wbRaw.Sheets[wbRaw.SheetNames[0]]);
+    const data = XLSX.utils.sheet_to_json(wbRaw.Sheets[wbRaw.SheetNames[0]]).map(normalizarLinhaSignus);
 
     // Validar arquivo
     const { erros: errosVal, avisos: avisosVal } = validarArquivo(data);
@@ -1531,13 +1589,23 @@ async function gerarPlanilha() {
     const nome = formatName(p['Nome']||'', p['Marca']||'');
     const marc = p['Marca']||'';
     const cat  = p['Grupo setorial']||'';
-    const catNomeSignus = catZydonMap[cat] || cat;
-    const catCod = getCatCodigo(catNomeSignus) || getCatCodigo(cat);
-    // Nome oficial da Zydon: prioriza o nome real do código resolvido, senão usa o mapeado, senão o bruto do Signus
-    const catNomeZydon = (catCod && CATS_ZYDON_NOMES[catCod]) ? CATS_ZYDON_NOMES[catCod] : catNomeSignus;
-    const gen  = p['Gênero']||'';
-    const lin  = p['Linha de produto']||'';
-    const un   = p['Unidade de medida']||'';
+    // O Signus agora manda o código Zydon da categoria já resolvido (CATEGORIA_TREEVIEW_ID/NOME).
+    // Confiamos nisso quando existir e bater com a base; só cai no mapeamento manual
+    // (categoria_mappings/pendências) se o Signus não mandar ou o código for desconhecido.
+    const catIdSignus = p['_categoria_treeview_id']||'';
+    const nomeZydonPorId = catIdSignus ? (CATS_ZYDON_NOMES[catIdSignus] || kb?.categorias_zydon?.[catIdSignus]?.nome) : '';
+    let catCod, catNomeZydon;
+    if (catIdSignus && nomeZydonPorId) {
+      catCod = catIdSignus;
+      catNomeZydon = nomeZydonPorId;
+    } else {
+      const catNomeSignus = catZydonMap[cat] || cat;
+      catCod = getCatCodigo(catNomeSignus) || getCatCodigo(cat);
+      // Nome oficial da Zydon: prioriza o nome real do código resolvido, senão usa o mapeado, senão o bruto do Signus
+      catNomeZydon = (catCod && CATS_ZYDON_NOMES[catCod]) ? CATS_ZYDON_NOMES[catCod] : catNomeSignus;
+    }
+    const lin = p['Linha de produto']||'';
+    const un  = p['Unidade de medida']||'';
     const pG   = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
     const ean  = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
 
@@ -1549,7 +1617,11 @@ async function gerarPlanilha() {
       else eansSeen[ean] = p['ID'];
     }
 
-    const marcaCod = getMarcaCodigo(marc);
+    // O Signus agora manda o código Zydon da marca já resolvido (MARCA_ID) — confiamos nisso
+    // quando bater com o catálogo conhecido; senão cai no fuzzy-match por nome de sempre.
+    const marcaIdSignus = p['_marca_id_signus']||'';
+    const codigosMarcaConhecidos = new Set(Object.values(kb.marcas_zydon||{}).map(String));
+    const marcaCod = (marcaIdSignus && codigosMarcaConhecidos.has(marcaIdSignus)) ? marcaIdSignus : getMarcaCodigo(marc);
     if (!marcaCod && marc) marcaSemCod[marc] = (marcaSemCod[marc]||0) + 1;
 
     if (!catCod && cat) catSemCod[cat] = (catSemCod[cat]||0) + 1;
@@ -1603,6 +1675,7 @@ async function gerarPlanilha() {
       'Acréscimo Máximo': 0,
       'Tags': '',
       'EAN_VARIACAO': eanVariacao,
+      'LINHA_PRODUTO': formatLinha(lin),
     });
   }
 
@@ -1746,7 +1819,7 @@ document.getElementById('imgprep-file-planilha').addEventListener('change', func
   const reader = new FileReader();
   reader.onload = ev => {
     const wb = XLSX.read(ev.target.result, { type:'array' });
-    imgPrepProducts = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+    imgPrepProducts = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' }).map(normalizarLinhaSignus);
   };
   reader.readAsArrayBuffer(file);
 });
