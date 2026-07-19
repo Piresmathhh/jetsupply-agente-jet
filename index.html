@@ -272,10 +272,13 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
         <label class="auth-lbl">Senha</label>
         <input type="password" id="auth-password" class="auth-inp" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
       </div>
-      <label class="auth-remember">
-        <input type="checkbox" id="auth-remember" checked>
-        Lembrar de mim neste navegador
-      </label>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px">
+        <label class="auth-remember" style="margin:0">
+          <input type="checkbox" id="auth-remember" checked>
+          Lembrar de mim
+        </label>
+        <a onclick="showAuthView('forgot')" style="font-size:12px;color:var(--navy);font-weight:bold;cursor:pointer;text-decoration:none">Esqueci a senha</a>
+      </div>
       <button class="auth-btn" id="auth-login-btn" onclick="authLogin()">Entrar</button>
       <div class="auth-switch">Ainda não tem conta? <a onclick="showAuthView('signup')">Criar conta</a></div>
     </div>
@@ -311,6 +314,31 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <button class="auth-btn-2" onclick="showAuthView('login')">Já confirmei, ir para o login</button>
     </div>
 
+    <!-- Vista: esqueci a senha -->
+    <div id="auth-view-forgot" style="display:none">
+      <div class="auth-sub">Redefinir senha</div>
+      <div class="auth-row">
+        <label class="auth-lbl">E-mail</label>
+        <input type="email" id="forgot-email" class="auth-inp" placeholder="voce@jetsupply.com" autocomplete="username" onkeydown="if(event.key==='Enter')authForgotPassword()">
+      </div>
+      <button class="auth-btn" id="auth-forgot-btn" onclick="authForgotPassword()">Enviar link de redefinição</button>
+      <div class="auth-switch">Lembrou a senha? <a onclick="showAuthView('login')">Voltar para entrar</a></div>
+    </div>
+
+    <!-- Vista: definir nova senha (chegou aqui pelo link do e-mail) -->
+    <div id="auth-view-reset" style="display:none">
+      <div class="auth-sub">Defina sua nova senha</div>
+      <div class="auth-row">
+        <label class="auth-lbl">Nova senha</label>
+        <input type="password" id="reset-password" class="auth-inp" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="auth-row">
+        <label class="auth-lbl">Confirmar nova senha</label>
+        <input type="password" id="reset-password-2" class="auth-inp" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')authResetPassword()">
+      </div>
+      <button class="auth-btn" id="auth-reset-btn" onclick="authResetPassword()">Salvar nova senha</button>
+    </div>
+
     <div class="auth-msg" id="auth-msg"></div>
   </div>
 </div>
@@ -338,7 +366,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.10 · 19/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.11 · 19/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -619,21 +647,40 @@ async function carregarUsuarios() {
   const { data, error } = await sb.from('profiles').select('id,nome,email,role').order('nome');
   if (error || !data) { el.textContent = 'Erro ao carregar a equipe: ' + (error?.message || ''); return; }
   el.innerHTML = data.map(u => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:10px">
       <div>
         <div style="font-weight:bold">${u.nome || u.email || 'Sem nome'}</div>
         <div style="color:var(--t5);font-size:11px">${u.email||''}</div>
       </div>
       ${u.id === currentUser.id
         ? `<span style="color:var(--t5);font-size:11px">${roleLabel(u.role)} (você)</span>`
-        : `<select class="cfg-inp" style="width:auto" onchange="mudarPapelUsuario('${u.id}', this.value)">
-             <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-             <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
-             <option value="comum" ${u.role==='comum'?'selected':''}>Comum (só leitura)</option>
-           </select>`
+        : `<div style="display:flex;align-items:center;gap:6px">
+             <select class="cfg-inp" style="width:auto" onchange="mudarPapelUsuario('${u.id}', this.value)">
+               <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+               <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
+               <option value="comum" ${u.role==='comum'?'selected':''}>Comum (só leitura)</option>
+             </select>
+             <button class="cfg-btn" style="border-color:var(--red);color:var(--red)" title="Excluir usuário" onclick="excluirUsuario('${u.id}', ${JSON.stringify(u.nome || u.email || 'esse usuário')})">excluir</button>
+           </div>`
       }
     </div>
   `).join('');
+}
+
+// Só admin chama isso. Remove a conta de outra pessoa via Edge Function (precisa da
+// service_role key, que nunca chega ao browser — a function confere que quem chamou
+// é admin antes de excluir).
+async function excluirUsuario(userId, nome) {
+  const confirmado = confirm(`Excluir a conta de ${nome}? Essa ação é permanente — a pessoa perde o acesso e precisaria criar uma conta nova.`);
+  if (!confirmado) return;
+  try {
+    const { data, error } = await sb.functions.invoke('admin-delete-user', { body: { user_id: userId } });
+    if (error || data?.error) throw new Error(data?.error || error.message);
+    await registrarHistorico(`Excluiu a conta de ${nome} do acesso da equipe`);
+    carregarUsuarios();
+  } catch (e) {
+    addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui excluir: ${e.message}</div>`);
+  }
 }
 
 async function mudarPapelUsuario(userId, novoPapel) {
@@ -650,7 +697,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.10';
+const VERSION = 'v5.11';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -906,11 +953,11 @@ function hideAuthMsg() {
   el.className = 'auth-msg';
 }
 
-// Alterna entre as 3 vistas do cartão de login: 'login', 'signup', 'pending'
+// Alterna entre as vistas do cartão de login: 'login', 'signup', 'pending', 'forgot', 'reset'
 function showAuthView(view) {
-  document.getElementById('auth-view-login').style.display = view==='login' ? '' : 'none';
-  document.getElementById('auth-view-signup').style.display = view==='signup' ? '' : 'none';
-  document.getElementById('auth-view-pending').style.display = view==='pending' ? '' : 'none';
+  ['login','signup','pending','forgot','reset'].forEach(v => {
+    document.getElementById('auth-view-'+v).style.display = (v===view) ? '' : 'none';
+  });
   hideAuthMsg();
 }
 
@@ -949,6 +996,38 @@ async function authSignup() {
   // Confirmação de e-mail obrigatória: mostra a vista de "confira seu e-mail"
   document.getElementById('auth-pending-email').textContent = email;
   showAuthView('pending');
+}
+
+// Pede o link de redefinição de senha por e-mail. Por segurança, o Supabase não
+// diz se o e-mail existe ou não na base — a mensagem é sempre a mesma pros dois casos.
+async function authForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) { showAuthMsg('Digite seu e-mail.','err'); return; }
+  document.getElementById('auth-forgot-btn').disabled = true;
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+  document.getElementById('auth-forgot-btn').disabled = false;
+  if (error) { showAuthMsg(error.message,'err'); return; }
+  showAuthMsg('Se esse e-mail estiver cadastrado, mandamos um link pra redefinir a senha. Confira sua caixa de entrada.','ok');
+}
+
+// Chamado na vista que aparece quando a pessoa chega pelo link do e-mail de redefinição
+// (evento PASSWORD_RECOVERY do Supabase, tratado lá embaixo no init).
+async function authResetPassword() {
+  const p1 = document.getElementById('reset-password').value;
+  const p2 = document.getElementById('reset-password-2').value;
+  if (!p1 || !p2) { showAuthMsg('Preencha os dois campos.','err'); return; }
+  if (p1.length < 6) { showAuthMsg('A senha precisa ter pelo menos 6 caracteres.','err'); return; }
+  if (p1 !== p2) { showAuthMsg('As senhas não são iguais.','err'); return; }
+  document.getElementById('auth-reset-btn').disabled = true;
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  document.getElementById('auth-reset-btn').disabled = false;
+  if (error) { showAuthMsg(error.message,'err'); return; }
+  showAuthMsg('Senha atualizada! Entrando...','ok');
+  inPasswordRecovery = false;
+  const { data } = await sb.auth.getSession();
+  if (data.session) setTimeout(() => onAuthReady(data.session), 600);
 }
 
 async function logout() {
@@ -2432,11 +2511,15 @@ const _savedUserName = localStorage.getItem('jet_user_name');
 if (_savedImgUrl) document.getElementById('img-url').value = _savedImgUrl;
 if (_savedUserName) document.getElementById('user-name').value = _savedUserName;
 
+// Detecta se a pessoa chegou aqui pelo link de "esqueci a senha" (checagem síncrona,
+// antes de qualquer promise resolver, pra não ter corrida com o auto-login abaixo).
+let inPasswordRecovery = (window.location.hash || '').includes('type=recovery');
+
 // Restaura sessão do Supabase Auth se já estiver logado neste navegador
 sb.auth.getSession().then(({ data }) => {
-  if (data.session) onAuthReady(data.session);
+  if (data.session && !inPasswordRecovery) onAuthReady(data.session);
 });
-// Mantém a sessão sincronizada (ex: token renovado, logout em outra aba)
+// Mantém a sessão sincronizada (ex: token renovado, logout em outra aba, link de redefinição)
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') {
     currentUser = null;
@@ -2444,6 +2527,12 @@ sb.auth.onAuthStateChange((event, session) => {
     window._welcomed = false;
     document.getElementById('app-root').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
+  }
+  if (event === 'PASSWORD_RECOVERY') {
+    inPasswordRecovery = true;
+    document.getElementById('app-root').style.display = 'none';
+    document.getElementById('auth-overlay').style.display = 'flex';
+    showAuthView('reset');
   }
 });
 </script>
