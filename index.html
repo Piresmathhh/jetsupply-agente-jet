@@ -366,7 +366,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.12 · 19/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.13 · 19/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -2403,32 +2403,42 @@ function renderCategoriasResultado(mapa) {
         </div>`).join('')}
       </div>
       <div class="act-row" style="margin-top:10px">
-        <button class="act-btn pri" onclick="gerarArquivoCategoriaNova()">Gerar Importa Categoria.xlsx (só as novas)</button>
         ${currentProfile?.is_admin ? `<button class="act-btn" onclick="sincronizarCategoriasNaBase()">Também salvar na base do agente</button>` : ''}
       </div>
     </div>`;
   }
+  html += `<div class="act-row" style="margin-top:10px">
+    <button class="act-btn pri" onclick="gerarArquivoCategoriaZydon()">Gerar Importa Categoria.xlsx (todas as ${mapa.size})</button>
+  </div>`;
   el.innerHTML = html;
   window._categoriasNovas = novas;
+  window._categoriasTodas = Array.from(mapa.entries()).map(([id, info]) => ({ id, ...info }));
 }
 
-function gerarArquivoCategoriaNova() {
-  const novas = window._categoriasNovas || [];
-  if (!novas.length) return;
-  const rows = novas.map((n, i) => ({
-    'Código': Number(n.id),
-    'Status': true,
-    'Código pai': n.pai ? Number(n.pai) : '',
-    'SEO_DESCRIPTION': '',
-    'CHARACTERISTICS': '',
-    'SEO_TITLE': '',
-    'ORDER': i + 1,
-    'Nome': n.nome,
-    'SEO_META_KEYWORDS': '',
-  }));
+function gerarArquivoCategoriaZydon() {
+  const todas = window._categoriasTodas || [];
+  if (!todas.length) return;
+  // ORDER na Zydon é a posição entre os irmãos (mesmo "Código pai"), na ordem em
+  // que aparecem no treeview do Signus — não é uma ordenação global por código.
+  const contadorPorPai = {};
+  const rows = todas.map(n => {
+    const chavePai = n.pai || '__raiz__';
+    contadorPorPai[chavePai] = (contadorPorPai[chavePai] || 0) + 1;
+    return {
+      'Código': Number(n.id),
+      'Status': true,
+      'Código pai': n.pai ? Number(n.pai) : '',
+      'SEO_DESCRIPTION': '',
+      'CHARACTERISTICS': '',
+      'SEO_TITLE': '',
+      'ORDER': contadorPorPai[chavePai],
+      'Nome': n.nome,
+      'SEO_META_KEYWORDS': '',
+    };
+  });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Categorias');
-  XLSX.writeFile(wb, `Zydon_Importa_Categoria_novas_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `Zydon_Importa_Categoria_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 async function sincronizarCategoriasNaBase() {
@@ -2566,12 +2576,107 @@ function renderCaracteristicasResultado() {
       </div>
     `).join('');
     html += `<div class="act-row" style="margin-top:6px">
-      <button class="act-btn pri" onclick="baixarCaracteristicasNovas()">Baixar lista de valores novos (.xlsx)</button>
+      <button class="act-btn pri" onclick="baixarVariacoesCaracteristicasZydon()">Gerar Variações + Valores no formato Zydon (todos os produtos)</button>
+      <button class="act-btn" onclick="baixarCaracteristicasNovas()">Baixar lista de valores novos (.xlsx)</button>
       ${currentProfile?.is_admin ? `<button class="act-btn" onclick="marcarValoresComoExistentes()">Marcar tudo isso como já existente na Zydon</button>` : ''}
     </div>`;
     window._caracBlocos = blocos;
   }
   el.innerHTML = html;
+}
+
+// Converte o arquivo do Signus (1 linha por produto, com CARACT_VALOR) nos 2
+// arquivos que a Zydon espera pra importar Variações: "Variações produtos" e
+// "Valores de Variações de Produto" — mesmo formato dos exemplos enviados.
+// Agrupa por Cód. agrupamento e ordena os produtos do grupo pelo valor
+// numérico do CARACT_VALOR (2A, 4A, 6A... ou 0.5, 1, 1.5...).
+function gerarVariacoesCaracteristicasZydon(rows) {
+  const colId = acharColuna(rows, ['PROD_ID','ID']);
+  const colAgrup = acharColuna(rows, ['PROD_COD_AGRUPAMENTO','Cód. agrupamento','Cod. agrupamento','Cod agrupamento']);
+  const colSku = acharColuna(rows, ['PROD_SKU','SKU','Código']);
+  const colBar = acharColuna(rows, ['PROD_COD_BAR','Código barras','EAN']);
+  const colNome = acharColuna(rows, ['PROD_NOME','Nome']);
+  const colMarca = acharColuna(rows, ['MARCA_NOME','Marca']);
+  const colPeso = acharColuna(rows, ['PESO_KG','Peso']);
+  const colLargura = acharColuna(rows, ['LARGURA_CM','Largura (cm)']);
+  const colAltura = acharColuna(rows, ['ALTURA_CM','Altura (cm)']);
+  const colProf = acharColuna(rows, ['PROFUNDIDADE_CM','Profundidade (cm)']);
+  const colCarValor = acharColuna(rows, ['CARACT_VALOR','Valor']);
+  if (!colId || !colCarValor) return null;
+
+  const grupos = new Map();
+  (rows||[]).forEach(r => {
+    const grp = colAgrup ? String(r[colAgrup]||'').trim() : String(r[colId]||'');
+    if (!grupos.has(grp)) grupos.set(grp, []);
+    grupos.get(grp).push(r);
+  });
+
+  const variacoes = [];
+  for (const [grpCod, itens] of grupos.entries()) {
+    const comValor = itens.map(r => {
+      const valorTxt = String(r[colCarValor]||'').trim();
+      const m = valorTxt.match(/[\d.,]+/);
+      const num = m ? parseFloat(m[0].replace(',','.')) : 9999;
+      return { r, valorTxt, num };
+    });
+    comValor.sort((a,b) => a.num - b.num);
+    comValor.forEach((item, idx) => {
+      const r = item.r;
+      const id = String(r[colId]||'');
+      const pesoKg = colPeso ? Number(r[colPeso])||0 : 0;
+      const pesoG = pesoKg ? Math.round(pesoKg*1000) : '';
+      const ean = colBar && r[colBar] ? String(Math.round(Number(r[colBar]))) : '';
+      const nomeFmt = colNome ? formatName(r[colNome]||'', colMarca ? (r[colMarca]||'') : '') : '';
+      variacoes.push({
+        'PRICE': 1,
+        'VARIATION_HEIGHT': colAltura ? (r[colAltura]||'') : '',
+        'ORDER': idx + 1,
+        'Código': id,
+        'NOME': nomeFmt,
+        'STOCK': 1,
+        'VARIATION_WIDTH': colLargura ? (r[colLargura]||'') : '',
+        'PACKAGING_HEIGHT': colAltura ? (r[colAltura]||'') : '',
+        'Código produto': String(grpCod||id),
+        'PACKAGING_WEIGHT': pesoG,
+        'VARIATION_WEIGHT': pesoG,
+        'Valores': 1,
+        'VARIATION_DEPTH': colProf ? (r[colProf]||'') : '',
+        'Código variação': id,
+        'Status': true,
+        'SKU': colSku ? String(r[colSku]||'') : '',
+        'PACKAGING_WIDTH': colLargura ? (r[colLargura]||'') : '',
+        'PACKAGING_DEPTH': colProf ? (r[colProf]||'') : '',
+        'EAN_VARIACAO': ean,
+        '_valor': item.valorTxt,
+      });
+    });
+  }
+
+  const valores = variacoes.map(v => ({
+    'PRODUCT_VARIATION_ID': v['Código variação'],
+    'VALUE': v['_valor'],
+    'ID': v['Código variação'],
+    'VARIATION_ID': 1,
+  }));
+  const variacoesFinal = variacoes.map(v => { const c = {...v}; delete c._valor; return c; });
+  return { variacoesFinal, valores };
+}
+
+function baixarVariacoesCaracteristicasZydon() {
+  if (!caracSignusRows) return;
+  const resultado = gerarVariacoesCaracteristicasZydon(caracSignusRows);
+  if (!resultado) {
+    addAgentMsg('<div class="alert alert-warn">⚠ Esse arquivo não tem PROD_ID/CARACT_VALOR por produto — não dá pra gerar os arquivos de Variações, só o mapa de nomes.</div>', '', 'carac-results');
+    return;
+  }
+  const date = new Date().toISOString().slice(0,10);
+  const wbVar = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wbVar, XLSX.utils.json_to_sheet(resultado.variacoesFinal), 'Variações produtos');
+  XLSX.writeFile(wbVar, `Zydon_Importa_Produto_Variacoes_${date}.xlsx`);
+
+  const wbVal = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wbVal, XLSX.utils.json_to_sheet(resultado.valores), 'Valores de Variações de Produto');
+  XLSX.writeFile(wbVal, `Zydon_Importa_Produto_Variacoes_Valores_${date}.xlsx`);
 }
 
 function baixarCaracteristicasNovas() {
