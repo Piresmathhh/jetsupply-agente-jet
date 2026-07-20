@@ -270,7 +270,10 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </div>
       <div class="auth-row">
         <label class="auth-lbl">Senha</label>
-        <input type="password" id="auth-password" class="auth-inp" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
+        <div style="position:relative">
+          <input type="password" id="auth-password" class="auth-inp" style="padding-right:38px" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
+          <button type="button" onclick="toggleSenha('auth-password',this)" aria-label="Mostrar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px">
         <label class="auth-remember" style="margin:0">
@@ -296,11 +299,17 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </div>
       <div class="auth-row">
         <label class="auth-lbl">Senha</label>
-        <input type="password" id="signup-password" class="auth-inp" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+        <div style="position:relative">
+          <input type="password" id="signup-password" class="auth-inp" style="padding-right:38px" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+          <button type="button" onclick="toggleSenha('signup-password',this)" aria-label="Mostrar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
       </div>
       <div class="auth-row">
         <label class="auth-lbl">Confirmar senha</label>
-        <input type="password" id="signup-password-2" class="auth-inp" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')authSignup()">
+        <div style="position:relative">
+          <input type="password" id="signup-password-2" class="auth-inp" style="padding-right:38px" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')authSignup()">
+          <button type="button" onclick="toggleSenha('signup-password-2',this)" aria-label="Mostrar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
       </div>
       <button class="auth-btn" id="auth-signup-btn" onclick="authSignup()">Criar conta</button>
       <div class="auth-switch">Já tem conta? <a onclick="showAuthView('login')">Entrar</a></div>
@@ -312,6 +321,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <div class="auth-pending-title">Confirme seu e-mail</div>
       <div class="auth-pending-text">Mandamos um link de confirmação para<br><strong id="auth-pending-email"></strong>.<br>Clique nele e depois volte aqui pra entrar.</div>
       <button class="auth-btn-2" onclick="showAuthView('login')">Já confirmei, ir para o login</button>
+    </div>
+
+    <!-- Vista: aguardando aprovação de um admin -->
+    <div id="auth-view-awaiting" style="display:none">
+      <div class="auth-pending-icon">⏳</div>
+      <div class="auth-pending-title">Aguardando aprovação</div>
+      <div class="auth-pending-text">Sua conta foi criada, mas ainda precisa ser aprovada por um administrador da Jet Supply antes de acessar o Agente Jet.<br>Avise alguém do time e volte depois.</div>
+      <button class="auth-btn-2" onclick="logout()">Sair</button>
     </div>
 
     <!-- Vista: esqueci a senha -->
@@ -330,11 +347,17 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       <div class="auth-sub">Defina sua nova senha</div>
       <div class="auth-row">
         <label class="auth-lbl">Nova senha</label>
-        <input type="password" id="reset-password" class="auth-inp" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+        <div style="position:relative">
+          <input type="password" id="reset-password" class="auth-inp" style="padding-right:38px" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+          <button type="button" onclick="toggleSenha('reset-password',this)" aria-label="Mostrar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
       </div>
       <div class="auth-row">
         <label class="auth-lbl">Confirmar nova senha</label>
-        <input type="password" id="reset-password-2" class="auth-inp" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')authResetPassword()">
+        <div style="position:relative">
+          <input type="password" id="reset-password-2" class="auth-inp" style="padding-right:38px" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')authResetPassword()">
+          <button type="button" onclick="toggleSenha('reset-password-2',this)" aria-label="Mostrar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
       </div>
       <button class="auth-btn" id="auth-reset-btn" onclick="authResetPassword()">Salvar nova senha</button>
     </div>
@@ -366,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.16 · 19/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.17 · 19/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -699,7 +722,7 @@ function aplicarGateComum() {
   if (aviso) aviso.style.display = souSomenteLeitura() ? '' : 'none';
 }
 
-function roleLabel(r) { return r === 'admin' ? 'Admin' : r === 'comum' ? 'Comum (só leitura)' : 'Editor'; }
+function roleLabel(r) { return r === 'admin' ? 'Admin' : r === 'comum' ? 'Comum (só leitura)' : r === 'pendente' ? 'Pendente (aguardando aprovação)' : 'Editor'; }
 
 // Só admin vê e usa isso — o card correspondente já fica escondido pra não-admin,
 // e o RLS no banco também bloqueia a escrita se alguém tentar contornar a UI.
@@ -710,7 +733,28 @@ async function carregarUsuarios() {
   if (!el) return;
   const { data, error } = await sb.from('profiles').select('id,nome,email,role').order('nome');
   if (error || !data) { el.textContent = 'Erro ao carregar a equipe: ' + (error?.message || ''); return; }
-  el.innerHTML = data.map(u => `
+  const pendentes = data.filter(u => u.role === 'pendente' && u.id !== currentUser.id);
+  const aprovados = data.filter(u => !(u.role === 'pendente' && u.id !== currentUser.id));
+
+  let html = '';
+  if (pendentes.length) {
+    html += `<div style="margin-bottom:10px">
+      <div style="font-weight:bold;color:var(--red);font-size:12px;margin-bottom:4px">${pl(pendentes.length,'cadastro novo aguardando aprovação','cadastros novos aguardando aprovação')}</div>
+      ${pendentes.map(u => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:10px">
+          <div>
+            <div style="font-weight:bold">${u.nome || u.email || 'Sem nome'}</div>
+            <div style="color:var(--t5);font-size:11px">${u.email||''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="cfg-btn" style="border-color:var(--green);color:var(--green)" onclick="mudarPapelUsuario('${u.id}','editor')">aprovar</button>
+            <button class="cfg-btn" style="border-color:var(--red);color:var(--red)" title="Recusar e excluir cadastro" onclick="excluirUsuario('${u.id}', ${JSON.stringify(u.nome || u.email || 'esse usuário')})">recusar</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+  html += aprovados.map(u => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:10px">
       <div>
         <div style="font-weight:bold">${u.nome || u.email || 'Sem nome'}</div>
@@ -729,6 +773,7 @@ async function carregarUsuarios() {
       }
     </div>
   `).join('');
+  el.innerHTML = html;
 }
 
 // Só admin chama isso. Remove a conta de outra pessoa via Edge Function (precisa da
@@ -761,7 +806,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.16';
+const VERSION = 'v5.17';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1019,10 +1064,20 @@ function hideAuthMsg() {
 
 // Alterna entre as vistas do cartão de login: 'login', 'signup', 'pending', 'forgot', 'reset'
 function showAuthView(view) {
-  ['login','signup','pending','forgot','reset'].forEach(v => {
+  ['login','signup','pending','forgot','reset','awaiting'].forEach(v => {
     document.getElementById('auth-view-'+v).style.display = (v===view) ? '' : 'none';
   });
   hideAuthMsg();
+}
+
+// Mostra/esconde a senha nos campos de login, cadastro e redefinição.
+function toggleSenha(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const mostrando = el.type === 'text';
+  el.type = mostrando ? 'password' : 'text';
+  btn.textContent = mostrando ? '👁' : '🙈';
+  btn.setAttribute('aria-label', mostrando ? 'Mostrar senha' : 'Ocultar senha');
 }
 
 async function authLogin() {
@@ -1143,6 +1198,13 @@ async function onAuthReady(session) {
   if (!nameInput.value) nameInput.value = currentUser.user_metadata?.nome || currentUser.email.split('@')[0];
   setBaseStatus('warn', 'Carregando base...');
   await loadProfile();
+  if (currentProfile?.role === 'pendente') {
+    // Conta criada mas ainda não aprovada por um admin — bloqueia o acesso ao app.
+    document.getElementById('app-root').style.display = 'none';
+    document.getElementById('auth-overlay').style.display = 'flex';
+    showAuthView('awaiting');
+    return;
+  }
   await loadKB();
   // URL do R2 e chave Claude são config compartilhada da equipe: se já tem valor salvo no Supabase, prevalece sobre o local
   const urlImgCompartilhada = kb.codigos_zydon?.url_base_imagens?.url;
