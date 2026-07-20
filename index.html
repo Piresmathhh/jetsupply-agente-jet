@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.17 · 19/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.18 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -806,7 +806,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.17';
+const VERSION = 'v5.18';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2550,6 +2550,30 @@ function ordenarLinhasComoArvore(rows) {
   return resultado;
 }
 
+// Quando não existe ORDER real da Zydon salva/referenciada pra uma categoria,
+// ela ainda assim segue um padrão entre os irmãos: "Acessórios" sempre primeiro,
+// depois ordem numérica pela quantidade de polos (1P, 1P+N, 2P, 2P+N, 3P, 3P+N,
+// 4P...). Fora desse padrão (nomes sem número de polos), cai pra ordem alfabética.
+function compararNomesCategoriaZydon(a, b) {
+  const sa = String(a || '').trim();
+  const sb = String(b || '').trim();
+  const isAcessorios = (s) => /^acess[oó]rios?\b/i.test(s);
+  const aAcc = isAcessorios(sa);
+  const bAcc = isAcessorios(sb);
+  if (aAcc !== bAcc) return aAcc ? -1 : 1;
+
+  const numRe = /^(\d+)\s*P(\+N)?/i;
+  const ma = sa.match(numRe);
+  const mb = sb.match(numRe);
+  if (ma && mb) {
+    const na = parseInt(ma[1], 10), nb = parseInt(mb[1], 10);
+    if (na !== nb) return na - nb;
+    const pa = ma[2] ? 1 : 0, pb = mb[2] ? 1 : 0;
+    if (pa !== pb) return pa - pb;
+  }
+  return sa.localeCompare(sb, 'pt-BR', { numeric: true, sensitivity: 'base' });
+}
+
 function gerarArquivoCategoriaZydon() {
   const todas = window._categoriasTodas || [];
   if (!todas.length) return;
@@ -2557,7 +2581,8 @@ function gerarArquivoCategoriaZydon() {
   // Zydon — não dá pra derivar do treeview do Signus. Prioridade pra descobrir o
   // pai/ORDER real de cada categoria: 1) arquivo da Zydon subido agora (mais
   // fresco); 2) o que já foi salvo antes na base do agente; 3) categoria
-  // genuinamente nova — entra no final do grupo, sem outra forma de saber.
+  // genuinamente nova — sem ORDER real conhecida, entra no grupo dos irmãos
+  // ordenada por nome (compararNomesCategoriaZydon), não na ordem do Signus.
   const ref = catZydonOrdemMap;
   const maxOrdemPorPai = {};
   const registrarMax = (pai, ordem) => {
@@ -2567,32 +2592,41 @@ function gerarArquivoCategoriaZydon() {
   if (ref) for (const info of ref.values()) registrarMax(info.pai, info.ordem);
   for (const salvo of Object.values(kb?.categorias_zydon||{})) registrarMax(salvo.pai!=null ? String(salvo.pai) : null, salvo.ordem);
 
-  const rows = todas.map(n => {
+  const resolvidas = [];
+  const semOrdemPorPai = {};
+  todas.forEach(n => {
     const refInfo = ref?.get(String(n.id));
     const salvo = kb?.categorias_zydon?.[String(n.id)];
     const pai = refInfo ? refInfo.pai : (salvo && salvo.pai != null ? String(salvo.pai) : n.pai);
-    let ordem;
     if (refInfo && refInfo.ordem !== null) {
-      ordem = refInfo.ordem;
+      resolvidas.push({ n, pai, ordem: refInfo.ordem });
     } else if (salvo && salvo.ordem !== null && salvo.ordem !== undefined) {
-      ordem = salvo.ordem;
+      resolvidas.push({ n, pai, ordem: salvo.ordem });
     } else {
       const chave = pai || '__raiz__';
-      maxOrdemPorPai[chave] = (maxOrdemPorPai[chave] || 0) + 1;
-      ordem = maxOrdemPorPai[chave];
+      (semOrdemPorPai[chave] = semOrdemPorPai[chave] || []).push({ n, pai });
     }
-    return {
-      'Código': Number(n.id),
-      'Status': 'true',
-      'Código pai': pai ? Number(pai) : '',
-      'SEO_DESCRIPTION': '',
-      'CHARACTERISTICS': '',
-      'SEO_TITLE': '',
-      'ORDER': ordem,
-      'Nome': n.nome,
-      'SEO_META_KEYWORDS': '',
-    };
   });
+  for (const chave of Object.keys(semOrdemPorPai)) {
+    const grupo = semOrdemPorPai[chave];
+    grupo.sort((a, b) => compararNomesCategoriaZydon(a.n.nome, b.n.nome));
+    grupo.forEach(item => {
+      maxOrdemPorPai[chave] = (maxOrdemPorPai[chave] || 0) + 1;
+      resolvidas.push({ n: item.n, pai: item.pai, ordem: maxOrdemPorPai[chave] });
+    });
+  }
+
+  const rows = resolvidas.map(({ n, pai, ordem }) => ({
+    'Código': Number(n.id),
+    'Status': 'true',
+    'Código pai': pai ? Number(pai) : '',
+    'SEO_DESCRIPTION': '',
+    'CHARACTERISTICS': '',
+    'SEO_TITLE': '',
+    'ORDER': ordem,
+    'Nome': n.nome,
+    'SEO_META_KEYWORDS': '',
+  }));
   const rowsOrdenadas = ordenarLinhasComoArvore(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsOrdenadas), 'Categorias');
