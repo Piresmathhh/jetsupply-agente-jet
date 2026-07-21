@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.25 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.26 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -775,7 +775,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.25';
+const VERSION = 'v5.26';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1206,12 +1206,13 @@ function emptyKB() {
     categorias_zydon_por_nome: {}, unidades_globais: [], regras_globais: [],
     codigos_zydon: {}, historico: [],
     caracteristica_valores_zydon: [], caracteristica_mappings: {},
+    imagens_disponiveis_count: 0,
   };
 }
 
 async function loadKB() {
   try {
-    const [marcasR, marcaRegrasR, marcasZydonR, catsZydonR, catMapR, regrasR, unidadesR, configR, histR, caracValR, caracMapR] = await Promise.all([
+    const [marcasR, marcaRegrasR, marcasZydonR, catsZydonR, catMapR, regrasR, unidadesR, configR, histR, caracValR, caracMapR, imgCountR] = await Promise.all([
       sb.from('marcas').select('id,nome_exibicao,siglas_modelos,unidades_upper'),
       sb.from('marca_regras_nome').select('marca_id,de,para'),
       sb.from('marcas_zydon').select('nome,codigo'),
@@ -1223,6 +1224,7 @@ async function loadKB() {
       sb.from('historico_alteracoes').select('usuario_nome,acao,criado_em').order('criado_em',{ascending:false}).limit(100),
       sb.from('caracteristica_valores_zydon').select('valor'),
       sb.from('caracteristica_mappings').select('nome_signus,nome_zydon'),
+      sb.from('imagens_disponiveis').select('nome_arquivo', { count: 'exact', head: true }),
     ]);
     const erro = [marcasR,marcaRegrasR,marcasZydonR,catsZydonR,catMapR,regrasR,unidadesR,configR,histR,caracValR,caracMapR].find(r=>r.error);
     if (erro) throw erro.error;
@@ -1260,7 +1262,10 @@ async function loadKB() {
       data: (h.criado_em||'').slice(0,10), usuario: h.usuario_nome||'Usuário', acao: h.acao,
     }));
 
+    novo.imagens_disponiveis_count = imgCountR?.count || 0;
+
     kb = novo;
+    renderImglistArea();
     const nMarcas = Object.keys(kb.marcas).length;
     const nMarcasZydon = Object.keys(kb.marcas_zydon).length;
     // "X de Y" deixa clara a relação: quantas das marcas do catálogo Zydon já têm
@@ -1270,6 +1275,7 @@ async function loadKB() {
   } catch(e) {
     kb = kb || emptyKB();
     setBaseStatus('', 'Erro ao carregar a base: ' + (e.message||e));
+    renderImglistArea();
   }
 }
 
@@ -1518,11 +1524,15 @@ document.getElementById('file-in').addEventListener('change', handleFileUpload);
 enableDragDrop('file-in');
 
 // ══════════════════════════════════════════════════════════════════
-// LISTA REAL DE IMAGENS — casa exatamente com o que existe, nunca inventa
+// LISTA REAL DE IMAGENS — casa exatamente com o que existe, nunca inventa.
+// A lista fica salva na base do agente (tabela imagens_disponiveis), então
+// depois de cadastrada uma vez, não precisa subir a planilha de novo em toda
+// sessão — o upload aqui só serve pra cadastrar ou atualizar essa base.
 // ══════════════════════════════════════════════════════════════════
-// window._imagensIndex: Map<baseDoSKU, [{filename, seq, ext}]> — null quando nenhuma lista foi carregada.
+// window._imagensIndex: Map<baseDoSKU, [{filename, seq, ext}]> — lista desta sessão
+// (upload que ainda não terminou de sincronizar, ou sincronizado por um não-admin).
+// null quando não há upload nesta sessão — nesse caso a busca cai direto na base.
 window._imagensIndex = null;
-window._imagensUrlBasePadrao = '';
 
 // "10076381_2.jpg" -> { base:"10076381", seq:2, ext:"jpg" } — só sufixo _n bem no final antes
 // da extensão conta como sequência; hífens/números no meio do nome (ex: "10VB48BP-33") ficam intactos.
@@ -1532,21 +1542,65 @@ function normalizarBaseImagem(nomeArquivo) {
   return { base: m[1], seq: m[2] ? parseInt(m[2],10) : 0, ext: m[3] };
 }
 
-function handleImagensListUpload(e) {
+// Busca as imagens de uma lista de SKUs direto na base (tabela imagens_disponiveis),
+// em lotes — evita puxar as dezenas de milhares de linhas cadastradas de uma vez só.
+async function buscarImagensDoBanco(skus) {
+  const resultado = new Map();
+  const unicos = Array.from(new Set((skus||[]).map(s => String(s||'').trim()).filter(Boolean)));
+  if (!unicos.length) return resultado;
+  const tamanhoLote = 300;
+  for (let i = 0; i < unicos.length; i += tamanhoLote) {
+    const lote = unicos.slice(i, i + tamanhoLote);
+    const { data, error } = await sb.from('imagens_disponiveis').select('nome_arquivo,base_nome,seq').in('base_nome', lote);
+    if (error) continue;
+    (data||[]).forEach(r => {
+      if (!resultado.has(r.base_nome)) resultado.set(r.base_nome, []);
+      resultado.get(r.base_nome).push({ filename: r.nome_arquivo, seq: r.seq });
+    });
+  }
+  return resultado;
+}
+
+function renderImglistArea() {
+  const el = document.getElementById('imglist-area');
+  if (!el) return;
+  const uploadHtml = `<label class="upload-z" for="imglist-in" style="padding:10px 8px"><input type="file" id="imglist-in" accept=".xlsx,.xls,.csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg><strong style="font-size:12px">Nomes de imagens reais</strong><span class="upload-z-hint">só gera as que existem, sem inventar</span></label>`;
+  if (window._imagensIndex) {
+    el.innerHTML = `<div class="file-ok">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div class="file-ok-name">Lista desta sessão</div><div class="file-ok-sub">${pl(window._imagensIndex.size,'SKU com imagem','SKUs com imagem')}</div></div>
+        <button onclick="limparListaImagens()" aria-label="Remover lista de imagens" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
+      </div>
+    </div>`;
+  } else if ((kb?.imagens_disponiveis_count||0) > 0) {
+    el.innerHTML = `<div class="file-ok">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div class="file-ok-name">Cadastradas na base</div><div class="file-ok-sub">${pl(kb.imagens_disponiveis_count,'imagem','imagens')}</div></div>
+        <label for="imglist-in" style="cursor:pointer;color:var(--navy);font-size:11px;font-weight:bold;text-decoration:underline">atualizar</label>
+      </div>
+      <input type="file" id="imglist-in" accept=".xlsx,.xls,.csv" style="display:none">
+    </div>`;
+  } else {
+    el.innerHTML = uploadHtml;
+  }
+  document.getElementById('imglist-in').addEventListener('change', handleImagensListUpload);
+  enableDragDrop('imglist-in');
+}
+
+async function handleImagensListUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(ev) {
+  reader.onload = async function(ev) {
     const wb = XLSX.read(ev.target.result, { type:'array' });
     const dados = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     const colNome = acharColuna(dados, ['Nome do arquivo','Arquivo','Nome de arquivo','Imagem','Filename','Nome']);
-    const colUrlBase = acharColuna(dados, ['Link base','URL base','Base URL','Url base','URL-base']);
     if (!colNome) {
       addAgentMsg('<div class="alert alert-err">⚠ Não encontrei a coluna com o nome dos arquivos de imagem nessa planilha.</div>');
       return;
     }
     const idx = new Map();
-    let urlBasePadrao = '';
+    const linhasParaBase = [];
     dados.forEach(r => {
       const nomeArq = String(r[colNome]||'').trim();
       if (!nomeArq) return;
@@ -1554,32 +1608,41 @@ function handleImagensListUpload(e) {
       if (!parsed) return;
       if (!idx.has(parsed.base)) idx.set(parsed.base, []);
       idx.get(parsed.base).push({ filename: nomeArq, seq: parsed.seq, ext: parsed.ext });
-      if (colUrlBase && r[colUrlBase] && !urlBasePadrao) urlBasePadrao = String(r[colUrlBase]).trim();
+      linhasParaBase.push({ nome_arquivo: nomeArq, base_nome: parsed.base, seq: parsed.seq });
     });
     window._imagensIndex = idx;
-    window._imagensUrlBasePadrao = urlBasePadrao;
-    document.getElementById('imglist-area').innerHTML =
-      `<div class="file-ok">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${pl(idx.size,'SKU com imagem','SKUs com imagem')}</div></div>
-          <button onclick="limparListaImagens()" aria-label="Remover lista de imagens" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
-        </div>
-      </div>`;
-    addAgentMsg(`<div class="alert alert-ok">✓ Lista de imagens carregada: ${pl(dados.length,'arquivo','arquivos')} agrupados em ${pl(idx.size,'SKU','SKUs')}. Ao gerar, a aba Imagens vai usar exatamente essas — sem inventar quantidade.</div>`);
+    renderImglistArea();
+
+    if (!currentProfile?.is_admin) {
+      addAgentMsg(`<div class="alert alert-ok">✓ Lista carregada pra essa sessão: ${pl(dados.length,'arquivo','arquivos')} agrupados em ${pl(idx.size,'SKU','SKUs')}. Só um admin pode salvar isso na base do agente pra todo mundo já vir com ela pronta — por enquanto vale só aqui.</div>`);
+      return;
+    }
+
+    addAgentMsg(`<div class="alert alert-warn">⏳ Salvando ${pl(linhasParaBase.length,'imagem','imagens')} na base do agente...</div>`);
+    const tamanhoLote = 500;
+    let salvas = 0, falhou = false;
+    for (let i = 0; i < linhasParaBase.length; i += tamanhoLote) {
+      const lote = linhasParaBase.slice(i, i + tamanhoLote);
+      const { error } = await sb.from('imagens_disponiveis').upsert(lote, { onConflict: 'nome_arquivo' });
+      if (error) { falhou = true; addAgentMsg(`<div class="alert alert-warn">⚠ Parou em ${salvas} de ${linhasParaBase.length}: ${error.message}</div>`); break; }
+      salvas += lote.length;
+    }
+    if (!falhou) {
+      if (!kb) kb = emptyKB();
+      kb.imagens_disponiveis_count = salvas;
+      await registrarHistorico(`Cadastrou/atualizou ${pl(salvas,'imagem','imagens')} na base (lista real de arquivos)`);
+      addAgentMsg(`<div class="alert alert-ok">✓ ${pl(salvas,'imagem salva','imagens salvas')} na base do agente — da próxima vez já vem pronta, sem precisar subir de novo.</div>`);
+      renderImglistArea();
+    }
   };
   reader.readAsArrayBuffer(file);
 }
-document.getElementById('imglist-in').addEventListener('change', handleImagensListUpload);
-enableDragDrop('imglist-in');
 
 function limparListaImagens() {
   window._imagensIndex = null;
-  window._imagensUrlBasePadrao = '';
-  document.getElementById('imglist-area').innerHTML =
-    `<label class="upload-z" for="imglist-in" style="padding:10px 8px"><input type="file" id="imglist-in" accept=".xlsx,.xls,.csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg><strong style="font-size:12px">Nomes de imagens reais</strong><span class="upload-z-hint">só gera as que existem, sem inventar</span></label>`;
-  document.getElementById('imglist-in').addEventListener('change', handleImagensListUpload);
-  enableDragDrop('imglist-in');
+  renderImglistArea();
 }
+renderImglistArea(); // liga o listener já no carregamento da página (antes do login, loadKB() re-renderiza depois)
 
 function limparPlanilha() {
   products = []; pendentes = []; wb1 = wb2 = wb3 = null; errosGeracao = [];
@@ -1987,24 +2050,22 @@ async function gerarPlanilha() {
   });
 
   // Imagens — não existe foto por variação, só pelo SKU do produto PAI. Só sobe a Zydon a
-  // quantidade EXATA de imagens que realmente existe (lista real carregada em "Lista de
-  // imagens"); sem essa lista, não inventamos nomes de arquivo (_1 a _10 "no escuro"
-  // deixava a aba subindo em branco na Zydon quando a imagem não existia de verdade).
+  // quantidade EXATA de imagens que realmente existe: primeiro olha a lista desta sessão
+  // (se teve upload), senão busca direto na base do agente (tabela imagens_disponiveis,
+  // cadastrada uma vez só). Sem nenhuma das duas fontes, não inventamos nomes de arquivo
+  // (_1 a _10 "no escuro" deixava a aba subindo em branco na Zydon quando não existia de verdade).
   const imgs = [];
   const semImagemSku = [];
-  function imagensDoSku(sku) {
-    if (!window._imagensIndex) return [];
-    const achadas = window._imagensIndex.get(String(sku||'').trim()) || [];
-    return achadas.slice().sort((a,b) => a.seq - b.seq);
-  }
-  const urlBaseFinal = (imgBase || window._imagensUrlBasePadrao || '').replace(/\/$/,'');
-  const gruposImgFeitos = new Set();
+  // 1ª passada: só descobre quais SKUs (um por família/produto) precisam de imagem —
+  // pra buscar todos de uma vez na base, em vez de uma query por produto.
+  const candidatos = [];
+  const gruposVistos = new Set();
   for (const p of products) {
     const grpCod = p[COL_AGRUPAMENTO];
     let paiIdImg, cod, nome;
     if (grpCod) {
-      if (gruposImgFeitos.has(grpCod)) continue; // já gerou imagem dessa família
-      gruposImgFeitos.add(grpCod);
+      if (gruposVistos.has(grpCod)) continue;
+      gruposVistos.add(grpCod);
       paiIdImg = grpPaiId[grpCod];
       const paiProduto = (grupos[grpCod]||[]).find(x => String(x['ID']||'')===String(paiIdImg)) || p;
       cod = paiProduto['Código']||'';
@@ -2015,14 +2076,25 @@ async function gerarPlanilha() {
       nome = formatName(p['Nome']||'', p['Marca']||'');
     }
     if (!cod) continue;
+    candidatos.push({ paiIdImg, grpCod, cod, nome });
+  }
+  const imagensDb = await buscarImagensDoBanco(candidatos.map(c => c.cod));
+  const temAlgumaFonteImagem = !!(window._imagensIndex && window._imagensIndex.size) || (kb?.imagens_disponiveis_count||0) > 0 || imagensDb.size > 0;
+  function imagensDoSku(sku) {
+    const chave = String(sku||'').trim();
+    const achadas = (window._imagensIndex && window._imagensIndex.get(chave)) || imagensDb.get(chave) || [];
+    return achadas.slice().sort((a,b) => a.seq - b.seq);
+  }
+  const urlBaseFinal = (imgBase || '').replace(/\/$/,'');
+  candidatos.forEach(({ paiIdImg, grpCod, cod, nome }) => {
     const achadas = imagensDoSku(cod);
-    if (!achadas.length) { if (window._imagensIndex) semImagemSku.push(cod); continue; }
+    if (!achadas.length) { if (temAlgumaFonteImagem) semImagemSku.push(cod); return; }
     achadas.forEach(img => {
       imgs.push({ 'Código':'', 'Produto (Código)':String(paiIdImg||grpCod||''), 'Produto (Nome)':nome, 'Imagem': urlBaseFinal ? `${urlBaseFinal}/${img.filename}` : img.filename });
     });
-  }
-  if (window._imagensIndex && semImagemSku.length) errosGeracao.push(`${pl(semImagemSku.length,'produto','produtos')} sem imagem encontrada na lista (SKU ex: ${semImagemSku.slice(0,3).join(', ')}${semImagemSku.length>3?'...':''})`);
-  if (!window._imagensIndex) errosGeracao.push('Nenhuma lista real de imagens carregada — a aba Imagens saiu vazia (sem a lista, não inventamos nomes de arquivo).');
+  });
+  if (temAlgumaFonteImagem && semImagemSku.length) errosGeracao.push(`${pl(semImagemSku.length,'produto','produtos')} sem imagem encontrada na lista (SKU ex: ${semImagemSku.slice(0,3).join(', ')}${semImagemSku.length>3?'...':''})`);
+  if (!temAlgumaFonteImagem) errosGeracao.push('Nenhuma lista real de imagens carregada (nem na base) — a aba Imagens saiu vazia (sem a lista, não inventamos nomes de arquivo).');
 
   // Variações Valores
   const valoresVar = variacoes.map(v => ({
