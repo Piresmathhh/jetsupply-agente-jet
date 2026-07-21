@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.29 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.30 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -775,7 +775,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.29';
+const VERSION = 'v5.30';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1608,6 +1608,7 @@ function renderImglistArea() {
         <div><div class="file-ok-name">Lista desta sessão</div><div class="file-ok-sub">${pl(window._imagensIndex.size,'SKU com imagem','SKUs com imagem')}</div></div>
         <button onclick="limparListaImagens()" aria-label="Remover lista de imagens" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
       </div>
+      <input type="file" id="imglist-in" accept=".xlsx,.xls,.csv" style="display:none">
     </div>`;
   } else if ((kb?.imagens_disponiveis_count||0) > 0) {
     el.innerHTML = `<div class="file-ok">
@@ -1620,8 +1621,10 @@ function renderImglistArea() {
   } else {
     el.innerHTML = uploadHtml;
   }
-  document.getElementById('imglist-in').addEventListener('change', handleImagensListUpload);
-  enableDragDrop('imglist-in');
+  // Sempre religa o listener — mas só se o input existir (guarda contra estados sem input,
+  // que antes quebravam o carregamento da base inteira com "Cannot read ... addEventListener").
+  const inp = document.getElementById('imglist-in');
+  if (inp) { inp.addEventListener('change', handleImagensListUpload); enableDragDrop('imglist-in'); }
 }
 
 async function handleImagensListUpload(e) {
