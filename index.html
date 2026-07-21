@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.28 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.29 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -775,7 +775,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.28';
+const VERSION = 'v5.29';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1481,6 +1481,39 @@ function deduplicarProdutosPorId(data) {
   return resultado;
 }
 
+// Eixos de variação da Zydon: cada característica PRÉ-DEFINIDA que a Zydon reconhece como
+// variação tem um VARIATION_ID próprio (definido lá na plataforma, não vem do Signus) e uma
+// ordem de exibição. Número de Polos aparece antes de Corrente Nominal. Se aparecer uma
+// pré-definida nova que não está aqui, o gerador avisa em vez de chutar um ID errado.
+const EIXOS_VARIACAO_ZYDON = {
+  'Número de Polos':  { variation_id: 6, ordem: 1 },
+  'Corrente Nominal': { variation_id: 1, ordem: 2 },
+};
+
+// Reconstrói, a partir das linhas cruas (antes do dedup), a lista de características de cada
+// produto: PROD_ID -> [{nome, valor, tipo}]. Usado pra montar o arquivo de Valores de Variação.
+function construirCaractsPorProduto(linhasCruas) {
+  const colId = acharColuna(linhasCruas, ['PROD_ID','ID']);
+  const colCarNome = acharColuna(linhasCruas, ['CARACT_NOME','Característica','Caracteristica']);
+  const colCarValor = acharColuna(linhasCruas, ['CARACT_VALOR','Valor']);
+  const colCarTipo = acharColuna(linhasCruas, ['CARACT_TIPO','Tipo']);
+  const mapa = new Map();
+  if (!colId || !colCarNome || !colCarValor) return mapa; // arquivo sem colunas de característica
+  (linhasCruas||[]).forEach(r => {
+    const id = String(r[colId]||'').trim();
+    if (!id) return;
+    const nome = String(r[colCarNome]||'').trim();
+    if (!nome) return;
+    if (!mapa.has(id)) mapa.set(id, []);
+    mapa.get(id).push({
+      nome,
+      valor: String(r[colCarValor]||'').trim(),
+      tipo: colCarTipo ? String(r[colCarTipo]||'').trim().toUpperCase() : '',
+    });
+  });
+  return mapa;
+}
+
 function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1509,6 +1542,10 @@ function handleFileUpload(e) {
     if (bruto.length !== data.length) {
       addAgentMsg(`<div class="alert alert-ok">✓ Esse arquivo vem com ${bruto.length} linhas (uma por produto+característica) — reagrupei em ${pl(data.length,'produto único','produtos únicos')} antes de gerar.</div>`);
     }
+    // Guarda as características por produto ANTES do dedup — o dedup joga fora as linhas
+    // extras (uma por característica), mas o arquivo de Valores de Variação precisa delas
+    // de volta (1 linha por eixo pré-definido: Número de Polos, Corrente Nominal...).
+    window._caractsPorProduto = construirCaractsPorProduto(bruto);
     document.getElementById('upload-area').innerHTML =
       `<div class="file-ok">
         <div style="display:flex;align-items:center;justify-content:space-between">
@@ -1670,6 +1707,7 @@ renderImglistArea(); // liga o listener já no carregamento da página (antes do
 
 function limparPlanilha() {
   products = []; pendentes = []; wb1 = wb2 = wb3 = null; errosGeracao = [];
+  window._caractsPorProduto = null;
   document.getElementById('upload-area').innerHTML =
     `<label class="upload-z" for="file-in"><input type="file" id="file-in" accept=".xlsx,.xls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg><strong>Selecionar arquivo</strong><p>Exportação do Signus (.xlsx)</p><span class="upload-z-hint">ou arraste aqui</span></label>`;
   document.getElementById('file-in').addEventListener('change', handleFileUpload);
@@ -2037,11 +2075,26 @@ async function gerarPlanilha() {
   // Códigos que não existem mais como linha própria em Produtos.
   const sims = [];
 
-  // Variações
+  // Variações — 1 linha por produto. A ORDEM segue amperagem (Corrente Nominal) e, dentro da
+  // mesma amperagem, a ordem de polos que a gente definiu (1P, 1P+N, 2P, 3P...). Se o arquivo
+  // trouxer as características (CARACT_*), usa elas; senão cai no valor extraído do nome.
+  const caractsMap = window._caractsPorProduto || new Map();
+  const eixoValor = (p, nomeCaract) => {
+    const cs = caractsMap.get(String(p['ID']||'')) || [];
+    const c = cs.find(x => x.nome === nomeCaract);
+    return c ? c.valor : '';
+  };
+  const ampNum = (txt) => { const m = String(txt||'').match(/([\d.,]+)/); return m ? parseFloat(m[0].replace(',','.')) : NaN; };
   const variacoes = [];
   Object.entries(grupos).forEach(([grpCod, grp]) => {
     const comValor = grp.map(p => ({ produto:p, info: extrairValorVariacao(p) }));
-    comValor.sort((a,b) => a.info.num - b.info.num);
+    comValor.sort((a,b) => {
+      const aAmp = ampNum(eixoValor(a.produto,'Corrente Nominal')), bAmp = ampNum(eixoValor(b.produto,'Corrente Nominal'));
+      const ampA = isNaN(aAmp) ? a.info.num : aAmp, ampB = isNaN(bAmp) ? b.info.num : bAmp;
+      if (ampA !== ampB) return ampA - ampB;
+      // mesma amperagem: ordena pelos polos na regra de categoria (1P, 1P+N, 2P, 3P, 4P...)
+      return compararNomesCategoriaZydon(eixoValor(a.produto,'Número de Polos'), eixoValor(b.produto,'Número de Polos'));
+    });
     comValor.forEach((item, idx) => {
       const p = item.produto;
       const pG = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
@@ -2120,15 +2173,51 @@ async function gerarPlanilha() {
   if (temAlgumaFonteImagem && semImagemSku.length) errosGeracao.push(`${pl(semImagemSku.length,'produto','produtos')} sem imagem encontrada na lista (SKU ex: ${semImagemSku.slice(0,3).join(', ')}${semImagemSku.length>3?'...':''})`);
   if (!temAlgumaFonteImagem) errosGeracao.push('Nenhuma lista real de imagens carregada (nem na base) — a aba Imagens saiu vazia (sem a lista, não inventamos nomes de arquivo).');
 
-  // Variações Valores — VARIATION_ID é sempre 1 (identifica o eixo de variação, não a posição
-  // do produto no grupo). Confirmado no arquivo real de exemplo da Zydon: 258/258 linhas com
-  // VARIATION_ID=1, mesmo com produtos em posições 1 a 11 dentro do agrupamento.
-  const valoresVar = variacoes.map(v => ({
-    'PRODUCT_VARIATION_ID': v['Código variação'],
-    'VALUE': v['_valor'],
-    'ID': v['Código variação'],
-    'VARIATION_ID': 1,
-  }));
+  // Variações Valores — 1 linha por (produto × eixo de variação). Um produto pode ter VÁRIOS
+  // eixos pré-definidos que variam dentro da família (ex: Número de Polos E Corrente Nominal).
+  // Cada eixo vira uma linha, com o VARIATION_ID que a Zydon usa pra ele (Número de Polos=6,
+  // Corrente Nominal=1), e Número de Polos aparece antes de Corrente Nominal. Se o arquivo não
+  // trouxer características, cai no comportamento antigo (1 linha por produto, VARIATION_ID=1).
+  const valoresVar = [];
+  const eixosDesconhecidos = new Set();
+  if (caractsMap.size) {
+    // Descobre, por agrupamento, quais características PRÉ-DEFINIDA de fato variam (>1 valor).
+    const eixosPorGrupo = {};
+    Object.entries(grupos).forEach(([grpCod, grp]) => {
+      const valoresPorNome = new Map();
+      grp.forEach(p => (caractsMap.get(String(p['ID']||''))||[]).forEach(c => {
+        if (c.tipo && !/PR.?-?DEFINIDA/i.test(c.tipo)) return;
+        if (!valoresPorNome.has(c.nome)) valoresPorNome.set(c.nome, new Set());
+        valoresPorNome.get(c.nome).add(c.valor);
+      }));
+      eixosPorGrupo[grpCod] = [...valoresPorNome.entries()].filter(([,v]) => v.size > 1).map(([n]) => n);
+    });
+    // Percorre na MESMA ordem das variações (já ordenadas por amperagem+polos).
+    variacoes.forEach(v => {
+      const grpCod = v['Código produto'];
+      const id = v['Código variação'];
+      const caracts = caractsMap.get(String(id)) || [];
+      const eixos = (eixosPorGrupo[grpCod] || []).slice().sort((a,b) => (EIXOS_VARIACAO_ZYDON[a]?.ordem||99) - (EIXOS_VARIACAO_ZYDON[b]?.ordem||99));
+      eixos.forEach(nomeEixo => {
+        const c = caracts.find(x => x.nome === nomeEixo);
+        const cfg = EIXOS_VARIACAO_ZYDON[nomeEixo];
+        if (!cfg) eixosDesconhecidos.add(nomeEixo);
+        valoresVar.push({
+          'PRODUCT_VARIATION_ID': id,
+          'VALUE': c ? c.valor : '',
+          'ID': id,
+          'VARIATION_ID': cfg ? cfg.variation_id : 1,
+        });
+      });
+    });
+  }
+  // Fallback (arquivo sem características): mantém 1 linha por produto.
+  if (!valoresVar.length) {
+    variacoes.forEach(v => valoresVar.push({
+      'PRODUCT_VARIATION_ID': v['Código variação'], 'VALUE': v['_valor'], 'ID': v['Código variação'], 'VARIATION_ID': 1,
+    }));
+  }
+  if (eixosDesconhecidos.size) errosGeracao.push(`Eixo de variação sem VARIATION_ID mapeado (usei 1 como padrão): ${[...eixosDesconhecidos].join(', ')}. Me avise o número certo da Zydon pra cada um.`);
 
   // Limpar campos internos
   const variacoesFinal = variacoes.map(v => { const c = {...v}; delete c._valor; delete c._order; return c; });
