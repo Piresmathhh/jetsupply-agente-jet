@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.26 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.27 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -775,7 +775,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.26';
+const VERSION = 'v5.27';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1618,24 +1618,48 @@ async function handleImagensListUpload(e) {
       return;
     }
 
-    addAgentMsg(`<div class="alert alert-warn">⏳ Salvando ${pl(linhasParaBase.length,'imagem','imagens')} na base do agente...</div>`);
-    const tamanhoLote = 500;
-    let salvas = 0, falhou = false;
-    for (let i = 0; i < linhasParaBase.length; i += tamanhoLote) {
-      const lote = linhasParaBase.slice(i, i + tamanhoLote);
-      const { error } = await sb.from('imagens_disponiveis').upsert(lote, { onConflict: 'nome_arquivo' });
-      if (error) { falhou = true; addAgentMsg(`<div class="alert alert-warn">⚠ Parou em ${salvas} de ${linhasParaBase.length}: ${error.message}</div>`); break; }
-      salvas += lote.length;
+    addAgentMsg(`<div class="alert alert-warn">⏳ Salvando ${pl(linhasParaBase.length,'imagem','imagens')} na base do agente — pode levar um tempo com uma lista grande, <strong>não feche nem atualize a página</strong> até a barra terminar.</div>`);
+    const progDiv = addProgressMsg(linhasParaBase.length, 'chat', 'Salvando imagens na base');
+    // Avisa o navegador pra confirmar antes de sair/atualizar enquanto ainda tem lote no ar —
+    // sem isso, um refresh no meio perde tudo silenciosamente (sem erro, sem aviso).
+    const avisarSaida = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', avisarSaida);
+    const resultado = await upsertEmLotesComConcorrencia(
+      'imagens_disponiveis', linhasParaBase, 1000, 4,
+      (atual, total) => updateProgress(progDiv, atual, total, 'Salvando imagens na base')
+    );
+    window.removeEventListener('beforeunload', avisarSaida);
+    if (!resultado.ok) {
+      addAgentMsg(`<div class="alert alert-warn">⚠ Parou em ${resultado.salvas} de ${linhasParaBase.length}: ${resultado.erro.message}</div>`);
+      return;
     }
-    if (!falhou) {
-      if (!kb) kb = emptyKB();
-      kb.imagens_disponiveis_count = salvas;
-      await registrarHistorico(`Cadastrou/atualizou ${pl(salvas,'imagem','imagens')} na base (lista real de arquivos)`);
-      addAgentMsg(`<div class="alert alert-ok">✓ ${pl(salvas,'imagem salva','imagens salvas')} na base do agente — da próxima vez já vem pronta, sem precisar subir de novo.</div>`);
-      renderImglistArea();
-    }
+    if (!kb) kb = emptyKB();
+    kb.imagens_disponiveis_count = resultado.salvas;
+    await registrarHistorico(`Cadastrou/atualizou ${pl(resultado.salvas,'imagem','imagens')} na base (lista real de arquivos)`);
+    addAgentMsg(`<div class="alert alert-ok">✓ ${pl(resultado.salvas,'imagem salva','imagens salvas')} na base do agente — da próxima vez já vem pronta, sem precisar subir de novo.</div>`);
+    renderImglistArea();
   };
   reader.readAsArrayBuffer(file);
+}
+
+// Sobe lotes em paralelo (algumas requisições ao mesmo tempo em vez de uma atrás da outra) —
+// com listas de dezenas de milhares de linhas, isso é a diferença entre ~1min e vários minutos.
+async function upsertEmLotesComConcorrencia(tabela, linhas, tamanhoLote, concorrencia, onProgresso) {
+  const lotes = [];
+  for (let i = 0; i < linhas.length; i += tamanhoLote) lotes.push(linhas.slice(i, i + tamanhoLote));
+  let proximoIndice = 0, concluidas = 0, erro = null;
+  async function worker() {
+    while (proximoIndice < lotes.length && !erro) {
+      const meuIndice = proximoIndice++;
+      const { error } = await sb.from(tabela).upsert(lotes[meuIndice], { onConflict: 'nome_arquivo' });
+      if (error) { erro = error; return; }
+      concluidas += lotes[meuIndice].length;
+      onProgresso?.(concluidas, linhas.length);
+    }
+  }
+  const trabalhadores = Array.from({ length: Math.min(concorrencia, lotes.length) }, () => worker());
+  await Promise.all(trabalhadores);
+  return { ok: !erro, salvas: concluidas, erro };
 }
 
 function limparListaImagens() {
@@ -2096,12 +2120,14 @@ async function gerarPlanilha() {
   if (temAlgumaFonteImagem && semImagemSku.length) errosGeracao.push(`${pl(semImagemSku.length,'produto','produtos')} sem imagem encontrada na lista (SKU ex: ${semImagemSku.slice(0,3).join(', ')}${semImagemSku.length>3?'...':''})`);
   if (!temAlgumaFonteImagem) errosGeracao.push('Nenhuma lista real de imagens carregada (nem na base) — a aba Imagens saiu vazia (sem a lista, não inventamos nomes de arquivo).');
 
-  // Variações Valores
+  // Variações Valores — VARIATION_ID é sempre 1 (identifica o eixo de variação, não a posição
+  // do produto no grupo). Confirmado no arquivo real de exemplo da Zydon: 258/258 linhas com
+  // VARIATION_ID=1, mesmo com produtos em posições 1 a 11 dentro do agrupamento.
   const valoresVar = variacoes.map(v => ({
     'PRODUCT_VARIATION_ID': v['Código variação'],
     'VALUE': v['_valor'],
     'ID': v['Código variação'],
-    'VARIATION_ID': v['_order'],
+    'VARIATION_ID': 1,
   }));
 
   // Limpar campos internos
@@ -2764,26 +2790,26 @@ enableDragDrop('cat-signus-file');
 // ══════════════════════════════════════════════════════════════════
 // PROGRESS
 // ══════════════════════════════════════════════════════════════════
-function addProgressMsg(total, targetId='chat') {
+function addProgressMsg(total, targetId='chat', label='Gerando planilhas') {
   const area = document.getElementById(targetId);
   const div = document.createElement('div');
   div.className = 'msg msg-a'; div.id = 'progress-msg';
   div.innerHTML = `<div class="msg-lbl">Agente Jet</div><div class="bubble">
     <div class="progress-wrap">
-      <div class="progress-txt">Gerando planilhas... 0 / ${total}</div>
+      <div class="progress-txt">${label}... 0 / ${total}</div>
       <div class="progress-bar-bg"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
     </div></div>`;
   area.appendChild(div); area.scrollTop = area.scrollHeight;
   return div;
 }
 
-function updateProgress(div, current, total) {
+function updateProgress(div, current, total, label='Gerando planilhas') {
   if (!div) return;
   const pct = Math.round(current/total*100);
   const bar = div.querySelector('#prog-bar');
   const txt = div.querySelector('.progress-txt');
   if (bar) bar.style.width = pct + '%';
-  if (txt) txt.textContent = `Gerando planilhas... ${current} / ${total} (${pct}%)`;
+  if (txt) txt.textContent = `${label}... ${current} / ${total} (${pct}%)`;
   if (current >= total) {
     setTimeout(() => { const p = document.getElementById('progress-msg'); if(p) p.remove(); }, 500);
   }
