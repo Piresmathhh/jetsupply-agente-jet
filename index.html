@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.18 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.19 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -806,7 +806,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.18';
+const VERSION = 'v5.19';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2577,31 +2577,36 @@ function compararNomesCategoriaZydon(a, b) {
 function gerarArquivoCategoriaZydon() {
   const todas = window._categoriasTodas || [];
   if (!todas.length) return;
-  // ORDER na Zydon é a posição entre os irmãos (mesmo "Código pai"), definida pela
-  // Zydon — não dá pra derivar do treeview do Signus. Prioridade pra descobrir o
-  // pai/ORDER real de cada categoria: 1) arquivo da Zydon subido agora (mais
-  // fresco); 2) o que já foi salvo antes na base do agente; 3) categoria
-  // genuinamente nova — sem ORDER real conhecida, entra no grupo dos irmãos
-  // ordenada por nome (compararNomesCategoriaZydon), não na ordem do Signus.
+  // O Signus é o ERP — quem manda na hierarquia (Nome, Código pai) é sempre o
+  // treeview do Signus, nunca a Zydon. O que já está cadastrado/exportado da
+  // Zydon (arquivo de referência ou base salva) só serve pra uma coisa: tentar
+  // aproveitar o ORDER real de uma categoria — e só quando ela concorda com o
+  // MESMO pai que o Signus diz. Se o pai não bate (a Zydon tem um dado velho
+  // ou errado, ex: categoria 571 "Suporte para Fusível" que na Zydon aponta
+  // pra um pai 266 que nem existe, enquanto o Signus diz corretamente 566),
+  // aquele ORDER não significa mais nada e a categoria cai no fallback por nome.
   const ref = catZydonOrdemMap;
   const maxOrdemPorPai = {};
   const registrarMax = (pai, ordem) => {
     const chave = pai || '__raiz__';
     if (ordem !== null && ordem !== undefined && !isNaN(ordem)) maxOrdemPorPai[chave] = Math.max(maxOrdemPorPai[chave]||0, ordem);
   };
-  if (ref) for (const info of ref.values()) registrarMax(info.pai, info.ordem);
-  for (const salvo of Object.values(kb?.categorias_zydon||{})) registrarMax(salvo.pai!=null ? String(salvo.pai) : null, salvo.ordem);
 
   const resolvidas = [];
   const semOrdemPorPai = {};
   todas.forEach(n => {
+    const pai = n.pai; // sempre do Signus — nunca sobrescrito pela Zydon
     const refInfo = ref?.get(String(n.id));
     const salvo = kb?.categorias_zydon?.[String(n.id)];
-    const pai = refInfo ? refInfo.pai : (salvo && salvo.pai != null ? String(salvo.pai) : n.pai);
-    if (refInfo && refInfo.ordem !== null) {
-      resolvidas.push({ n, pai, ordem: refInfo.ordem });
-    } else if (salvo && salvo.ordem !== null && salvo.ordem !== undefined) {
-      resolvidas.push({ n, pai, ordem: salvo.ordem });
+    let ordem = null;
+    if (refInfo && refInfo.ordem !== null && String(refInfo.pai) === String(pai)) {
+      ordem = refInfo.ordem;
+    } else if (salvo && salvo.ordem !== null && salvo.ordem !== undefined && String(salvo.pai != null ? salvo.pai : null) === String(pai)) {
+      ordem = salvo.ordem;
+    }
+    if (ordem !== null) {
+      resolvidas.push({ n, pai, ordem });
+      registrarMax(pai, ordem);
     } else {
       const chave = pai || '__raiz__';
       (semOrdemPorPai[chave] = semOrdemPorPai[chave] || []).push({ n, pai });
@@ -2637,20 +2642,25 @@ async function salvarOrdemCategoriasNaBase() {
   const ref = catZydonOrdemMap;
   if (!ref || !ref.size) return;
   if (!kb) kb = emptyKB();
-  // "pai" é uma FK pra própria tabela — se a categoria apontar pra um pai que não
-  // existe nem no que já está salvo nem no lote que estamos subindo agora (caso
-  // raro de um arquivo da Zydon referenciar uma categoria de fora desse recorte),
-  // salva sem pai em vez de travar o lote inteiro inserindo tudo.
+  // O pai salvo aqui tem que ser o do Signus (fonte da verdade da hierarquia),
+  // nunca o que veio no arquivo da Zydon — a Zydon só entra pra aproveitar o
+  // ORDER real. Só usa o pai do arquivo da Zydon como último recurso, quando a
+  // categoria nem existe no Signus (caso raro de categoria só do lado Zydon).
+  // "pai" é uma FK pra própria tabela — se mesmo assim apontar pra um pai que
+  // não existe em lugar nenhum, salva sem pai em vez de travar o lote inteiro.
   const codigosValidos = new Set(Object.keys(kb.categorias_zydon||{}));
+  if (catSignusFlat) for (const codigo of catSignusFlat.keys()) codigosValidos.add(String(codigo));
   for (const codigo of ref.keys()) codigosValidos.add(String(codigo));
 
   const rows = [];
   const semPaiValido = [];
   for (const [codigo, info] of ref.entries()) {
     const existente = kb.categorias_zydon?.[codigo];
-    const nome = catSignusFlat?.get(codigo)?.nome || existente?.nome || '';
+    const doSignus = catSignusFlat?.get(codigo);
+    const nome = doSignus?.nome || existente?.nome || '';
     if (!nome) continue; // sem nome não dá pra gravar (coluna obrigatória)
-    let pai = info.pai ? Number(info.pai) : null;
+    const paiOrigem = doSignus ? doSignus.pai : info.pai;
+    let pai = paiOrigem ? Number(paiOrigem) : null;
     if (pai !== null && !codigosValidos.has(String(pai))) { semPaiValido.push(codigo); pai = null; }
     rows.push({
       codigo: Number(codigo), nome, pai,
