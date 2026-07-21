@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.20 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.21 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -786,7 +786,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.20';
+const VERSION = 'v5.21';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2532,40 +2532,37 @@ function gerarArquivoCategoriaZydon() {
   if (!todas.length) return;
   // O Signus é o ERP — quem manda na hierarquia (Nome, Código pai) é sempre o
   // treeview do Signus, nunca a Zydon. A base salva do agente (kb.categorias_zydon)
-  // só serve pra uma coisa: tentar aproveitar o ORDER real de uma categoria já
-  // conhecida — e só quando ela concorda com o MESMO pai que o Signus diz. Se o
-  // pai não bate (a Zydon tinha um dado velho ou errado nessa categoria), aquele
-  // ORDER não significa mais nada e a categoria cai no fallback por nome.
-  const maxOrdemPorPai = {};
-  const registrarMax = (pai, ordem) => {
-    const chave = pai || '__raiz__';
-    if (ordem !== null && ordem !== undefined && !isNaN(ordem)) maxOrdemPorPai[chave] = Math.max(maxOrdemPorPai[chave]||0, ordem);
-  };
+  // só serve pra uma coisa: tentar aproveitar o ORDER real de um GRUPO DE IRMÃOS
+  // inteiro — e só quando TODOS os irmãos daquele pai já têm ordem conhecida
+  // batendo com o pai do Signus. Se aparecer um irmão novo no meio do grupo (ex:
+  // a Zydon intercala "1P+N" logo depois de "1P", não empilha ele no final da
+  // lista), não dá pra saber onde exatamente entra só olhando os outros —
+  // então o grupo INTEIRO recalcula pelo nome (Acessórios primeiro, depois
+  // numérico por polos: 1P, 1P+N, 2P, 2P+N, 3P...), em vez de travar os
+  // irmãos já conhecidos e só encaixar o novo no fim.
+  const porPai = new Map();
+  todas.forEach(n => {
+    const chave = n.pai || '__raiz__';
+    if (!porPai.has(chave)) porPai.set(chave, []);
+    porPai.get(chave).push(n);
+  });
 
   const resolvidas = [];
-  const semOrdemPorPai = {};
-  todas.forEach(n => {
-    const pai = n.pai; // sempre do Signus — nunca sobrescrito pela Zydon
-    const salvo = kb?.categorias_zydon?.[String(n.id)];
-    let ordem = null;
-    if (salvo && salvo.ordem !== null && salvo.ordem !== undefined && String(salvo.pai != null ? salvo.pai : null) === String(pai)) {
-      ordem = salvo.ordem;
-    }
-    if (ordem !== null) {
-      resolvidas.push({ n, pai, ordem });
-      registrarMax(pai, ordem);
-    } else {
-      const chave = pai || '__raiz__';
-      (semOrdemPorPai[chave] = semOrdemPorPai[chave] || []).push({ n, pai });
-    }
-  });
-  for (const chave of Object.keys(semOrdemPorPai)) {
-    const grupo = semOrdemPorPai[chave];
-    grupo.sort((a, b) => compararNomesCategoriaZydon(a.n.nome, b.n.nome));
-    grupo.forEach(item => {
-      maxOrdemPorPai[chave] = (maxOrdemPorPai[chave] || 0) + 1;
-      resolvidas.push({ n: item.n, pai: item.pai, ordem: maxOrdemPorPai[chave] });
+  for (const [chave, grupo] of porPai.entries()) {
+    const pai = chave === '__raiz__' ? null : chave;
+    const infos = grupo.map(n => {
+      const salvo = kb?.categorias_zydon?.[String(n.id)];
+      const ordemConhecida = (salvo && salvo.ordem !== null && salvo.ordem !== undefined && String(salvo.pai != null ? salvo.pai : null) === String(pai))
+        ? salvo.ordem : null;
+      return { n, ordemConhecida };
     });
+    const todosConhecidos = infos.every(i => i.ordemConhecida !== null);
+    if (todosConhecidos) {
+      infos.forEach(i => resolvidas.push({ n: i.n, pai, ordem: i.ordemConhecida }));
+    } else {
+      infos.sort((a, b) => compararNomesCategoriaZydon(a.n.nome, b.n.nome));
+      infos.forEach((i, idx) => resolvidas.push({ n: i.n, pai, ordem: idx + 1 }));
+    }
   }
 
   const rows = resolvidas.map(({ n, pai, ordem }) => ({
