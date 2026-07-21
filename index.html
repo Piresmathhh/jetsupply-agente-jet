@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.23 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.24 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -447,6 +447,17 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
           <strong>Selecionar arquivo</strong>
           <p>Exportação do Signus (.xlsx)</p>
           <span class="upload-z-hint">ou arraste o arquivo aqui</span>
+        </label>
+      </div>
+    </div>
+    <div class="sb-sec" style="flex-shrink:0">
+      <div class="sb-lbl">Lista de imagens (opcional)</div>
+      <div id="imglist-area">
+        <label class="upload-z" for="imglist-in" style="padding:10px 8px">
+          <input type="file" id="imglist-in" accept=".xlsx,.xls,.csv">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>
+          <strong style="font-size:12px">Nomes de imagens reais</strong>
+          <span class="upload-z-hint">só gera as que existem, sem inventar</span>
         </label>
       </div>
     </div>
@@ -786,7 +797,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.23';
+const VERSION = 'v5.24';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1468,13 +1479,32 @@ function enableDragDrop(inputId) {
   });
 }
 
+// A exportação real do Signus manda 1 linha por (produto, característica) — o mesmo PROD_ID
+// se repete N vezes (uma por CARACT_NOME: Corrente Nominal, Número de Polos, Curva de Disparo...),
+// com todos os campos de produto (Nome, SKU, peso, dimensões, agrupamento etc.) idênticos entre elas.
+// Sem isso, cada grupo conta 5x mais "produtos" do que existem de verdade, a aba Variações sai
+// duplicada e o EAN duplicado dispara em massa (falso positivo). Mantemos só a 1ª linha de cada ID.
+function deduplicarProdutosPorId(data) {
+  const vistos = new Set();
+  const resultado = [];
+  for (const p of data) {
+    const id = String(p['ID']||'').trim();
+    if (!id) { resultado.push(p); continue; } // sem ID não dá pra saber se é duplicata, mantém
+    if (vistos.has(id)) continue;
+    vistos.add(id);
+    resultado.push(p);
+  }
+  return resultado;
+}
+
 function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async function(ev) {
     const wbRaw = XLSX.read(ev.target.result, { type:'array' });
-    const data = XLSX.utils.sheet_to_json(wbRaw.Sheets[wbRaw.SheetNames[0]]).map(normalizarLinhaSignus);
+    const bruto = XLSX.utils.sheet_to_json(wbRaw.Sheets[wbRaw.SheetNames[0]]).map(normalizarLinhaSignus);
+    const data = deduplicarProdutosPorId(bruto);
 
     // Validar arquivo
     const { erros: errosVal, avisos: avisosVal } = validarArquivo(data);
@@ -1492,6 +1522,9 @@ function handleFileUpload(e) {
     const colAchada = acharColuna(data, COLUNAS_RECOMENDADAS['Cód. agrupamento']);
     COL_AGRUPAMENTO = colAchada || 'Cód. agrupamento';
     if (avisosVal.length) addAgentMsg(`<div class="alert alert-warn">⚠ ${avisosVal.join('<br>')}</div>`);
+    if (bruto.length !== data.length) {
+      addAgentMsg(`<div class="alert alert-ok">✓ Esse arquivo vem com ${bruto.length} linhas (uma por produto+característica) — reagrupei em ${pl(data.length,'produto único','produtos únicos')} antes de gerar.</div>`);
+    }
     document.getElementById('upload-area').innerHTML =
       `<div class="file-ok">
         <div style="display:flex;align-items:center;justify-content:space-between">
@@ -1505,6 +1538,70 @@ function handleFileUpload(e) {
 }
 document.getElementById('file-in').addEventListener('change', handleFileUpload);
 enableDragDrop('file-in');
+
+// ══════════════════════════════════════════════════════════════════
+// LISTA REAL DE IMAGENS — casa exatamente com o que existe, nunca inventa
+// ══════════════════════════════════════════════════════════════════
+// window._imagensIndex: Map<baseDoSKU, [{filename, seq, ext}]> — null quando nenhuma lista foi carregada.
+window._imagensIndex = null;
+window._imagensUrlBasePadrao = '';
+
+// "10076381_2.jpg" -> { base:"10076381", seq:2, ext:"jpg" } — só sufixo _n bem no final antes
+// da extensão conta como sequência; hífens/números no meio do nome (ex: "10VB48BP-33") ficam intactos.
+function normalizarBaseImagem(nomeArquivo) {
+  const m = String(nomeArquivo||'').trim().match(/^(.*?)(?:_(\d+))?\.(jpe?g|png)$/i);
+  if (!m) return null;
+  return { base: m[1], seq: m[2] ? parseInt(m[2],10) : 0, ext: m[3] };
+}
+
+function handleImagensListUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const wb = XLSX.read(ev.target.result, { type:'array' });
+    const dados = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const colNome = acharColuna(dados, ['Nome do arquivo','Arquivo','Nome de arquivo','Imagem','Filename','Nome']);
+    const colUrlBase = acharColuna(dados, ['Link base','URL base','Base URL','Url base','URL-base']);
+    if (!colNome) {
+      addAgentMsg('<div class="alert alert-err">⚠ Não encontrei a coluna com o nome dos arquivos de imagem nessa planilha.</div>');
+      return;
+    }
+    const idx = new Map();
+    let urlBasePadrao = '';
+    dados.forEach(r => {
+      const nomeArq = String(r[colNome]||'').trim();
+      if (!nomeArq) return;
+      const parsed = normalizarBaseImagem(nomeArq);
+      if (!parsed) return;
+      if (!idx.has(parsed.base)) idx.set(parsed.base, []);
+      idx.get(parsed.base).push({ filename: nomeArq, seq: parsed.seq, ext: parsed.ext });
+      if (colUrlBase && r[colUrlBase] && !urlBasePadrao) urlBasePadrao = String(r[colUrlBase]).trim();
+    });
+    window._imagensIndex = idx;
+    window._imagensUrlBasePadrao = urlBasePadrao;
+    document.getElementById('imglist-area').innerHTML =
+      `<div class="file-ok">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div class="file-ok-name">${file.name}</div><div class="file-ok-sub">${pl(idx.size,'SKU com imagem','SKUs com imagem')}</div></div>
+          <button onclick="limparListaImagens()" aria-label="Remover lista de imagens" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:18px;padding:2px 4px">×</button>
+        </div>
+      </div>`;
+    addAgentMsg(`<div class="alert alert-ok">✓ Lista de imagens carregada: ${pl(dados.length,'arquivo','arquivos')} agrupados em ${pl(idx.size,'SKU','SKUs')}. Ao gerar, a aba Imagens vai usar exatamente essas — sem inventar quantidade.</div>`);
+  };
+  reader.readAsArrayBuffer(file);
+}
+document.getElementById('imglist-in').addEventListener('change', handleImagensListUpload);
+enableDragDrop('imglist-in');
+
+function limparListaImagens() {
+  window._imagensIndex = null;
+  window._imagensUrlBasePadrao = '';
+  document.getElementById('imglist-area').innerHTML =
+    `<label class="upload-z" for="imglist-in" style="padding:10px 8px"><input type="file" id="imglist-in" accept=".xlsx,.xls,.csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg><strong style="font-size:12px">Nomes de imagens reais</strong><span class="upload-z-hint">só gera as que existem, sem inventar</span></label>`;
+  document.getElementById('imglist-in').addEventListener('change', handleImagensListUpload);
+  enableDragDrop('imglist-in');
+}
 
 function limparPlanilha() {
   products = []; pendentes = []; wb1 = wb2 = wb3 = null; errosGeracao = [];
@@ -1911,30 +2008,43 @@ async function gerarPlanilha() {
     });
   });
 
-  // Imagens — não existe foto por variação, só pelo SKU do produto PAI.
-  // Gera o conjunto de imagens (principal + _1 até _10) UMA VEZ por família.
+  // Imagens — não existe foto por variação, só pelo SKU do produto PAI. Só sobe a Zydon a
+  // quantidade EXATA de imagens que realmente existe (lista real carregada em "Lista de
+  // imagens"); sem essa lista, não inventamos nomes de arquivo (_1 a _10 "no escuro"
+  // deixava a aba subindo em branco na Zydon quando a imagem não existia de verdade).
   const imgs = [];
+  const semImagemSku = [];
+  function imagensDoSku(sku) {
+    if (!window._imagensIndex) return [];
+    const achadas = window._imagensIndex.get(String(sku||'').trim()) || [];
+    return achadas.slice().sort((a,b) => a.seq - b.seq);
+  }
+  const urlBaseFinal = (imgBase || window._imagensUrlBasePadrao || '').replace(/\/$/,'');
   const gruposImgFeitos = new Set();
   for (const p of products) {
     const grpCod = p[COL_AGRUPAMENTO];
+    let paiIdImg, cod, nome;
     if (grpCod) {
       if (gruposImgFeitos.has(grpCod)) continue; // já gerou imagem dessa família
       gruposImgFeitos.add(grpCod);
-      const paiId = grpPaiId[grpCod];
-      const paiProduto = (grupos[grpCod]||[]).find(x => String(x['ID']||'')===String(paiId)) || p;
-      const cod = paiProduto['Código']||'';
-      const nome = grpNomePai[grpCod] || formatName(paiProduto['Nome']||'', paiProduto['Marca']||'');
-      if (!imgBase || !cod) continue;
-      imgs.push({ 'Código':'', 'Produto (Código)':String(paiId||grpCod), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}.jpg` });
-      for (let n=1; n<=10; n++) imgs.push({ 'Código':'', 'Produto (Código)':String(paiId||grpCod), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}_${n}.jpg` });
+      paiIdImg = grpPaiId[grpCod];
+      const paiProduto = (grupos[grpCod]||[]).find(x => String(x['ID']||'')===String(paiIdImg)) || p;
+      cod = paiProduto['Código']||'';
+      nome = grpNomePai[grpCod] || formatName(paiProduto['Nome']||'', paiProduto['Marca']||'');
     } else {
-      const cod = p['Código']||'';
-      const nome = formatName(p['Nome']||'', p['Marca']||'');
-      if (!imgBase || !cod) continue;
-      imgs.push({ 'Código':'', 'Produto (Código)':String(p['ID']||''), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}.jpg` });
-      for (let n=1; n<=10; n++) imgs.push({ 'Código':'', 'Produto (Código)':String(p['ID']||''), 'Produto (Nome)':nome, 'Imagem':`${imgBase}/${cod}_${n}.jpg` });
+      paiIdImg = p['ID'];
+      cod = p['Código']||'';
+      nome = formatName(p['Nome']||'', p['Marca']||'');
     }
+    if (!cod) continue;
+    const achadas = imagensDoSku(cod);
+    if (!achadas.length) { if (window._imagensIndex) semImagemSku.push(cod); continue; }
+    achadas.forEach(img => {
+      imgs.push({ 'Código':'', 'Produto (Código)':String(paiIdImg||grpCod||''), 'Produto (Nome)':nome, 'Imagem': urlBaseFinal ? `${urlBaseFinal}/${img.filename}` : img.filename });
+    });
   }
+  if (window._imagensIndex && semImagemSku.length) errosGeracao.push(`${pl(semImagemSku.length,'produto','produtos')} sem imagem encontrada na lista (SKU ex: ${semImagemSku.slice(0,3).join(', ')}${semImagemSku.length>3?'...':''})`);
+  if (!window._imagensIndex) errosGeracao.push('Nenhuma lista real de imagens carregada — a aba Imagens saiu vazia (sem a lista, não inventamos nomes de arquivo).');
 
   // Variações Valores
   const valoresVar = variacoes.map(v => ({
