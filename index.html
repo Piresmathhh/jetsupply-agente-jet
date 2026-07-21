@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.21 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.22 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -786,7 +786,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.21';
+const VERSION = 'v5.22';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2531,15 +2531,13 @@ function gerarArquivoCategoriaZydon() {
   const todas = window._categoriasTodas || [];
   if (!todas.length) return;
   // O Signus é o ERP — quem manda na hierarquia (Nome, Código pai) é sempre o
-  // treeview do Signus, nunca a Zydon. A base salva do agente (kb.categorias_zydon)
-  // só serve pra uma coisa: tentar aproveitar o ORDER real de um GRUPO DE IRMÃOS
-  // inteiro — e só quando TODOS os irmãos daquele pai já têm ordem conhecida
-  // batendo com o pai do Signus. Se aparecer um irmão novo no meio do grupo (ex:
-  // a Zydon intercala "1P+N" logo depois de "1P", não empilha ele no final da
-  // lista), não dá pra saber onde exatamente entra só olhando os outros —
-  // então o grupo INTEIRO recalcula pelo nome (Acessórios primeiro, depois
-  // numérico por polos: 1P, 1P+N, 2P, 2P+N, 3P...), em vez de travar os
-  // irmãos já conhecidos e só encaixar o novo no fim.
+  // treeview do Signus, nunca a Zydon. O ORDER também não vem mais do que já
+  // está salvo/cadastrado na Zydon — vira sempre calculado pelo nome dentro de
+  // cada grupo de irmãos (mesmo "Código pai"): Acessórios primeiro, depois
+  // numérico por quantidade de polos (1P, 1P+N, 2P, 2P+N, 3P...), e alfabético
+  // pro resto. Isso é intencional mesmo quando diverge do que já está
+  // registrado na Zydon hoje (ex: "Disjuntores a Gás" antes de "a Vácuo" —
+  // o cadastro antigo tinha isso invertido).
   const porPai = new Map();
   todas.forEach(n => {
     const chave = n.pai || '__raiz__';
@@ -2550,19 +2548,8 @@ function gerarArquivoCategoriaZydon() {
   const resolvidas = [];
   for (const [chave, grupo] of porPai.entries()) {
     const pai = chave === '__raiz__' ? null : chave;
-    const infos = grupo.map(n => {
-      const salvo = kb?.categorias_zydon?.[String(n.id)];
-      const ordemConhecida = (salvo && salvo.ordem !== null && salvo.ordem !== undefined && String(salvo.pai != null ? salvo.pai : null) === String(pai))
-        ? salvo.ordem : null;
-      return { n, ordemConhecida };
-    });
-    const todosConhecidos = infos.every(i => i.ordemConhecida !== null);
-    if (todosConhecidos) {
-      infos.forEach(i => resolvidas.push({ n: i.n, pai, ordem: i.ordemConhecida }));
-    } else {
-      infos.sort((a, b) => compararNomesCategoriaZydon(a.n.nome, b.n.nome));
-      infos.forEach((i, idx) => resolvidas.push({ n: i.n, pai, ordem: idx + 1 }));
-    }
+    grupo.sort((a, b) => compararNomesCategoriaZydon(a.nome, b.nome));
+    grupo.forEach((n, idx) => resolvidas.push({ n, pai, ordem: idx + 1 }));
   }
 
   const rows = resolvidas.map(({ n, pai, ordem }) => ({
