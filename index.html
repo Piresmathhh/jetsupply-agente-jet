@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.24 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.25 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -418,10 +418,6 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <button class="nav-item" id="nav-categorias" onclick="showView('categorias')">
     <svg viewBox="0 0 24 24"><path d="M4 4h6v6H4z"/><path d="M14 6h6M14 12h6M10 12H7a2 2 0 00-2 2v2M14 18h6"/></svg>
     <span>Categorias</span>
-  </button>
-  <button class="nav-item" id="nav-caracteristicas" onclick="showView('caracteristicas')">
-    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 6l3 3M4 6l3-3M4 12h16M4 12l3 3M4 12l3-3M4 18h10"/></svg>
-    <span>Características</span>
   </button>
   <button class="nav-item" id="nav-historico" onclick="showView('historico')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
@@ -581,24 +577,6 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </label>
     </div>
     <div id="cat-signus-results"></div>
-  </div>
-</section>
-
-<!-- VIEW: Características Signus x Zydon -->
-<section class="view-panel view-full" id="view-caracteristicas">
-  <div class="view-scroll">
-    <div class="view-h1">Características Signus × Zydon</div>
-    <div class="view-sub">Carregue uma exportação do Signus com as características do produto (ex: Corrente Nominal, Curva de Disparo) e compare com o que já está cadastrado na Zydon, pra ver o que ainda falta subir lá.</div>
-    <div class="step-card">
-      <div class="step-card-lbl">Características (Signus)</div>
-      <label class="upload-z" for="carac-signus-file">
-        <input type="file" id="carac-signus-file" accept=".xlsx,.xls">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>
-        <strong id="carac-signus-file-name">Selecionar arquivo</strong>
-        <span class="upload-z-hint">planilha de características ou de produtos com CARACT_NOME/CARACT_VALOR</span>
-      </label>
-    </div>
-    <div id="carac-results"></div>
   </div>
 </section>
 
@@ -797,7 +775,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.24';
+const VERSION = 'v5.25';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2706,300 +2684,10 @@ document.getElementById('cat-signus-file').addEventListener('change', function(e
 enableDragDrop('cat-signus-file');
 
 // ══════════════════════════════════════════════════════════════════
-// CARACTERÍSTICAS SIGNUS x ZYDON — compara o que o Signus manda (por
-// produto ou vocabulário puro) com o que já está registrado como existente
-// na Zydon, pra saber o que ainda falta subir lá. Funcionalidade separada
-// da curadoria de produtos — não muda a geração de Variações/Valores hoje.
+// (Tela "Características" removida — o botão Produtos já trata multi-linha
+// por produto e gera as 3 planilhas certas direto, essa comparação separada
+// não é mais necessária.)
 // ══════════════════════════════════════════════════════════════════
-let caracSignusRows = null;
-
-function agruparCaracteristicasSignus(rows) {
-  // Duas formas possíveis de arquivo do Signus:
-  // 1) Por produto (ex: export da fábrica): tem CARACT_NOME + CARACT_VALOR, um par por linha.
-  // 2) Vocabulário puro (ex: Grupo de Características): tem CARACT_NOME mas não tem CARACT_VALOR.
-  const colNome = acharColuna(rows, ['CARACT_NOME','Característica','Caracteristica']);
-  const colValor = acharColuna(rows, ['CARACT_VALOR','Valor']);
-  const grupos = new Map();
-  (rows||[]).forEach(r => {
-    const nome = colNome ? String(r[colNome]||'').trim() : '';
-    if (!nome) return;
-    if (!grupos.has(nome)) grupos.set(nome, new Set());
-    if (colValor) {
-      const v = r[colValor];
-      if (v!==undefined && v!=='' && v!==null) grupos.get(nome).add(String(v).trim());
-    }
-  });
-  return { grupos, temValores: !!colValor };
-}
-
-function renderLinhaMapaCaracteristica(nomeSignus) {
-  const nomeZydon = kb?.caracteristica_mappings?.[nomeSignus] || '';
-  const inputId = 'carac-map-' + nomeSignus.replace(/[^a-zA-Z0-9]/g,'_');
-  return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px">
-    <span style="color:var(--t5)">nome na Zydon:</span>
-    <input type="text" id="${inputId}" class="cfg-inp" style="width:160px" placeholder="mesmo nome" value="${nomeZydon}">
-    <button class="cfg-btn" onclick="salvarMapaCaracteristica(${JSON.stringify(nomeSignus)},'${inputId}')">salvar</button>
-  </div>`;
-}
-
-async function upsertCaracteristicaMapping(nomeSignus, nomeZydon) {
-  if (!kb) kb = emptyKB();
-  const { data: antes } = await sb.from('caracteristica_mappings').select('*').eq('nome_signus', nomeSignus).maybeSingle();
-  const conflito = antes && antes.nome_zydon !== nomeZydon ? antes : null;
-  const { error } = await sb.from('caracteristica_mappings').upsert(
-    { nome_signus: nomeSignus, nome_zydon: nomeZydon, criado_por: currentUser?.id||null },
-    { onConflict: 'nome_signus' }
-  );
-  if (error) { addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui salvar: ${error.message}</div>`, '', 'carac-results'); return false; }
-  kb.caracteristica_mappings[nomeSignus] = nomeZydon;
-  await registrarHistorico(`Mapeou característica: "${nomeSignus}" → "${nomeZydon}"`);
-  definirUltimaAcao({ tabela:'caracteristica_mappings', chave:{nome_signus:nomeSignus}, before: antes||null, label: `característica "${nomeSignus}"` });
-  return { ok: true, conflito };
-}
-
-async function salvarMapaCaracteristica(nomeSignus, inputId) {
-  const nomeZydon = document.getElementById(inputId)?.value.trim();
-  if (!nomeZydon) return;
-  const res = await upsertCaracteristicaMapping(nomeSignus, nomeZydon);
-  if (res?.conflito) {
-    addAgentMsg(`<div class="alert alert-warn">⚠ Essa característica já tinha um mapeamento diferente ("${res.conflito.nome_zydon}") — atualizei pro novo valor. Se foi engano, tem o botão "Desfazer" no topo.</div>`, '', 'carac-results');
-  }
-}
-
-function renderCaracteristicasResultado() {
-  const el = document.getElementById('carac-results');
-  if (!el) return;
-  if (!caracSignusRows) { el.innerHTML = ''; return; }
-
-  const { grupos, temValores } = agruparCaracteristicasSignus(caracSignusRows);
-  const valoresConhecidos = new Set(kb?.caracteristica_valores_zydon||[]);
-  const nomes = Array.from(grupos.keys()).sort((a,b)=>a.localeCompare(b));
-
-  let html = '';
-  if (!nomes.length) {
-    html = `<div class="alert alert-warn">⚠ Não encontrei uma coluna de característica (CARACT_NOME) nesse arquivo.</div>`;
-  } else if (!temValores) {
-    html += `<div class="alert alert-warn">⚠ Esse arquivo só tem o vocabulário de características (sem valor por produto) — mostrando a lista pra você mapear o nome na Zydon.</div>`;
-    html += nomes.map(n => `<div class="step-card"><div class="step-card-lbl">${n}</div>${renderLinhaMapaCaracteristica(n)}</div>`).join('');
-  } else {
-    let totalNovos = 0;
-    const blocos = nomes.map(nome => {
-      const valores = Array.from(grupos.get(nome)).sort();
-      const novos = valores.filter(v => !valoresConhecidos.has(v));
-      totalNovos += novos.length;
-      return { nome, valores, novos };
-    });
-    html += `<div class="diff-summary">
-      <div class="diff-stat"><div class="diff-stat-n" style="color:var(--navy)">${nomes.length}</div><div class="diff-stat-l">${pl(nomes.length,'característica','características')}</div></div>
-      <div class="diff-stat"><div class="diff-stat-n" style="color:${totalNovos?'var(--red)':'var(--green)'}">${totalNovos}</div><div class="diff-stat-l">${pl(totalNovos,'valor novo','valores novos')}</div></div>
-    </div>`;
-    if (!(kb?.caracteristica_valores_zydon||[]).length) {
-      html += `<div class="alert alert-warn">⚠ Ainda não tenho nenhum valor salvo como "já existe na Zydon" — por isso tudo abaixo aparece como novo. Marque manualmente depois de cadastrar lá pra essa comparação ficar precisa.</div>`;
-    }
-    html += blocos.map(b => `
-      <div class="step-card">
-        <div class="step-card-lbl">${b.nome}</div>
-        ${renderLinhaMapaCaracteristica(b.nome)}
-        <div style="font-size:12px;display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
-          ${b.valores.map(v => `<span style="padding:3px 8px;border-radius:20px;font-size:11px;font-weight:bold;background:${b.novos.includes(v)?'var(--red-l)':'var(--green-l)'};color:${b.novos.includes(v)?'var(--red)':'var(--green)'}">${v}${b.novos.includes(v)?' · novo':''}</span>`).join('')}
-        </div>
-      </div>
-    `).join('');
-    html += `<div class="act-row" style="margin-top:6px">
-      <button class="act-btn pri" onclick="baixarVariacoesCaracteristicasZydon()">Gerar Variações + Valores no formato Zydon (todos os produtos)</button>
-      <button class="act-btn" onclick="baixarCaracteristicasNovas()">Baixar lista de valores novos (.xlsx)</button>
-      ${currentProfile?.is_admin ? `<button class="act-btn" onclick="marcarValoresComoExistentes()">Marcar tudo isso como já existente na Zydon</button>` : ''}
-    </div>`;
-    window._caracBlocos = blocos;
-  }
-  el.innerHTML = html;
-}
-
-// Converte o arquivo do Signus nos 2 arquivos que a Zydon espera pra importar
-// Variações: "Variações produtos" e "Valores de Variações de Produto" — mesmo
-// formato dos exemplos enviados. A exportação REAL do Signus vem com uma
-// linha por PRODUTO+CARACTERÍSTICA (um PROD_ID se repete em várias linhas,
-// uma pra Corrente Nominal, outra pra Número de Polos, Curva de Disparo
-// etc.) — então primeiro reagrupa por PROD_ID pra reconstruir 1 registro por
-// produto de verdade, com a lista de características dele. Depois agrupa os
-// produtos por Cód. agrupamento e descobre o "eixo de variação": a
-// característica PRÉ-DEFINIDA cujo valor muda de um produto pro outro dentro
-// do mesmo grupo (ex: Corrente Nominal varia 2A/4A/6A..., já Número de Polos
-// fica igual no grupo todo e não conta como eixo). Ordena os produtos do
-// grupo pelo valor numérico do eixo (2A, 4A, 6A... ou 0.5, 1, 1.5...).
-function gerarVariacoesCaracteristicasZydon(rows) {
-  const colId = acharColuna(rows, ['PROD_ID','ID']);
-  const colAgrup = acharColuna(rows, ['PROD_COD_AGRUPAMENTO','Cód. agrupamento','Cod. agrupamento','Cod agrupamento']);
-  const colSku = acharColuna(rows, ['PROD_SKU','SKU','Código']);
-  const colBar = acharColuna(rows, ['PROD_COD_BAR','Código barras','EAN']);
-  const colNome = acharColuna(rows, ['PROD_NOME','Nome']);
-  const colMarca = acharColuna(rows, ['MARCA_NOME','Marca']);
-  const colPeso = acharColuna(rows, ['PESO_KG','Peso']);
-  const colLargura = acharColuna(rows, ['LARGURA_CM','Largura (cm)']);
-  const colAltura = acharColuna(rows, ['ALTURA_CM','Altura (cm)']);
-  const colProf = acharColuna(rows, ['PROFUNDIDADE_CM','Profundidade (cm)']);
-  const colCarNome = acharColuna(rows, ['CARACT_NOME','Característica','Caracteristica']);
-  const colCarValor = acharColuna(rows, ['CARACT_VALOR','Valor']);
-  const colCarTipo = acharColuna(rows, ['CARACT_TIPO','Tipo']);
-  if (!colId || !colCarValor) return null;
-
-  // 1) Reagrupa as linhas por PROD_ID — cada produto real pode vir espalhado
-  // em várias linhas (uma por característica); os campos de produto (SKU,
-  // nome, peso, dimensões...) se repetem iguais em todas, então usa a
-  // primeira linha encontrada como referência.
-  const porProduto = new Map();
-  (rows||[]).forEach(r => {
-    const id = String(r[colId]||'').trim();
-    if (!id) return;
-    if (!porProduto.has(id)) {
-      porProduto.set(id, {
-        id,
-        agrup: colAgrup ? String(r[colAgrup]||'').trim() : id,
-        row: r,
-        caracts: [],
-      });
-    }
-    const nome = colCarNome ? String(r[colCarNome]||'').trim() : '_eixo';
-    const valor = String(r[colCarValor]||'').trim();
-    const tipo = colCarTipo ? String(r[colCarTipo]||'').trim().toUpperCase() : '';
-    if (nome) porProduto.get(id).caracts.push({ nome, valor, tipo });
-  });
-
-  // 2) Agrupa os produtos (já reconstruídos) por Cód. agrupamento
-  const grupos = new Map();
-  for (const prod of porProduto.values()) {
-    if (!grupos.has(prod.agrup)) grupos.set(prod.agrup, []);
-    grupos.get(prod.agrup).push(prod);
-  }
-
-  const variacoes = [];
-  for (const [grpCod, produtos] of grupos.entries()) {
-    // 3) Acha o eixo de variação: entre as características PRÉ-DEFINIDA do
-    // grupo, a que tem mais valores distintos entre os produtos (as que ficam
-    // sempre iguais — como Número de Polos num grupo que só tem 1P — não são
-    // eixo, só descrevem o grupo todo).
-    const valoresPorCaract = new Map();
-    produtos.forEach(prod => {
-      prod.caracts.forEach(c => {
-        if (colCarTipo && c.tipo !== 'PRÉ-DEFINIDA' && c.tipo !== 'PRE-DEFINIDA') return;
-        if (!valoresPorCaract.has(c.nome)) valoresPorCaract.set(c.nome, new Set());
-        valoresPorCaract.get(c.nome).add(c.valor);
-      });
-    });
-    let eixoNome = null, maxDistintos = 1;
-    for (const [nome, vals] of valoresPorCaract.entries()) {
-      if (vals.size > maxDistintos) { maxDistintos = vals.size; eixoNome = nome; }
-    }
-    if (!eixoNome) eixoNome = Array.from(valoresPorCaract.keys())[0] || null;
-
-    const comValor = produtos.map(prod => {
-      const c = prod.caracts.find(c => c.nome === eixoNome);
-      const valorTxt = c ? c.valor : '';
-      const m = valorTxt.match(/[\d.,]+/);
-      const num = m ? parseFloat(m[0].replace(',','.')) : 9999;
-      return { prod, valorTxt, num };
-    });
-    comValor.sort((a,b) => a.num - b.num);
-    comValor.forEach((item, idx) => {
-      const r = item.prod.row;
-      const id = item.prod.id;
-      const pesoKg = colPeso ? Number(r[colPeso])||0 : 0;
-      const pesoG = pesoKg ? Math.round(pesoKg*1000) : '';
-      const ean = colBar && r[colBar] ? String(Math.round(Number(r[colBar]))) : '';
-      const nomeFmt = colNome ? formatName(r[colNome]||'', colMarca ? (r[colMarca]||'') : '') : '';
-      variacoes.push({
-        'PRICE': 1,
-        'VARIATION_HEIGHT': colAltura ? (r[colAltura]||'') : '',
-        'ORDER': idx + 1,
-        'Código': id,
-        'NOME': nomeFmt,
-        'STOCK': 1,
-        'VARIATION_WIDTH': colLargura ? (r[colLargura]||'') : '',
-        'PACKAGING_HEIGHT': colAltura ? (r[colAltura]||'') : '',
-        'Código produto': String(grpCod||id),
-        'PACKAGING_WEIGHT': pesoG,
-        'VARIATION_WEIGHT': pesoG,
-        'Valores': 1,
-        'VARIATION_DEPTH': colProf ? (r[colProf]||'') : '',
-        'Código variação': id,
-        'Status': 'true',
-        'SKU': colSku ? String(r[colSku]||'') : '',
-        'PACKAGING_WIDTH': colLargura ? (r[colLargura]||'') : '',
-        'PACKAGING_DEPTH': colProf ? (r[colProf]||'') : '',
-        'EAN_VARIACAO': ean,
-        '_valor': item.valorTxt,
-      });
-    });
-  }
-
-  const valores = variacoes.map(v => ({
-    'PRODUCT_VARIATION_ID': v['Código variação'],
-    'VALUE': v['_valor'],
-    'ID': v['Código variação'],
-    'VARIATION_ID': 1,
-  }));
-  const variacoesFinal = variacoes.map(v => { const c = {...v}; delete c._valor; return c; });
-  return { variacoesFinal, valores };
-}
-
-function baixarVariacoesCaracteristicasZydon() {
-  if (!caracSignusRows) return;
-  const resultado = gerarVariacoesCaracteristicasZydon(caracSignusRows);
-  if (!resultado) {
-    addAgentMsg('<div class="alert alert-warn">⚠ Esse arquivo não tem PROD_ID/CARACT_VALOR por produto — não dá pra gerar os arquivos de Variações, só o mapa de nomes.</div>', '', 'carac-results');
-    return;
-  }
-  const date = new Date().toISOString().slice(0,10);
-  const wbVar = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wbVar, XLSX.utils.json_to_sheet(resultado.variacoesFinal), 'Variações produtos');
-  XLSX.writeFile(wbVar, `Zydon_Importa_Produto_Variacoes_${date}.xlsx`);
-
-  const wbVal = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wbVal, XLSX.utils.json_to_sheet(resultado.valores), 'Valores de Variações de Produto');
-  XLSX.writeFile(wbVal, `Zydon_Importa_Produto_Variacoes_Valores_${date}.xlsx`);
-}
-
-function baixarCaracteristicasNovas() {
-  const blocos = window._caracBlocos || [];
-  const rows = [];
-  blocos.forEach(b => { b.novos.forEach(v => rows.push({
-    'Característica (Signus)': b.nome,
-    'Característica (Zydon)': kb?.caracteristica_mappings?.[b.nome] || b.nome,
-    'Valor novo': v,
-  })); });
-  if (!rows.length) return;
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Valores novos');
-  XLSX.writeFile(wb, `Caracteristicas_novas_${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-async function marcarValoresComoExistentes() {
-  const blocos = window._caracBlocos || [];
-  const todosValores = new Set();
-  blocos.forEach(b => b.novos.forEach(v => todosValores.add(v)));
-  if (!todosValores.size) return;
-  if (!kb) kb = emptyKB();
-  const rows = Array.from(todosValores).map(valor => ({ valor }));
-  const { error } = await sb.from('caracteristica_valores_zydon').upsert(rows, { onConflict: 'valor' });
-  if (error) { addAgentMsg(`<div class="alert alert-warn">⚠ Não consegui salvar: ${error.message}</div>`, '', 'carac-results'); return; }
-  kb.caracteristica_valores_zydon = Array.from(new Set([...(kb.caracteristica_valores_zydon||[]), ...todosValores]));
-  await registrarHistorico(`Marcou ${pl(todosValores.size,'valor de característica','valores de característica')} como já existentes na Zydon`);
-  addAgentMsg(`<div class="alert alert-ok">✓ ${pl(todosValores.size,'valor marcado','valores marcados')} como já existente na Zydon.</div>`, '', 'carac-results');
-  renderCaracteristicasResultado();
-}
-
-document.getElementById('carac-signus-file').addEventListener('change', function(e) {
-  const file = e.target.files[0]; if (!file) return;
-  document.getElementById('carac-signus-file-name').textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const wb = XLSX.read(ev.target.result, { type:'array' });
-    caracSignusRows = lerPrimeiraAbaUtil(wb);
-    renderCaracteristicasResultado();
-  };
-  reader.readAsArrayBuffer(file);
-});
-enableDragDrop('carac-signus-file');
 
 // ══════════════════════════════════════════════════════════════════
 // PROGRESS
