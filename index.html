@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.22 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.23 · 20/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -786,7 +786,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.22';
+const VERSION = 'v5.23';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2705,11 +2705,18 @@ function renderCaracteristicasResultado() {
   el.innerHTML = html;
 }
 
-// Converte o arquivo do Signus (1 linha por produto, com CARACT_VALOR) nos 2
-// arquivos que a Zydon espera pra importar Variações: "Variações produtos" e
-// "Valores de Variações de Produto" — mesmo formato dos exemplos enviados.
-// Agrupa por Cód. agrupamento e ordena os produtos do grupo pelo valor
-// numérico do CARACT_VALOR (2A, 4A, 6A... ou 0.5, 1, 1.5...).
+// Converte o arquivo do Signus nos 2 arquivos que a Zydon espera pra importar
+// Variações: "Variações produtos" e "Valores de Variações de Produto" — mesmo
+// formato dos exemplos enviados. A exportação REAL do Signus vem com uma
+// linha por PRODUTO+CARACTERÍSTICA (um PROD_ID se repete em várias linhas,
+// uma pra Corrente Nominal, outra pra Número de Polos, Curva de Disparo
+// etc.) — então primeiro reagrupa por PROD_ID pra reconstruir 1 registro por
+// produto de verdade, com a lista de características dele. Depois agrupa os
+// produtos por Cód. agrupamento e descobre o "eixo de variação": a
+// característica PRÉ-DEFINIDA cujo valor muda de um produto pro outro dentro
+// do mesmo grupo (ex: Corrente Nominal varia 2A/4A/6A..., já Número de Polos
+// fica igual no grupo todo e não conta como eixo). Ordena os produtos do
+// grupo pelo valor numérico do eixo (2A, 4A, 6A... ou 0.5, 1, 1.5...).
 function gerarVariacoesCaracteristicasZydon(rows) {
   const colId = acharColuna(rows, ['PROD_ID','ID']);
   const colAgrup = acharColuna(rows, ['PROD_COD_AGRUPAMENTO','Cód. agrupamento','Cod. agrupamento','Cod agrupamento']);
@@ -2721,28 +2728,71 @@ function gerarVariacoesCaracteristicasZydon(rows) {
   const colLargura = acharColuna(rows, ['LARGURA_CM','Largura (cm)']);
   const colAltura = acharColuna(rows, ['ALTURA_CM','Altura (cm)']);
   const colProf = acharColuna(rows, ['PROFUNDIDADE_CM','Profundidade (cm)']);
+  const colCarNome = acharColuna(rows, ['CARACT_NOME','Característica','Caracteristica']);
   const colCarValor = acharColuna(rows, ['CARACT_VALOR','Valor']);
+  const colCarTipo = acharColuna(rows, ['CARACT_TIPO','Tipo']);
   if (!colId || !colCarValor) return null;
 
-  const grupos = new Map();
+  // 1) Reagrupa as linhas por PROD_ID — cada produto real pode vir espalhado
+  // em várias linhas (uma por característica); os campos de produto (SKU,
+  // nome, peso, dimensões...) se repetem iguais em todas, então usa a
+  // primeira linha encontrada como referência.
+  const porProduto = new Map();
   (rows||[]).forEach(r => {
-    const grp = colAgrup ? String(r[colAgrup]||'').trim() : String(r[colId]||'');
-    if (!grupos.has(grp)) grupos.set(grp, []);
-    grupos.get(grp).push(r);
+    const id = String(r[colId]||'').trim();
+    if (!id) return;
+    if (!porProduto.has(id)) {
+      porProduto.set(id, {
+        id,
+        agrup: colAgrup ? String(r[colAgrup]||'').trim() : id,
+        row: r,
+        caracts: [],
+      });
+    }
+    const nome = colCarNome ? String(r[colCarNome]||'').trim() : '_eixo';
+    const valor = String(r[colCarValor]||'').trim();
+    const tipo = colCarTipo ? String(r[colCarTipo]||'').trim().toUpperCase() : '';
+    if (nome) porProduto.get(id).caracts.push({ nome, valor, tipo });
   });
 
+  // 2) Agrupa os produtos (já reconstruídos) por Cód. agrupamento
+  const grupos = new Map();
+  for (const prod of porProduto.values()) {
+    if (!grupos.has(prod.agrup)) grupos.set(prod.agrup, []);
+    grupos.get(prod.agrup).push(prod);
+  }
+
   const variacoes = [];
-  for (const [grpCod, itens] of grupos.entries()) {
-    const comValor = itens.map(r => {
-      const valorTxt = String(r[colCarValor]||'').trim();
+  for (const [grpCod, produtos] of grupos.entries()) {
+    // 3) Acha o eixo de variação: entre as características PRÉ-DEFINIDA do
+    // grupo, a que tem mais valores distintos entre os produtos (as que ficam
+    // sempre iguais — como Número de Polos num grupo que só tem 1P — não são
+    // eixo, só descrevem o grupo todo).
+    const valoresPorCaract = new Map();
+    produtos.forEach(prod => {
+      prod.caracts.forEach(c => {
+        if (colCarTipo && c.tipo !== 'PRÉ-DEFINIDA' && c.tipo !== 'PRE-DEFINIDA') return;
+        if (!valoresPorCaract.has(c.nome)) valoresPorCaract.set(c.nome, new Set());
+        valoresPorCaract.get(c.nome).add(c.valor);
+      });
+    });
+    let eixoNome = null, maxDistintos = 1;
+    for (const [nome, vals] of valoresPorCaract.entries()) {
+      if (vals.size > maxDistintos) { maxDistintos = vals.size; eixoNome = nome; }
+    }
+    if (!eixoNome) eixoNome = Array.from(valoresPorCaract.keys())[0] || null;
+
+    const comValor = produtos.map(prod => {
+      const c = prod.caracts.find(c => c.nome === eixoNome);
+      const valorTxt = c ? c.valor : '';
       const m = valorTxt.match(/[\d.,]+/);
       const num = m ? parseFloat(m[0].replace(',','.')) : 9999;
-      return { r, valorTxt, num };
+      return { prod, valorTxt, num };
     });
     comValor.sort((a,b) => a.num - b.num);
     comValor.forEach((item, idx) => {
-      const r = item.r;
-      const id = String(r[colId]||'');
+      const r = item.prod.row;
+      const id = item.prod.id;
       const pesoKg = colPeso ? Number(r[colPeso])||0 : 0;
       const pesoG = pesoKg ? Math.round(pesoKg*1000) : '';
       const ean = colBar && r[colBar] ? String(Math.round(Number(r[colBar]))) : '';
