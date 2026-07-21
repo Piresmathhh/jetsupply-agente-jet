@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.27 · 20/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.28 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -775,7 +775,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.27';
+const VERSION = 'v5.28';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2713,7 +2713,7 @@ function compararNomesCategoriaZydon(a, b) {
   return sa.localeCompare(sb, 'pt-BR', { numeric: true, sensitivity: 'base' });
 }
 
-function gerarArquivoCategoriaZydon() {
+async function gerarArquivoCategoriaZydon() {
   const todas = window._categoriasTodas || [];
   if (!todas.length) return;
   // O Signus é o ERP — quem manda na hierarquia (Nome, Código pai) é sempre o
@@ -2753,6 +2753,13 @@ function gerarArquivoCategoriaZydon() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsOrdenadas), 'Categorias');
   XLSX.writeFile(wb, `Zydon_Importa_Categoria_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+  // Categoria nova que sai nesse arquivo (pra subir na Zydon) tem que sair reconhecida
+  // AQUI TAMBÉM — senão o botão Produtos continua sem saber o código dela até alguém
+  // lembrar de clicar num botão separado. Salva na base do agente no mesmo clique.
+  if (currentProfile?.is_admin && (window._categoriasNovas||[]).length) {
+    await sincronizarCategoriasNaBase();
+  }
 }
 
 async function sincronizarCategoriasNaBase() {
