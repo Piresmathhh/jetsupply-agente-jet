@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.33 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.34 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -774,7 +774,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.33';
+const VERSION = 'v5.34';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1411,6 +1411,14 @@ function setBaseStatus(st, txt) {
 // "1 marca" / "2 marcas" — sem isso vira "1 marcas", que lê como erro de digitação
 function pl(n, singular, plural) { return `${n} ${n===1?singular:plural}`; }
 
+// Escapa texto vindo de dado externo (planilha do Signus, base) antes de injetar em innerHTML,
+// pra um nome de produto/marca/categoria com "<", ">" ou aspas não virar HTML/script (XSS).
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // ══════════════════════════════════════════════════════════════════
 // ANÁLISE DE PENDÊNCIAS
 // ══════════════════════════════════════════════════════════════════
@@ -1754,7 +1762,7 @@ async function processarLote() {
       const div = document.createElement('div');
       div.className = 'msg msg-a';
       div.innerHTML = `<div class="msg-lbl">Agente Jet</div><div class="bubble"><div class="act-row">
-        <button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button>
+        <button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilhas Zydon</button>
         <button class="act-btn" onclick="sendQuick('Mostrar todos os produtos')">Ver todos</button>
       </div></div>`;
       area.appendChild(div); area.scrollTop = area.scrollHeight;
@@ -1845,36 +1853,44 @@ function renderPendentes() {
     if (issue.tipo==='categoria') { if (!porCat[issue.valor]) porCat[issue.valor]=[]; porCat[issue.valor].push(p); }
   }));
   let html = '';
+  // Guarda o nome original por id seguro (só alfanumérico) — os botões passam só o id, nunca
+  // o nome cru dentro do onclick (que seria vetor de injeção). O nome exibido/no input é escapado.
+  window._pendOrig = { marca:{}, cat:{} };
   Object.entries(porMarca).forEach(([marca, prods]) => {
     const id = marca.replace(/[^a-zA-Z0-9]/g,'_');
+    window._pendOrig.marca[id] = marca;
+    const m = escapeHtml(marca);
     html += `<div class="pend-item">
-      <div class="pend-head"><div class="pend-head-txt">⚠ Marca nova: ${marca} (${prods.length} prod.)</div></div>
+      <div class="pend-head"><div class="pend-head-txt">⚠ Marca nova: ${m} (${prods.length} prod.)</div></div>
       <div class="pend-body">
         <div class="pend-q">Como escrever o nome desta marca?</div>
-        <input class="pend-inp" id="pend-nome-${id}" value="${marca}">
+        <input class="pend-inp" id="pend-nome-${id}" value="${m}">
         <div class="pend-q" style="margin-top:6px">Siglas maiúsculas (vírgula):</div>
         <input class="pend-inp" id="pend-siglas-${id}" placeholder="Ex: NSX, IC60, A9...">
-        <button class="pend-save" onclick="salvarMarca('${marca}','${id}')">Salvar</button>
-        <button class="pend-skip" onclick="pularMarca('${marca}')">Pular</button>
+        <button class="pend-save" onclick="salvarMarca('${id}')">Salvar</button>
+        <button class="pend-skip" onclick="pularMarca('${id}')">Pular</button>
       </div>
     </div>`;
   });
   Object.entries(porCat).forEach(([cat, prods]) => {
     const id = cat.replace(/[^a-zA-Z0-9]/g,'_');
+    window._pendOrig.cat[id] = cat;
+    const cShort = cat.length>30?cat.slice(0,30)+'…':cat;
     html += `<div class="pend-item">
-      <div class="pend-head"><div class="pend-head-txt">📂 Categoria nova: ${cat.length>30?cat.slice(0,30)+'…':cat} (${prods.length} prod.)</div></div>
+      <div class="pend-head"><div class="pend-head-txt">📂 Categoria nova: ${escapeHtml(cShort)} (${prods.length} prod.)</div></div>
       <div class="pend-body">
         <div class="pend-q">Como chamar na Zydon?</div>
-        <input class="pend-inp" id="pend-cat-${id}" value="${cat}">
-        <button class="pend-save" onclick="salvarCategoria('${cat}','${id}')">Salvar</button>
-        <button class="pend-skip" onclick="pularCategoria('${cat}')">Pular</button>
+        <input class="pend-inp" id="pend-cat-${id}" value="${escapeHtml(cat)}">
+        <button class="pend-save" onclick="salvarCategoria('${id}')">Salvar</button>
+        <button class="pend-skip" onclick="pularCategoria('${id}')">Pular</button>
       </div>
     </div>`;
   });
   area.innerHTML = html || '<div class="pend-empty">Sem pendências.<br>Tudo processado!</div>';
 }
 
-async function salvarMarca(marcaOriginal, marcaId) {
+async function salvarMarca(marcaId) {
+  const marcaOriginal = window._pendOrig?.marca?.[marcaId] || '';
   if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor resolver essa pendência.'); return; }
   const nomeExib = document.getElementById(`pend-nome-${marcaId}`)?.value.trim() || marcaOriginal;
   const siglasRaw = document.getElementById(`pend-siglas-${marcaId}`)?.value.trim() || '';
@@ -1884,11 +1900,12 @@ async function salvarMarca(marcaOriginal, marcaId) {
   renderPendentes();
   addAgentMsg(`Marca <strong>${nomeExib}</strong> salva${siglas.length?` com siglas: ${siglas.join(', ')}`:''}.${res?' Base sincronizada.':' Erro ao sincronizar.'}`);
   if (res?.conflito) addAgentMsg(`<div class="alert alert-warn">⚠ Essa marca já tinha sido cadastrada por outra pessoa enquanto você resolvia essa pendência, com siglas: <strong>${(res.conflito.siglas_modelos||[]).join(', ')||'(nenhuma)'}</strong>. Sua versão substituiu a anterior. Se não era essa a intenção, use o botão "Desfazer" no topo.</div>`);
-  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
+  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilhas Zydon</button></div>`),400);
 }
-function pularMarca(marca) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca)); renderPendentes(); }
+function pularMarca(marcaId) { const marca = window._pendOrig?.marca?.[marcaId]; pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='marca' && i.valor===marca)); renderPendentes(); }
 
-async function salvarCategoria(catOriginal, catId) {
+async function salvarCategoria(catId) {
+  const catOriginal = window._pendOrig?.cat?.[catId] || '';
   if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor resolver essa pendência.'); return; }
   const nomeZydon = document.getElementById(`pend-cat-${catId}`)?.value.trim() || catOriginal;
   const res = await upsertCategoriaMapping(catOriginal, nomeZydon);
@@ -1896,9 +1913,9 @@ async function salvarCategoria(catOriginal, catId) {
   renderPendentes();
   addAgentMsg(`Categoria <strong>"${catOriginal}"</strong> → <strong>"${nomeZydon}"</strong> salva.${res?' Base sincronizada.':' Erro ao sincronizar.'}`);
   if (res?.conflito) addAgentMsg(`<div class="alert alert-warn">⚠ Essa categoria já tinha sido mapeada por outra pessoa enquanto você resolvia essa pendência, como: <strong>"${res.conflito.nome_zydon}"</strong>. Sua versão substituiu a anterior. Se não era essa a intenção, use o botão "Desfazer" no topo.</div>`);
-  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar 3 planilhas Zydon</button></div>`),400);
+  if (!pendentes.length) setTimeout(()=>addAgentMsg('Tudo resolvido! Pode gerar as planilhas.',`<div class="act-row"><button class="act-btn pri" onclick="gerarPlanilha()">Gerar planilhas Zydon</button></div>`),400);
 }
-function pularCategoria(cat) { pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===cat)); renderPendentes(); }
+function pularCategoria(catId) { const cat = window._pendOrig?.cat?.[catId]; pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===cat)); renderPendentes(); }
 
 // ══════════════════════════════════════════════════════════════════
 // GERAÇÃO DAS PLANILHAS
@@ -2251,7 +2268,7 @@ async function gerarPlanilha() {
 function buildReportHtml(erros) {
   return `<div class="report-wrap" style="margin-top:8px">
       <div class="report-head">⚠ ${pl(erros.length,'aviso encontrado','avisos encontrados')}</div>
-      <div class="report-body">${erros.slice(0,15).map(e=>`<div class="report-item">· ${e}</div>`).join('')}${erros.length>15?`<div class="report-item" style="color:var(--t5)">...e mais ${pl(erros.length-15,'aviso','avisos')}</div>`:''}</div>
+      <div class="report-body">${erros.slice(0,15).map(e=>`<div class="report-item">· ${escapeHtml(e)}</div>`).join('')}${erros.length>15?`<div class="report-item" style="color:var(--t5)">...e mais ${pl(erros.length-15,'aviso','avisos')}</div>`:''}</div>
     </div>`;
 }
 
@@ -2707,7 +2724,7 @@ function renderCategoriasResultado(mapa) {
       <div class="step-card-lbl">${pl(novas.length,'categoria nova','categorias novas')} — ainda não estão na Zydon</div>
       <div style="font-size:12px;max-height:320px;overflow:auto">
         ${novas.map(n => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div><strong>${n.nome}</strong><div style="color:var(--t5);font-size:11px">Código ${n.id}${n.pai?` · pai ${n.pai}`:''}</div></div>
+          <div><strong>${escapeHtml(n.nome)}</strong><div style="color:var(--t5);font-size:11px">Código ${n.id}${n.pai?` · pai ${n.pai}`:''}</div></div>
         </div>`).join('')}
       </div>
       <div class="act-row" style="margin-top:10px">
