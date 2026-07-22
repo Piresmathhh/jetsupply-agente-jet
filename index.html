@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.32 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.33 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -471,10 +471,9 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
     <div class="chat" id="chat" aria-live="polite"></div>
     <div class="dl-bar" id="dl-bar">
       <p id="dl-msg">Arquivos prontos.</p>
-      <button class="dl-btn" onclick="downloadTodas()" style="background:var(--orange)">Baixar as 3 juntas</button>
+      <button class="dl-btn" onclick="downloadTodas()" style="background:var(--orange)">Baixar as 2 juntas</button>
       <button class="dl-btn" onclick="downloadArquivo(1)">1. Produto</button>
       <button class="dl-btn" onclick="downloadArquivo(2)">2. Variações</button>
-      <button class="dl-btn" onclick="downloadArquivo(3)">3. Variações Valores</button>
       <button class="dl-btn" onclick="reabrirRelatorio()" style="background:var(--navy)">Ver relatório</button>
     </div>
     <div class="inp-area">
@@ -775,7 +774,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.32';
+const VERSION = 'v5.33';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2078,9 +2077,9 @@ async function gerarPlanilha() {
   // Códigos que não existem mais como linha própria em Produtos.
   const sims = [];
 
-  // Variações — 1 linha por produto. A ORDEM segue amperagem (Corrente Nominal) e, dentro da
-  // mesma amperagem, a ordem de polos que a gente definiu (1P, 1P+N, 2P, 3P...). Se o arquivo
-  // trouxer as características (CARACT_*), usa elas; senão cai no valor extraído do nome.
+  // ── NOVO MODELO ZYDON (2 arquivos): Produto + Variações. Este bloco monta o arquivo
+  //    de Variações, com 3 abas — "Variações de Produtos", "Valores" e "Imagens" —
+  //    usando os nomes de coluna do template atual da Zydon (julho/2026).
   const caractsMap = window._caractsPorProduto || new Map();
   const eixoValor = (p, nomeCaract) => {
     const cs = caractsMap.get(String(p['ID']||'')) || [];
@@ -2088,162 +2087,139 @@ async function gerarPlanilha() {
     return c ? c.valor : '';
   };
   const ampNum = (txt) => { const m = String(txt||'').match(/([\d.,]+)/); return m ? parseFloat(m[0].replace(',','.')) : NaN; };
-  const variacoes = [];
+
+  // Eixos que de fato variam em cada grupo (característica PRÉ-DEFINIDA com +1 valor),
+  // já na ordem de exibição (Número de Polos antes de Corrente Nominal).
+  const eixosPorGrupo = {};
   Object.entries(grupos).forEach(([grpCod, grp]) => {
-    const comValor = grp.map(p => ({ produto:p, info: extrairValorVariacao(p) }));
-    comValor.sort((a,b) => {
-      const aAmp = ampNum(eixoValor(a.produto,'Corrente Nominal')), bAmp = ampNum(eixoValor(b.produto,'Corrente Nominal'));
-      const ampA = isNaN(aAmp) ? a.info.num : aAmp, ampB = isNaN(bAmp) ? b.info.num : bAmp;
-      if (ampA !== ampB) return ampA - ampB;
-      // mesma amperagem: ordena pelos polos na regra de categoria (1P, 1P+N, 2P, 3P, 4P...)
-      return compararNomesCategoriaZydon(eixoValor(a.produto,'Número de Polos'), eixoValor(b.produto,'Número de Polos'));
+    const valoresPorNome = new Map();
+    grp.forEach(p => (caractsMap.get(String(p['ID']||''))||[]).forEach(c => {
+      if (c.tipo && !/PR.?-?DEFINIDA/i.test(c.tipo)) return;
+      if (!valoresPorNome.has(c.nome)) valoresPorNome.set(c.nome, new Set());
+      valoresPorNome.get(c.nome).add(c.valor);
+    }));
+    eixosPorGrupo[grpCod] = [...valoresPorNome.entries()].filter(([,v]) => v.size > 1).map(([n]) => n)
+      .sort((a,b) => (EIXOS_VARIACAO_ZYDON[a]?.ordem||99) - (EIXOS_VARIACAO_ZYDON[b]?.ordem||99));
+  });
+
+  // Ordem dos produtos dentro do grupo: amperagem, depois polos (1P, 1P+N, 2P, 3P...).
+  const produtosOrdenados = [];
+  Object.entries(grupos).forEach(([grpCod, grp]) => {
+    grp.slice().sort((a,b) => {
+      const aAmp = ampNum(eixoValor(a,'Corrente Nominal')), bAmp = ampNum(eixoValor(b,'Corrente Nominal'));
+      const A = isNaN(aAmp) ? extrairValorVariacao(a).num : aAmp, B = isNaN(bAmp) ? extrairValorVariacao(b).num : bAmp;
+      if (A !== B) return A - B;
+      return compararNomesCategoriaZydon(eixoValor(a,'Número de Polos'), eixoValor(b,'Número de Polos'));
+    }).forEach(p => produtosOrdenados.push({ p, grpCod }));
+  });
+
+  // Aba "Variações de Produtos" (1 linha por SKU filho) + aba "Valores" (1 linha por eixo).
+  const variacoesFinal = [];   // Variações de Produtos
+  const valoresVar = [];       // Valores
+  const eixosDesconhecidos = new Set();
+  produtosOrdenados.forEach(({ p, grpCod }) => {
+    const id = String(p['ID']||'');
+    const sku = String(p['Código']||'');
+    const pG = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
+    variacoesFinal.push({
+      'Código': id,
+      'Produto (Código)': String(grpCod||''),
+      'Produto (Nome)': formatName(p['Nome']||'', p['Marca']||''),
+      'SKU': sku,
+      'Preço': 1,
+      'Estoque': 1,
+      'Peso (g)': pG,
+      'Largura (cm)': p['Largura (cm)']||'',
+      'Altura (cm)': p['Altura (cm)']||'',
+      'Profundidade (cm)': p['Profundidade (cm)']||'',
+      'Peso da Embalagem (g)': pG,
+      'Largura da Embalagem (cm)': p['Largura (cm)']||'',
+      'Altura da Embalagem (cm)': p['Altura (cm)']||'',
+      'Profundidade da Embalagem (cm)': p['Profundidade (cm)']||'',
     });
-    comValor.forEach((item, idx) => {
-      const p = item.produto;
-      const pG = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
-      const ean = p['Código barras'] ? String(Math.round(Number(p['Código barras']))) : '';
-      variacoes.push({
-        'PRICE': 1,
-        'VARIATION_HEIGHT': p['Altura (cm)']||'',
-        'ORDER': idx + 1,
-        'Código': String(p['ID']||''),
-        'NOME': formatName(p['Nome']||'', p['Marca']||''),
-        'STOCK': 1,
-        'VARIATION_WIDTH': p['Largura (cm)']||'',
-        'PACKAGING_HEIGHT': p['Altura (cm)']||'',
-        'Código produto': String(grpCod||''),
-        'PACKAGING_WEIGHT': pG,
-        'VARIATION_WEIGHT': pG,
-        'Valores': 1,
-        'VARIATION_DEPTH': p['Profundidade (cm)']||'',
-        'Código variação': String(p['ID']||''),
-        'Status': 'true',
-        'SKU': String(p['Código']||''),
-        'PACKAGING_WIDTH': p['Largura (cm)']||'',
-        'PACKAGING_DEPTH': p['Profundidade (cm)']||'',
-        'EAN_VARIACAO': ean,
-        // Guardar valor para arquivo 3
-        '_valor': item.info.valor,
-        '_order': idx + 1,
+    const eixos = eixosPorGrupo[grpCod] || [];
+    const caracts = caractsMap.get(id) || [];
+    eixos.forEach(nomeEixo => {
+      const c = caracts.find(x => x.nome === nomeEixo);
+      const cfg = EIXOS_VARIACAO_ZYDON[nomeEixo];
+      if (!cfg) eixosDesconhecidos.add(nomeEixo);
+      valoresVar.push({
+        'Código': id,
+        'Valor': c ? c.valor : '',
+        'Variação de Produto (Código)': String(grpCod||''),
+        'Variação de Produto (SKU)': sku,
+        'Variação (Código)': cfg ? cfg.variation_id : '',
+        'Variação (Nome)': nomeEixo,
       });
     });
   });
+  if (eixosDesconhecidos.size) errosGeracao.push(`Eixo de variação sem código Zydon mapeado: ${[...eixosDesconhecidos].join(', ')}. Me avise o número certo pra cada um.`);
 
-  // Imagens — não existe foto por variação, só pelo SKU do produto PAI. Só sobe a Zydon a
-  // quantidade EXATA de imagens que realmente existe: primeiro olha a lista desta sessão
-  // (se teve upload), senão busca direto na base do agente (tabela imagens_disponiveis,
-  // cadastrada uma vez só). Sem nenhuma das duas fontes, não inventamos nomes de arquivo
-  // (_1 a _10 "no escuro" deixava a aba subindo em branco na Zydon quando não existia de verdade).
-  const imgs = [];
-  const semImagemSku = [];
-  // 1ª passada: só descobre quais SKUs (um por família/produto) precisam de imagem —
-  // pra buscar todos de uma vez na base, em vez de uma query por produto.
-  const candidatos = [];
+  // Imagens — busca a lista real (sessão ou base do agente), sem inventar nome de arquivo.
+  const urlBaseFinal = (imgBase || '').replace(/\/$/,'');
+  const todosSkusFilho = produtosOrdenados.map(({p}) => String(p['Código']||'')).filter(Boolean);
+  // pai de cada grupo (pra aba Imagens do arquivo de Produto, que continua por produto pai)
+  const paiPorGrupo = {};
   const gruposVistos = new Set();
+  const skusPai = [];
   for (const p of products) {
     const grpCod = p[COL_AGRUPAMENTO];
-    let paiIdImg, cod, nome;
     if (grpCod) {
       if (gruposVistos.has(grpCod)) continue;
       gruposVistos.add(grpCod);
-      paiIdImg = grpPaiId[grpCod];
-      const paiProduto = (grupos[grpCod]||[]).find(x => String(x['ID']||'')===String(paiIdImg)) || p;
-      cod = paiProduto['Código']||'';
-      nome = grpNomePai[grpCod] || formatName(paiProduto['Nome']||'', paiProduto['Marca']||'');
+      const paiId = grpPaiId[grpCod];
+      const paiProduto = (grupos[grpCod]||[]).find(x => String(x['ID']||'')===String(paiId)) || p;
+      const cod = paiProduto['Código']||'';
+      paiPorGrupo['g'+grpCod] = { paiId, cod, nome: grpNomePai[grpCod] || formatName(paiProduto['Nome']||'', paiProduto['Marca']||'') };
+      if (cod) skusPai.push(String(cod));
     } else {
-      paiIdImg = p['ID'];
-      cod = p['Código']||'';
-      nome = formatName(p['Nome']||'', p['Marca']||'');
+      const cod = p['Código']||'';
+      paiPorGrupo['a'+p['ID']] = { paiId: p['ID'], cod, nome: formatName(p['Nome']||'', p['Marca']||'') };
+      if (cod) skusPai.push(String(cod));
     }
-    if (!cod) continue;
-    candidatos.push({ paiIdImg, grpCod, cod, nome });
   }
-  const imagensDb = await buscarImagensDoBanco(candidatos.map(c => c.cod));
+  const imagensDb = await buscarImagensDoBanco([...new Set([...todosSkusFilho, ...skusPai])]);
   const temAlgumaFonteImagem = !!(window._imagensIndex && window._imagensIndex.size) || (kb?.imagens_disponiveis_count||0) > 0 || imagensDb.size > 0;
-  function imagensDoSku(sku) {
+  const imagensDoSku = (sku) => {
     const chave = String(sku||'').trim();
     const achadas = (window._imagensIndex && window._imagensIndex.get(chave)) || imagensDb.get(chave) || [];
     return achadas.slice().sort((a,b) => a.seq - b.seq);
-  }
-  const urlBaseFinal = (imgBase || '').replace(/\/$/,'');
-  candidatos.forEach(({ paiIdImg, grpCod, cod, nome }) => {
-    const achadas = imagensDoSku(cod);
-    if (!achadas.length) { if (temAlgumaFonteImagem) semImagemSku.push(cod); return; }
-    achadas.forEach(img => {
-      imgs.push({ 'Código':'', 'Produto (Código)':String(paiIdImg||grpCod||''), 'Produto (Nome)':nome, 'Imagem': urlBaseFinal ? `${urlBaseFinal}/${img.filename}` : img.filename });
-    });
+  };
+  // aba Imagens do arquivo de Variações — por SKU do filho (modelo novo)
+  const imagensVariacao = [];
+  const semImgVar = [];
+  produtosOrdenados.forEach(({p}) => {
+    const id = String(p['ID']||''), sku = String(p['Código']||'');
+    if (!sku) return;
+    const achadas = imagensDoSku(sku);
+    if (!achadas.length) { if (temAlgumaFonteImagem) semImgVar.push(sku); return; }
+    achadas.forEach(img => imagensVariacao.push({ 'Código':'', 'Variação (Código)': id, 'Variação (SKU)': sku, 'Imagem': urlBaseFinal ? `${urlBaseFinal}/${img.filename}` : img.filename }));
   });
-  if (temAlgumaFonteImagem && semImagemSku.length) errosGeracao.push(`${pl(semImagemSku.length,'produto','produtos')} sem imagem encontrada na lista (SKU ex: ${semImagemSku.slice(0,3).join(', ')}${semImagemSku.length>3?'...':''})`);
-  if (!temAlgumaFonteImagem) errosGeracao.push('Nenhuma lista real de imagens carregada (nem na base) — a aba Imagens saiu vazia (sem a lista, não inventamos nomes de arquivo).');
+  // aba Imagens do arquivo de Produto — por SKU do pai
+  const imgs = [];
+  Object.values(paiPorGrupo).forEach(({ paiId, cod, nome }) => {
+    if (!cod) return;
+    imagensDoSku(cod).forEach(img => imgs.push({ 'Código':'', 'Produto (Código)': String(paiId||''), 'Produto (Nome)': nome, 'Imagem': urlBaseFinal ? `${urlBaseFinal}/${img.filename}` : img.filename }));
+  });
+  if (!temAlgumaFonteImagem) errosGeracao.push('Nenhuma lista real de imagens carregada (nem na base) — as abas Imagens saíram vazias (sem a lista, não inventamos nomes de arquivo).');
+  else if (semImgVar.length) errosGeracao.push(`${pl(semImgVar.length,'variação','variações')} sem imagem encontrada na lista (SKU ex: ${semImgVar.slice(0,3).join(', ')}${semImgVar.length>3?'...':''})`);
 
-  // Variações Valores — 1 linha por (produto × eixo de variação). Um produto pode ter VÁRIOS
-  // eixos pré-definidos que variam dentro da família (ex: Número de Polos E Corrente Nominal).
-  // Cada eixo vira uma linha, com o VARIATION_ID que a Zydon usa pra ele (Número de Polos=6,
-  // Corrente Nominal=1), e Número de Polos aparece antes de Corrente Nominal. Se o arquivo não
-  // trouxer características, cai no comportamento antigo (1 linha por produto, VARIATION_ID=1).
-  const valoresVar = [];
-  const eixosDesconhecidos = new Set();
-  if (caractsMap.size) {
-    // Descobre, por agrupamento, quais características PRÉ-DEFINIDA de fato variam (>1 valor).
-    const eixosPorGrupo = {};
-    Object.entries(grupos).forEach(([grpCod, grp]) => {
-      const valoresPorNome = new Map();
-      grp.forEach(p => (caractsMap.get(String(p['ID']||''))||[]).forEach(c => {
-        if (c.tipo && !/PR.?-?DEFINIDA/i.test(c.tipo)) return;
-        if (!valoresPorNome.has(c.nome)) valoresPorNome.set(c.nome, new Set());
-        valoresPorNome.get(c.nome).add(c.valor);
-      }));
-      eixosPorGrupo[grpCod] = [...valoresPorNome.entries()].filter(([,v]) => v.size > 1).map(([n]) => n);
-    });
-    // Percorre na MESMA ordem das variações (já ordenadas por amperagem+polos).
-    variacoes.forEach(v => {
-      const grpCod = v['Código produto'];
-      const id = v['Código variação'];
-      const caracts = caractsMap.get(String(id)) || [];
-      const eixos = (eixosPorGrupo[grpCod] || []).slice().sort((a,b) => (EIXOS_VARIACAO_ZYDON[a]?.ordem||99) - (EIXOS_VARIACAO_ZYDON[b]?.ordem||99));
-      eixos.forEach(nomeEixo => {
-        const c = caracts.find(x => x.nome === nomeEixo);
-        const cfg = EIXOS_VARIACAO_ZYDON[nomeEixo];
-        if (!cfg) eixosDesconhecidos.add(nomeEixo);
-        // ID e PRODUCT_VARIATION_ID = PROD_ID (o número que sai do Signus), sem inventar
-        // sufixo. Se a Zydon reclamar de chave repetida quando o produto tem 2 eixos, isso
-        // é a inconsistência da plataforma que está sendo escalada pro time da Zydon —
-        // não é o agente que gera id.
-        valoresVar.push({
-          'PRODUCT_VARIATION_ID': id,
-          'VALUE': c ? c.valor : '',
-          'ID': String(id),
-          'VARIATION_ID': cfg ? cfg.variation_id : 1,
-        });
-      });
-    });
-  }
-  // Fallback (arquivo sem características): mantém 1 linha por produto.
-  if (!valoresVar.length) {
-    variacoes.forEach(v => valoresVar.push({
-      'PRODUCT_VARIATION_ID': v['Código variação'], 'VALUE': v['_valor'], 'ID': v['Código variação'], 'VARIATION_ID': 1,
-    }));
-  }
-  if (eixosDesconhecidos.size) errosGeracao.push(`Eixo de variação sem VARIATION_ID mapeado (usei 1 como padrão): ${[...eixosDesconhecidos].join(', ')}. Me avise o número certo da Zydon pra cada um.`);
-
-  // Limpar campos internos
-  const variacoesFinal = variacoes.map(v => { const c = {...v}; delete c._valor; delete c._order; return c; });
-
-  // Montar workbooks
+  // ── Montar os 2 arquivos ──
   wb1 = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(rows), 'Produtos');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Unidades Alternativas');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Ficha Técnica');
-  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(sims.length?sims:[]), 'Produtos Similares');
+  XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Produtos Similares');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Produtos Recomendados');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet(imgs), 'Imagens');
   XLSX.utils.book_append_sheet(wb1, XLSX.utils.json_to_sheet([]), 'Complementos');
 
   wb2 = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb2, XLSX.utils.json_to_sheet(variacoesFinal.length?variacoesFinal:[]), 'Variações produtos');
+  XLSX.utils.book_append_sheet(wb2, XLSX.utils.json_to_sheet(variacoesFinal.length?variacoesFinal:[]), 'Variações de Produtos');
+  XLSX.utils.book_append_sheet(wb2, XLSX.utils.json_to_sheet(valoresVar.length?valoresVar:[]), 'Valores');
+  XLSX.utils.book_append_sheet(wb2, XLSX.utils.json_to_sheet(imagensVariacao.length?imagensVariacao:[]), 'Imagens');
 
-  wb3 = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb3, XLSX.utils.json_to_sheet(valoresVar.length?valoresVar:[]), 'Valores de Variações de Produto');
+  wb3 = null;
 
   // Consolidar avisos agrupados (evita repetir a mesma mensagem centenas de vezes)
   if (semMarca.length) errosGeracao.push(`${pl(semMarca.length,'produto','produtos')} sem marca preenchida (ex: ID ${semMarca.slice(0,3).join(', ')}${semMarca.length>3?'...':''})`);
@@ -2668,14 +2644,12 @@ function downloadTodas() {
   const date = window._dlDate || new Date().toISOString().slice(0,10);
   if (wb1) XLSX.writeFile(wb1, `JetSupply_Produto_${date}.xlsx`);
   setTimeout(() => { if (wb2) XLSX.writeFile(wb2, `JetSupply_Variacoes_${date}.xlsx`); }, 400);
-  setTimeout(() => { if (wb3) XLSX.writeFile(wb3, `JetSupply_Variacoes_Valores_${date}.xlsx`); }, 800);
 }
 
 function downloadArquivo(n) {
   const date = window._dlDate || new Date().toISOString().slice(0,10);
   if (n===1 && wb1) XLSX.writeFile(wb1, `JetSupply_Produto_${date}.xlsx`);
   if (n===2 && wb2) XLSX.writeFile(wb2, `JetSupply_Variacoes_${date}.xlsx`);
-  if (n===3 && wb3) XLSX.writeFile(wb3, `JetSupply_Variacoes_Valores_${date}.xlsx`);
 }
 
 // ══════════════════════════════════════════════════════════════════
