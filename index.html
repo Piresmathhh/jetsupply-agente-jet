@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.34 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.35 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -774,7 +774,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.34';
+const VERSION = 'v5.35';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1592,15 +1592,26 @@ async function buscarImagensDoBanco(skus) {
   const resultado = new Map();
   const unicos = Array.from(new Set((skus||[]).map(s => String(s||'').trim()).filter(Boolean)));
   if (!unicos.length) return resultado;
-  const tamanhoLote = 300;
+  const tamanhoLote = 200; // SKUs por consulta (lista IN)
   for (let i = 0; i < unicos.length; i += tamanhoLote) {
     const lote = unicos.slice(i, i + tamanhoLote);
-    const { data, error } = await sb.from('imagens_disponiveis').select('nome_arquivo,base_nome,seq').in('base_nome', lote);
-    if (error) continue;
-    (data||[]).forEach(r => {
-      if (!resultado.has(r.base_nome)) resultado.set(r.base_nome, []);
-      resultado.get(r.base_nome).push({ filename: r.nome_arquivo, seq: r.seq });
-    });
+    // Pagina DENTRO do lote: o Supabase corta em ~1000 linhas por consulta, e tem SKU com
+    // dezenas de imagens — sem paginar, as imagens do fim do resultado somem e o produto
+    // aparece "sem imagem" mesmo tendo tudo cadastrado. range() varre até acabar.
+    let de = 0; const pagina = 1000;
+    while (true) {
+      const { data, error } = await sb.from('imagens_disponiveis')
+        .select('nome_arquivo,base_nome,seq')
+        .in('base_nome', lote)
+        .range(de, de + pagina - 1);
+      if (error) break;
+      (data||[]).forEach(r => {
+        if (!resultado.has(r.base_nome)) resultado.set(r.base_nome, []);
+        resultado.get(r.base_nome).push({ filename: r.nome_arquivo, seq: r.seq });
+      });
+      if (!data || data.length < pagina) break;
+      de += pagina;
+    }
   }
   return resultado;
 }
@@ -2105,13 +2116,19 @@ async function gerarPlanilha() {
   };
   const ampNum = (txt) => { const m = String(txt||'').match(/([\d.,]+)/); return m ? parseFloat(m[0].replace(',','.')) : NaN; };
 
-  // Eixos que de fato variam em cada grupo (característica PRÉ-DEFINIDA com +1 valor),
-  // já na ordem de exibição (Número de Polos antes de Corrente Nominal).
+  // Eixos que de fato variam em cada grupo, já na ordem de exibição (Número de Polos antes
+  // de Corrente Nominal). Uma característica é candidata a eixo se: (a) é uma variação
+  // conhecida da Zydon (está em EIXOS_VARIACAO_ZYDON) — independente do CARACT_TIPO, porque
+  // o Signus às vezes marca "Número de Polos" como PERSONALIZADA e isso derrubava o 2º eixo;
+  // ou (b) é PRÉ-DEFINIDA (fallback pra variações ainda não mapeadas). Só vira eixo de fato
+  // se tiver mais de um valor no grupo.
   const eixosPorGrupo = {};
   Object.entries(grupos).forEach(([grpCod, grp]) => {
     const valoresPorNome = new Map();
     grp.forEach(p => (caractsMap.get(String(p['ID']||''))||[]).forEach(c => {
-      if (c.tipo && !/PR.?-?DEFINIDA/i.test(c.tipo)) return;
+      const conhecida = !!EIXOS_VARIACAO_ZYDON[c.nome];
+      const preDefinida = !c.tipo || /PR.?-?DEFINIDA/i.test(c.tipo);
+      if (!conhecida && !preDefinida) return; // ignora personalizada desconhecida (Curva, Tensão, Frequência...)
       if (!valoresPorNome.has(c.nome)) valoresPorNome.set(c.nome, new Set());
       valoresPorNome.get(c.nome).add(c.valor);
     }));
@@ -2134,10 +2151,14 @@ async function gerarPlanilha() {
   const variacoesFinal = [];   // Variações de Produtos
   const valoresVar = [];       // Valores
   const eixosDesconhecidos = new Set();
+  // "Ordem" reinicia em 1 a cada família (posição da variação dentro do produto pai).
+  const ordemPorGrupo = {};
   produtosOrdenados.forEach(({ p, grpCod }) => {
     const id = String(p['ID']||'');
     const sku = String(p['Código']||'');
     const pG = p['Peso'] ? Math.round(Number(p['Peso'])*1000) : '';
+    const chaveGrp = String(grpCod||'');
+    ordemPorGrupo[chaveGrp] = (ordemPorGrupo[chaveGrp]||0) + 1;
     variacoesFinal.push({
       'Código': id,
       'Produto (Código)': String(grpCod||''),
@@ -2153,6 +2174,7 @@ async function gerarPlanilha() {
       'Largura da Embalagem (cm)': p['Largura (cm)']||'',
       'Altura da Embalagem (cm)': p['Altura (cm)']||'',
       'Profundidade da Embalagem (cm)': p['Profundidade (cm)']||'',
+      'Ordem': ordemPorGrupo[chaveGrp],
     });
     const eixos = eixosPorGrupo[grpCod] || [];
     const caracts = caractsMap.get(id) || [];
