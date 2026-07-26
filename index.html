@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.37 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.38 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -774,7 +774,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.37';
+const VERSION = 'v5.38';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2210,9 +2210,11 @@ async function gerarPlanilha() {
       const cfg = EIXOS_VARIACAO_ZYDON[nomeEixo];
       if (!cfg) eixosDesconhecidos.add(nomeEixo);
       valoresVar.push({
-        // "Variação de Produto (Código)" aponta pra VARIAÇÃO (o produto filho), não pro pai —
-        // fica igual à coluna Código e casa com o SKU da coluna seguinte, que também é do filho.
-        'Código': id,
+        // "Código" (o id da própria linha de valor) fica VAZIO — quem gera é a Zydon, e é
+        // assim que as variações aparecem montadas certinho na vitrine. O vínculo é feito por
+        // "Variação de Produto (Código)", que aponta pra variação (produto filho) e casa com
+        // o SKU da coluna seguinte.
+        'Código': '',
         'Valor': c ? c.valor : '',
         'Variação de Produto (Código)': id,
         'Variação de Produto (SKU)': sku,
