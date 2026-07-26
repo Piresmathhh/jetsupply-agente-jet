@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.40 · 22/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.41 · 26/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -482,7 +482,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 <section class="view-panel view-full" id="view-imagens">
   <div class="view-scroll">
     <div class="view-h1">Redimensionar imagens</div>
-    <div class="view-sub">Casa as fotos do fornecedor com os produtos da planilha, renomeia pelo SKU e redimensiona (máx. 1000px, JPEG) — tudo no navegador, sem subir nada pra fora.</div>
+    <div class="view-sub">Casa as fotos do fornecedor com os produtos da planilha, renomeia pelo SKU e redimensiona (máx. 1000px, JPEG). Tudo no navegador, sem subir nada pra fora.</div>
     <div class="step-card">
       <div class="step-card-lbl">1. Planilha Signus (produtos)</div>
       <div style="font-size:11px;color:var(--t5);margin-bottom:8px" id="imgprep-planilha-status">Usa a planilha já carregada na aba Planilha, ou selecione outra abaixo</div>
@@ -572,7 +572,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 <section class="view-panel view-full" id="view-historico">
   <div class="view-scroll">
     <div class="view-h1">Histórico de alterações</div>
-    <div class="view-sub">Quem mexeu em quê na base de conhecimento — marcas, categorias, regras e exclusões de conta. Os últimos 100 registros.</div>
+    <div class="view-sub">Quem mexeu em quê na base de conhecimento: marcas, categorias, regras e exclusões de conta. Os últimos 100 registros.</div>
     <input type="text" id="historico-busca" class="cfg-inp" placeholder="Buscar por pessoa ou ação..." style="margin-bottom:14px" oninput="renderHistorico()">
     <div id="historico-list"></div>
   </div>
@@ -609,14 +609,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
     <div class="settings-card">
       <div class="step-card-lbl">Imagens dos produtos</div>
       <div style="font-size:12px;color:var(--t4);line-height:1.5;margin-bottom:10px">
-        Na hora de gerar, o agente pergunta ao Cloudflare quantas imagens cada produto tem de verdade — se você subir uma foto nova, ela já entra na próxima geração. Não precisa manter planilha.
+        Na hora de gerar, o agente pergunta ao Cloudflare quantas imagens cada produto tem de verdade. Se você subir uma foto nova, ela já entra na próxima geração. Não precisa manter planilha.
       </div>
       <div id="imglist-area"></div>
     </div>
 
     <div class="settings-card" id="nonadmin-settings-note" style="display:none">
       <div class="step-card-lbl">Compartilhado com a equipe</div>
-      <div style="font-size:12px;color:var(--t4);line-height:1.5">A chave da API Claude e a URL das imagens são configuradas pelo administrador e já funcionam automaticamente pra você — não precisa (e não dá) mexer aqui.</div>
+      <div style="font-size:12px;color:var(--t4);line-height:1.5">A chave da API Claude e a URL das imagens são configuradas pelo administrador e já funcionam automaticamente pra você. Não precisa (e não dá) mexer aqui.</div>
     </div>
 
     <div class="settings-card" id="admin-users-card" style="display:none">
@@ -644,7 +644,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-// SUPABASE — conexão e autenticação
+// SUPABASE: conexão e autenticação
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://alnhqvuezhcvgnfzdayr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbmhxdnVlemhjdmduZnpkYXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTg5NDAsImV4cCI6MjA5OTgzNDk0MH0.iHqBAUCw0l56IlqbbezGv9e1dUqgEQlqQ57Nkgu27VI';
@@ -665,7 +665,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 let currentUser = null; // sessão atual do Supabase Auth
-let currentProfile = null; // { id, nome, is_admin } — carregado após login
+let currentProfile = null; // { id, nome, is_admin }, carregado após login
 
 async function loadProfile() {
   const { data } = await sb.from('profiles').select('id,nome,is_admin,role').eq('id', currentUser.id).maybeSingle();
@@ -689,7 +689,7 @@ function aplicarGateComum() {
 
 function roleLabel(r) { return r === 'admin' ? 'Admin' : r === 'comum' ? 'Comum (só leitura)' : r === 'pendente' ? 'Pendente (aguardando aprovação)' : 'Editor'; }
 
-// Só admin vê e usa isso — o card correspondente já fica escondido pra não-admin,
+// Só admin vê e usa isso, o card correspondente já fica escondido pra não-admin,
 // e o RLS no banco também bloqueia a escrita se alguém tentar contornar a UI.
 async function carregarUsuarios() {
   const card = document.getElementById('admin-users-card');
@@ -742,10 +742,10 @@ async function carregarUsuarios() {
 }
 
 // Só admin chama isso. Remove a conta de outra pessoa via Edge Function (precisa da
-// service_role key, que nunca chega ao browser — a function confere que quem chamou
+// service_role key, que nunca chega ao browser, a function confere que quem chamou
 // é admin antes de excluir).
 async function excluirUsuario(userId, nome) {
-  const confirmado = confirm(`Excluir a conta de ${nome}? Essa ação é permanente — a pessoa perde o acesso e precisaria criar uma conta nova.`);
+  const confirmado = confirm(`Excluir a conta de ${nome}? Essa ação é permanente. A pessoa perde o acesso e precisaria criar uma conta nova.`);
   if (!confirmado) return;
   try {
     const { data, error } = await sb.functions.invoke('admin-delete-user', { body: { user_id: userId } });
@@ -771,7 +771,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.40';
+const VERSION = 'v5.41';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -779,7 +779,7 @@ let chatHistory = [];
 let wb1 = null, wb2 = null, wb3 = null; // workbooks gerados
 let errosGeracao = [];
 
-// Colunas obrigatórias — cada uma com variações aceitas (nomes podem sofrer pequenas mudanças no Signus)
+// Colunas obrigatórias: cada uma com variações aceitas (nomes podem sofrer pequenas mudanças no Signus)
 const COLUNAS_OBRIGATORIAS = {
   'ID': ['id'],
   'Código': ['código','codigo'],
@@ -792,10 +792,10 @@ const COLUNAS_OBRIGATORIAS = {
 const COLUNAS_RECOMENDADAS = { 'Cód. agrupamento': ['cód. agrupamento','cod. agrupamento','código agrupamento','codigo agrupamento','cód agrupamento'] };
 
 // ══════════════════════════════════════════════════════════════════
-// NOVO TEMPLATE SIGNUS (18/07/2026) — traduz nomes técnicos (PROD_NOME,
+// NOVO TEMPLATE SIGNUS (18/07/2026), traduz nomes técnicos (PROD_NOME,
 // MARCA_NOME, GRUPO_SETORIAL_NOME...) pros nomes em português que o resto
 // do app já espera (Nome, Marca, Grupo setorial...). Feito num lugar só,
-// na entrada, pra não precisar mexer em cada função que lê uma coluna —
+// na entrada, pra não precisar mexer em cada função que lê uma coluna,
 // e continua aceitando o formato antigo também, caso apareça de novo.
 // ══════════════════════════════════════════════════════════════════
 function normalizarLinhaSignus(p) {
@@ -825,7 +825,7 @@ function normalizarLinhaSignus(p) {
     if (v !== undefined) out[chaveInterna] = v;
   }
   // O novo formato já manda o código Zydon de categoria e marca resolvidos direto
-  // (CATEGORIA_TREEVIEW_ID/NOME, MARCA_ID) — guardamos à parte pra gerarPlanilha()
+  // (CATEGORIA_TREEVIEW_ID/NOME, MARCA_ID), guardamos à parte pra gerarPlanilha()
   // e analisarProduto() preferirem isso em vez de tentar mapear pelo nome, só caindo
   // no mapeamento manual (pendências) se isso não vier ou não bater com a base.
   out['_categoria_treeview_id'] = (p['CATEGORIA_TREEVIEW_ID'] !== undefined && p['CATEGORIA_TREEVIEW_ID'] !== '') ? String(p['CATEGORIA_TREEVIEW_ID']).trim() : '';
@@ -912,7 +912,7 @@ function formatName(raw, marcaNome) {
   return result;
 }
 
-// Formata "WEG - MDWS" -> "Weg - Mdws" — mesmo estilo de capitalização do Nome, mas sem as
+// Formata "WEG - MDWS" -> "Weg - Mdws", mesmo estilo de capitalização do Nome, mas sem as
 // regras de substituição (é só o nome da linha de produto, exibido cru na aba Produtos).
 function formatLinha(raw) {
   if (!raw) return '';
@@ -1008,14 +1008,14 @@ function validarArquivo(data) {
   for (const [nomeOficial, variacoes] of Object.entries(COLUNAS_RECOMENDADAS)) {
     const variacoesNorm = variacoes.map(normalizarNomeColuna);
     const encontrou = colunasNorm.some(c => variacoesNorm.includes(c));
-    if (!encontrou) avisos.push(`Coluna "${nomeOficial}" não encontrada — produtos não serão agrupados em variações/similares.`);
+    if (!encontrou) avisos.push(`Coluna "${nomeOficial}" não encontrada. Sem ela os produtos não serão agrupados em variações/similares.`);
   }
 
   return { erros, avisos };
 }
 
 // ══════════════════════════════════════════════════════════════════
-// AUTENTICAÇÃO (Supabase Auth) — substitui o token GitHub compartilhado
+// AUTENTICAÇÃO (Supabase Auth), substitui o token GitHub compartilhado
 // ══════════════════════════════════════════════════════════════════
 function showAuthMsg(text, kind) {
   const el = document.getElementById('auth-msg');
@@ -1056,7 +1056,7 @@ async function authLogin() {
   document.getElementById('auth-login-btn').disabled = false;
   if (error) {
     const msg = error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.'
-      : error.message === 'Email not confirmed' ? 'Confirme seu e-mail antes de entrar — veja o link que mandamos pra sua caixa de entrada.'
+      : error.message === 'Email not confirmed' ? 'Confirme seu e-mail antes de entrar. Veja o link que mandamos pra sua caixa de entrada.'
       : error.message;
     showAuthMsg(msg, 'err');
     return;
@@ -1083,7 +1083,7 @@ async function authSignup() {
 }
 
 // Pede o link de redefinição de senha por e-mail. Por segurança, o Supabase não
-// diz se o e-mail existe ou não na base — a mensagem é sempre a mesma pros dois casos.
+// diz se o e-mail existe ou não na base, a mensagem é sempre a mesma pros dois casos.
 async function authForgotPassword() {
   const email = document.getElementById('forgot-email').value.trim();
   if (!email) { showAuthMsg('Digite seu e-mail.','err'); return; }
@@ -1133,7 +1133,7 @@ async function excluirConta() {
   msgEl.style.color = 'var(--red)';
   const confirmado = prompt('Isso apaga sua conta pra sempre. Digite EXCLUIR (em maiúsculas) pra confirmar:');
   if (confirmado !== 'EXCLUIR') {
-    if (confirmado !== null) { msgEl.textContent = 'Não confirmado — nada foi excluído.'; }
+    if (confirmado !== null) { msgEl.textContent = 'Não confirmado. Nada foi excluído.'; }
     return;
   }
   msgEl.style.color = 'var(--t4)';
@@ -1164,7 +1164,7 @@ async function onAuthReady(session) {
   setBaseStatus('warn', 'Carregando base...');
   await loadProfile();
   if (currentProfile?.role === 'pendente') {
-    // Conta criada mas ainda não aprovada por um admin — bloqueia o acesso ao app.
+    // Conta criada mas ainda não aprovada por um admin, bloqueia o acesso ao app.
     document.getElementById('app-root').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
     showAuthView('awaiting');
@@ -1174,17 +1174,17 @@ async function onAuthReady(session) {
   // URL do R2 e chave Claude são config compartilhada da equipe: se já tem valor salvo no Supabase, prevalece sobre o local
   const urlImgCompartilhada = kb.codigos_zydon?.url_base_imagens?.url;
   if (urlImgCompartilhada) document.getElementById('img-url').value = urlImgCompartilhada;
-  // A chave Claude em si nunca chega ao browser — só um marcador dizendo se já está configurada
+  // A chave Claude em si nunca chega ao browser, só um marcador dizendo se já está configurada
   const claudeKeyConfigurada = kb.codigos_zydon?.claude_key_status?.configured;
   const claudeKeyInput = document.getElementById('claude-key');
-  if (claudeKeyInput) claudeKeyInput.placeholder = claudeKeyConfigurada ? '•••••••••••••• (configurada — digite pra trocar)' : 'sk-ant-...';
+  if (claudeKeyInput) claudeKeyInput.placeholder = claudeKeyConfigurada ? '•••••••••••••• (configurada, digite pra trocar)' : 'sk-ant-...';
   document.getElementById('sync-btn').style.display = '';
   if (!window._welcomed) {
     window._welcomed = true;
     const historicoSalvo = loadChatHistory();
     if (historicoSalvo.length) {
       chatHistory = historicoSalvo;
-      addAgentMsg('<em style="color:var(--t5)">— conversa restaurada —</em>');
+      addAgentMsg('<em style="color:var(--t5)">conversa restaurada</em>');
       chatHistory.forEach(m => { if (m.role === 'user') addUserMsg(m.content); else addAgentMsg(renderMd(m.content)); });
     } else {
       showWelcomeMsg();
@@ -1193,7 +1193,7 @@ async function onAuthReady(session) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// BASE DE CONHECIMENTO (Supabase) — substitui o conhecimento.json no GitHub
+// BASE DE CONHECIMENTO (Supabase), substitui o conhecimento.json no GitHub
 // ══════════════════════════════════════════════════════════════════
 function emptyKB() {
   return {
@@ -1285,7 +1285,7 @@ async function salvarUrlImagens(url) {
 }
 
 async function salvarClaudeKey(key) {
-  if (!currentProfile?.is_admin) return; // só admin — o banco também bloqueia via RLS
+  if (!currentProfile?.is_admin) return; // só admin, o banco também bloqueia via RLS
   key = (key||'').trim();
   if (!key) return;
   // A chave nunca é gravada direto do browser: vai pra uma Edge Function que a guarda
@@ -1298,7 +1298,7 @@ async function salvarClaudeKey(key) {
   if (!kb) kb = emptyKB();
   kb.codigos_zydon.claude_key_status = { configured: true };
   const claudeKeyInput = document.getElementById('claude-key');
-  if (claudeKeyInput) { claudeKeyInput.value = ''; claudeKeyInput.placeholder = '•••••••••••••• (configurada — digite pra trocar)'; }
+  if (claudeKeyInput) { claudeKeyInput.value = ''; claudeKeyInput.placeholder = '•••••••••••••• (configurada, digite pra trocar)'; }
 }
 
 async function registrarHistorico(acao) {
@@ -1310,7 +1310,7 @@ async function registrarHistorico(acao) {
   if (kb.historico.length > 100) kb.historico = kb.historico.slice(0,100);
 }
 
-// Compara arrays sem se importar com ordem — usado só pra detectar se duas pessoas
+// Compara arrays sem se importar com ordem, usado só pra detectar se duas pessoas
 // mexeram na mesma marca com valores diferentes (edição concorrente).
 function arraysIguaisSemOrdem(a, b) {
   const x = (a||[]).slice().sort(), y = (b||[]).slice().sort();
@@ -1322,7 +1322,7 @@ async function upsertMarca(nomeExib, siglas) {
   const { data: antes } = await sb.from('marcas').select('*').eq('nome_exibicao', nomeExib).maybeSingle();
   // Se já existia (outra pessoa cadastrou essa marca entre o momento em que a
   // pendência apareceu na tela e o clique em "Salvar") e as siglas são diferentes,
-  // é uma edição concorrente — avisamos em vez de sobrescrever silenciosamente.
+  // é uma edição concorrente, avisamos em vez de sobrescrever silenciosamente.
   const conflito = antes && !arraysIguaisSemOrdem(antes.siglas_modelos, siglas) ? antes : null;
   const { error } = await sb.from('marcas').upsert(
     { nome_exibicao: nomeExib, siglas_modelos: siglas, unidades_upper: [], criado_por: currentUser?.id||null },
@@ -1353,7 +1353,7 @@ async function upsertCategoriaMapping(catOriginal, nomeZydon) {
 }
 
 async function upsertRegraGlobal(de, para) {
-  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor cadastrar essa regra.'); return false; }
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só de leitura. Peça pra um admin ou editor cadastrar essa regra.'); return false; }
   if (!kb) kb = emptyKB();
   const { data: antes } = await sb.from('regras_globais').select('*').eq('de', de).maybeSingle();
   const conflito = antes && antes.para !== para ? antes : null;
@@ -1380,7 +1380,7 @@ function definirUltimaAcao(acao) {
 
 async function desfazerUltimaAcao() {
   if (!lastAction) return;
-  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor desfazer isso.'); return; }
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só de leitura. Peça pra um admin ou editor desfazer isso.'); return; }
   const { tabela, chave, before, label } = lastAction;
   const btn = document.getElementById('undo-btn');
   try {
@@ -1405,7 +1405,7 @@ function setBaseStatus(st, txt) {
   document.getElementById('gh-txt').textContent = txt;
 }
 
-// "1 marca" / "2 marcas" — sem isso vira "1 marcas", que lê como erro de digitação
+// "1 marca" / "2 marcas", sem isso vira "1 marcas", que lê como erro de digitação
 function pl(n, singular, plural) { return `${n} ${n===1?singular:plural}`; }
 
 // Escapa texto vindo de dado externo (planilha do Signus, base) antes de injetar em innerHTML,
@@ -1424,7 +1424,7 @@ function analisarProduto(p) {
   const marca = p['Marca'] || '';
   if (marca && !marcaConhecida(marca)) issues.push({ tipo:'marca', valor:marca });
   // Se o Signus já mandou o código Zydon da categoria resolvido (CATEGORIA_TREEVIEW_ID) e ele
-  // bate com a base, não há pendência — só cai na checagem manual de sempre se isso não vier.
+  // bate com a base, não há pendência, só cai na checagem manual de sempre se isso não vier.
   const catIdSignus = p['_categoria_treeview_id'] || '';
   const catIdResolvida = !!(catIdSignus && (CATS_ZYDON_NOMES[catIdSignus] || kb?.categorias_zydon?.[catIdSignus]));
   if (!catIdResolvida) {
@@ -1467,7 +1467,7 @@ function enableDragDrop(inputId) {
   });
 }
 
-// A exportação real do Signus manda 1 linha por (produto, característica) — o mesmo PROD_ID
+// A exportação real do Signus manda 1 linha por (produto, característica), o mesmo PROD_ID
 // se repete N vezes (uma por CARACT_NOME: Corrente Nominal, Número de Polos, Curva de Disparo...),
 // com todos os campos de produto (Nome, SKU, peso, dimensões, agrupamento etc.) idênticos entre elas.
 // Sem isso, cada grupo conta 5x mais "produtos" do que existem de verdade, a aba Variações sai
@@ -1544,9 +1544,9 @@ function handleFileUpload(e) {
     COL_AGRUPAMENTO = colAchada || 'Cód. agrupamento';
     if (avisosVal.length) addAgentMsg(`<div class="alert alert-warn">⚠ ${avisosVal.join('<br>')}</div>`);
     if (bruto.length !== data.length) {
-      addAgentMsg(`<div class="alert alert-ok">✓ Esse arquivo vem com ${bruto.length} linhas (uma por produto+característica) — reagrupei em ${pl(data.length,'produto único','produtos únicos')} antes de gerar.</div>`);
+      addAgentMsg(`<div class="alert alert-ok">✓ Esse arquivo vem com ${bruto.length} linhas (uma por produto+característica). Reagrupei em ${pl(data.length,'produto único','produtos únicos')} antes de gerar.</div>`);
     }
-    // Guarda as características por produto ANTES do dedup — o dedup joga fora as linhas
+    // Guarda as características por produto ANTES do dedup, o dedup joga fora as linhas
     // extras (uma por característica), mas o arquivo de Valores de Variação precisa delas
     // de volta (1 linha por eixo pré-definido: Número de Polos, Corrente Nominal...).
     window._caractsPorProduto = construirCaractsPorProduto(bruto);
@@ -1565,17 +1565,17 @@ document.getElementById('file-in').addEventListener('change', handleFileUpload);
 enableDragDrop('file-in');
 
 // ══════════════════════════════════════════════════════════════════
-// LISTA REAL DE IMAGENS — casa exatamente com o que existe, nunca inventa.
+// LISTA REAL DE IMAGENS: casa exatamente com o que existe, nunca inventa.
 // A lista fica salva na base do agente (tabela imagens_disponiveis), então
 // depois de cadastrada uma vez, não precisa subir a planilha de novo em toda
-// sessão — o upload aqui só serve pra cadastrar ou atualizar essa base.
+// sessão, o upload aqui só serve pra cadastrar ou atualizar essa base.
 // ══════════════════════════════════════════════════════════════════
-// window._imagensIndex: Map<baseDoSKU, [{filename, seq, ext}]> — lista desta sessão
+// window._imagensIndex: Map<baseDoSKU, [{filename, seq, ext}]>, lista desta sessão
 // (upload que ainda não terminou de sincronizar, ou sincronizado por um não-admin).
-// null quando não há upload nesta sessão — nesse caso a busca cai direto na base.
+// null quando não há upload nesta sessão, nesse caso a busca cai direto na base.
 window._imagensIndex = null;
 
-// "10076381_2.jpg" -> { base:"10076381", seq:2, ext:"jpg" } — só sufixo _n bem no final antes
+// "10076381_2.jpg" -> { base:"10076381", seq:2, ext:"jpg" }, só sufixo _n bem no final antes
 // da extensão conta como sequência; hífens/números no meio do nome (ex: "10VB48BP-33") ficam intactos.
 function normalizarBaseImagem(nomeArquivo) {
   const m = String(nomeArquivo||'').trim().match(/^(.*?)(?:_(\d+))?\.(jpe?g|png)$/i);
@@ -1584,7 +1584,7 @@ function normalizarBaseImagem(nomeArquivo) {
 }
 
 // Worker que lê o bucket de imagens no Cloudflare ao vivo. É a fonte principal:
-// se alguém subir uma foto nova agora, ela já entra na próxima geração — sem
+// se alguém subir uma foto nova agora, ela já entra na próxima geração, sem
 // depender de planilha nem de a base estar atualizada.
 const URL_WORKER_IMAGENS = 'https://agente-jet-imagens.marcos-rangel.workers.dev';
 
@@ -1609,12 +1609,12 @@ async function buscarImagensDoCloudflare(skus) {
     });
     return mapa;
   } catch (e) {
-    return null; // rede fora, CORS, Worker caído — quem chamou usa a base
+    return null; // rede fora, CORS, Worker caído, quem chamou usa a base
   }
 }
 
 // Busca as imagens de uma lista de SKUs direto na base (tabela imagens_disponiveis),
-// em lotes — evita puxar as dezenas de milhares de linhas cadastradas de uma vez só.
+// em lotes, evita puxar as dezenas de milhares de linhas cadastradas de uma vez só.
 // Hoje serve de RETAGUARDA: só é usada se o Worker do Cloudflare não responder.
 async function buscarImagensDoBanco(skus) {
   const resultado = new Map();
@@ -1624,7 +1624,7 @@ async function buscarImagensDoBanco(skus) {
   for (let i = 0; i < unicos.length; i += tamanhoLote) {
     const lote = unicos.slice(i, i + tamanhoLote);
     // Pagina DENTRO do lote: o Supabase corta em ~1000 linhas por consulta, e tem SKU com
-    // dezenas de imagens — sem paginar, as imagens do fim do resultado somem e o produto
+    // dezenas de imagens, sem paginar, as imagens do fim do resultado somem e o produto
     // aparece "sem imagem" mesmo tendo tudo cadastrado. range() varre até acabar.
     let de = 0; const pagina = 1000;
     while (true) {
@@ -1670,7 +1670,7 @@ function renderImglistArea() {
       <input type="file" id="imglist-in" accept=".xlsx,.xls,.csv" style="display:none">
     </div>`;
   }
-  // Sempre religa o listener — mas só se o input existir (guarda contra estados sem input,
+  // Sempre religa o listener, mas só se o input existir (guarda contra estados sem input,
   // que antes quebravam o carregamento da base inteira com "Cannot read ... addEventListener").
   const inp = document.getElementById('imglist-in');
   if (inp) { inp.addEventListener('change', handleImagensListUpload); enableDragDrop('imglist-in'); }
@@ -1703,13 +1703,13 @@ async function handleImagensListUpload(e) {
     renderImglistArea();
 
     if (!currentProfile?.is_admin) {
-      addAgentMsg(`<div class="alert alert-ok">✓ Lista carregada pra essa sessão: ${pl(dados.length,'arquivo','arquivos')} agrupados em ${pl(idx.size,'SKU','SKUs')}. Só um admin pode salvar isso na base do agente pra todo mundo já vir com ela pronta — por enquanto vale só aqui.</div>`);
+      addAgentMsg(`<div class="alert alert-ok">✓ Lista carregada pra essa sessão: ${pl(dados.length,'arquivo','arquivos')} agrupados em ${pl(idx.size,'SKU','SKUs')}. Só um admin pode salvar isso na base do agente pra todo mundo já vir com ela pronta. Por enquanto vale só aqui.</div>`);
       return;
     }
 
-    addAgentMsg(`<div class="alert alert-warn">⏳ Salvando ${pl(linhasParaBase.length,'imagem','imagens')} na base do agente — pode levar um tempo com uma lista grande, <strong>não feche nem atualize a página</strong> até a barra terminar.</div>`);
+    addAgentMsg(`<div class="alert alert-warn">⏳ Salvando ${pl(linhasParaBase.length,'imagem','imagens')} na base do agente. Isso pode levar um tempo com uma lista grande, <strong>não feche nem atualize a página</strong> até a barra terminar.</div>`);
     const progDiv = addProgressMsg(linhasParaBase.length, 'chat', 'Salvando imagens na base');
-    // Avisa o navegador pra confirmar antes de sair/atualizar enquanto ainda tem lote no ar —
+    // Avisa o navegador pra confirmar antes de sair/atualizar enquanto ainda tem lote no ar,
     // sem isso, um refresh no meio perde tudo silenciosamente (sem erro, sem aviso).
     const avisarSaida = (e) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', avisarSaida);
@@ -1725,13 +1725,13 @@ async function handleImagensListUpload(e) {
     if (!kb) kb = emptyKB();
     kb.imagens_disponiveis_count = resultado.salvas;
     await registrarHistorico(`Cadastrou/atualizou ${pl(resultado.salvas,'imagem','imagens')} na base (lista real de arquivos)`);
-    addAgentMsg(`<div class="alert alert-ok">✓ ${pl(resultado.salvas,'imagem salva','imagens salvas')} na base do agente — da próxima vez já vem pronta, sem precisar subir de novo.</div>`);
+    addAgentMsg(`<div class="alert alert-ok">✓ ${pl(resultado.salvas,'imagem salva','imagens salvas')} na base do agente. Da próxima vez ela já vem pronta, sem precisar subir de novo.</div>`);
     renderImglistArea();
   };
   reader.readAsArrayBuffer(file);
 }
 
-// Sobe lotes em paralelo (algumas requisições ao mesmo tempo em vez de uma atrás da outra) —
+// Sobe lotes em paralelo (algumas requisições ao mesmo tempo em vez de uma atrás da outra),
 // com listas de dezenas de milhares de linhas, isso é a diferença entre ~1min e vários minutos.
 async function upsertEmLotesComConcorrencia(tabela, linhas, tamanhoLote, concorrencia, onProgresso) {
   const lotes = [];
@@ -1769,7 +1769,7 @@ function limparPlanilha() {
   addAgentMsg('Planilha removida. Faça o upload de uma nova quando quiser.');
 }
 
-// Devolve o controle pro navegador por um instante — evita travar a aba em lotes grandes
+// Devolve o controle pro navegador por um instante, evita travar a aba em lotes grandes
 // (a Jet tem +45.000 produtos; sem isso, o processamento síncrono some sem repintar a tela).
 function yieldToUI() { return new Promise(r => setTimeout(r, 0)); }
 
@@ -1793,8 +1793,8 @@ async function processarLote() {
   const nOk = processados.length, nPend = pendentes.length;
   addAgentMsg(
     `Lote processado: <strong>${pl(products.length,'produto','produtos')}</strong><br><br>` +
-    `<strong style="color:var(--green)">${nOk} prontos</strong> — regras conhecidas aplicadas<br>` +
-    `<strong style="color:var(--amber)">${nPend} pendentes</strong> — ${nPend > 0 ? 'veja as dúvidas na barra lateral' : 'nenhuma dúvida!'}`,
+    `<strong style="color:var(--green)">${nOk} prontos</strong> (regras conhecidas aplicadas)<br>` +
+    `<strong style="color:var(--amber)">${nPend} pendentes</strong> ${nPend > 0 ? '(veja as dúvidas na barra lateral)' : '(nenhuma dúvida!)'}`,
     nOk > 0 ? buildPreview(products.slice(0,5)) : ''
   );
   renderPendentes();
@@ -1830,7 +1830,7 @@ function renderProdRows(rows) {
   return `<table>${thead}<tbody>${tbody}</tbody></table>`;
 }
 
-// Navegador de produtos com busca + "carregar mais" — usado em "ver todos", pra não travar
+// Navegador de produtos com busca + "carregar mais", usado em "ver todos", pra não travar
 // em bases grandes (a Jet tem +45.000 produtos, mostrar tudo de uma vez não escala).
 window._prodBrowsers = window._prodBrowsers || {};
 function buildProductBrowser(rows) {
@@ -1895,7 +1895,7 @@ function renderPendentes() {
     if (issue.tipo==='categoria') { if (!porCat[issue.valor]) porCat[issue.valor]=[]; porCat[issue.valor].push(p); }
   }));
   let html = '';
-  // Guarda o nome original por id seguro (só alfanumérico) — os botões passam só o id, nunca
+  // Guarda o nome original por id seguro (só alfanumérico), os botões passam só o id, nunca
   // o nome cru dentro do onclick (que seria vetor de injeção). O nome exibido/no input é escapado.
   window._pendOrig = { marca:{}, cat:{} };
   Object.entries(porMarca).forEach(([marca, prods]) => {
@@ -1933,7 +1933,7 @@ function renderPendentes() {
 
 async function salvarMarca(marcaId) {
   const marcaOriginal = window._pendOrig?.marca?.[marcaId] || '';
-  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor resolver essa pendência.'); return; }
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só de leitura. Peça pra um admin ou editor resolver essa pendência.'); return; }
   const nomeExib = document.getElementById(`pend-nome-${marcaId}`)?.value.trim() || marcaOriginal;
   const siglasRaw = document.getElementById(`pend-siglas-${marcaId}`)?.value.trim() || '';
   const siglas = siglasRaw.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
@@ -1948,7 +1948,7 @@ function pularMarca(marcaId) { const marca = window._pendOrig?.marca?.[marcaId];
 
 async function salvarCategoria(catId) {
   const catOriginal = window._pendOrig?.cat?.[catId] || '';
-  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só-leitura — peça pra um admin ou editor resolver essa pendência.'); return; }
+  if (souSomenteLeitura()) { addAgentMsg('Seu acesso é só de leitura. Peça pra um admin ou editor resolver essa pendência.'); return; }
   const nomeZydon = document.getElementById(`pend-cat-${catId}`)?.value.trim() || catOriginal;
   const res = await upsertCategoriaMapping(catOriginal, nomeZydon);
   pendentes = pendentes.filter(p => !p.issues.some(i => i.tipo==='categoria' && i.valor===catOriginal));
@@ -2025,7 +2025,7 @@ async function gerarPlanilha() {
     grpNomePai[grpCod] = buildNomePai(paiProduto, infoMin, infoMax);
   });
 
-  // Validações — agrupadas para não poluir o relatório com repetição
+  // Validações, agrupadas para não poluir o relatório com repetição
   const eansSeen = {};
   const rows = [];
   const semMarca = [];       // produtos sem marca preenchida
@@ -2035,7 +2035,7 @@ async function gerarPlanilha() {
 
   for (let idx = 0; idx < products.length; idx++) {
     const p = products[idx];
-    // Progresso a cada 50 — e cede o thread pra não travar a aba em lotes grandes
+    // Progresso a cada 50, e cede o thread pra não travar a aba em lotes grandes
     if (idx % 50 === 0) { updateProgress(progDiv, idx, products.length); await yieldToUI(); }
 
     const nome = formatName(p['Nome']||'', p['Marca']||'');
@@ -2069,7 +2069,7 @@ async function gerarPlanilha() {
       else eansSeen[ean] = p['ID'];
     }
 
-    // O Signus agora manda o código Zydon da marca já resolvido (MARCA_ID) — confiamos nisso
+    // O Signus agora manda o código Zydon da marca já resolvido (MARCA_ID), confiamos nisso
     // quando bater com o catálogo conhecido; senão cai no fuzzy-match por nome de sempre.
     const marcaIdSignus = p['_marca_id_signus']||'';
     const codigosMarcaConhecidos = new Set(Object.values(kb.marcas_zydon||{}).map(String));
@@ -2082,7 +2082,7 @@ async function gerarPlanilha() {
     const eanVariacao = grpCod && gruposEan[grpCod] ? gruposEan[grpCod].join('; ') : ean;
 
     // Produtos = só o pai por família (1 linha, nome agregado, ativo sempre true).
-    // Os demais filhos do grupo não geram linha em Produtos — só existem na aba Variações.
+    // Os demais filhos do grupo não geram linha em Produtos, só existem na aba Variações.
     const ehFilhoNaoPai = grpCod && String(p['ID']||'') !== String(grpPaiId[grpCod]||'');
     if (ehFilhoNaoPai) continue;
 
@@ -2131,13 +2131,13 @@ async function gerarPlanilha() {
     });
   }
 
-  // Similares — desativado para membros do mesmo grupo: agora são variações de UM produto
+  // Similares, desativado para membros do mesmo grupo: agora são variações de UM produto
   // (o pai), não produtos separados. Gerar "similar" entre eles duplicaria referências a
   // Códigos que não existem mais como linha própria em Produtos.
   const sims = [];
 
   // ── NOVO MODELO ZYDON (2 arquivos): Produto + Variações. Este bloco monta o arquivo
-  //    de Variações, com 3 abas — "Variações de Produtos", "Valores" e "Imagens" —
+  //    de Variações, com 3 abas: "Variações de Produtos", "Valores" e "Imagens",
   //    usando os nomes de coluna do template atual da Zydon (julho/2026).
   const caractsMap = window._caractsPorProduto || new Map();
   const eixoValor = (p, nomeCaract) => {
@@ -2149,7 +2149,7 @@ async function gerarPlanilha() {
 
   // Eixos que de fato variam em cada grupo, já na ordem de exibição (Número de Polos antes
   // de Corrente Nominal). Uma característica é candidata a eixo se: (a) é uma variação
-  // conhecida da Zydon (está em EIXOS_VARIACAO_ZYDON) — independente do CARACT_TIPO, porque
+  // conhecida da Zydon (está em EIXOS_VARIACAO_ZYDON), independente do CARACT_TIPO, porque
   // o Signus às vezes marca "Número de Polos" como PERSONALIZADA e isso derrubava o 2º eixo;
   // ou (b) é PRÉ-DEFINIDA (fallback pra variações ainda não mapeadas). Só vira eixo de fato
   // se tiver mais de um valor no grupo.
@@ -2164,7 +2164,7 @@ async function gerarPlanilha() {
       valoresPorNome.get(c.nome).add(c.valor);
     }));
     // Uma variação conhecida da Zydon (Número de Polos, Corrente Nominal) SEMPRE vira eixo,
-    // mesmo que o valor seja igual pro grupo todo — porque a família pode já estar separada
+    // mesmo que o valor seja igual pro grupo todo, porque a família pode já estar separada
     // por polos (ex: grupo só de 1P), e ainda assim a Zydon espera o valor em cada variação
     // pra formar a combinação ("2A + 1P Monopolar"). Pra características ainda não mapeadas,
     // só vira eixo se de fato variar (evita encher de Curva/Tensão/Frequência).
@@ -2241,7 +2241,7 @@ async function gerarPlanilha() {
       const cfg = EIXOS_VARIACAO_ZYDON[nomeEixo];
       if (!cfg) eixosDesconhecidos.add(nomeEixo);
       valoresVar.push({
-        // "Código" (o id da própria linha de valor) fica VAZIO — quem gera é a Zydon, e é
+        // "Código" (o id da própria linha de valor) fica VAZIO, quem gera é a Zydon, e é
         // assim que as variações aparecem montadas certinho na vitrine. O vínculo é feito por
         // "Variação de Produto (Código)", que aponta pra variação (produto filho) e casa com
         // o SKU da coluna seguinte.
@@ -2256,7 +2256,7 @@ async function gerarPlanilha() {
   });
   if (eixosDesconhecidos.size) errosGeracao.push(`Eixo de variação sem código Zydon mapeado: ${[...eixosDesconhecidos].join(', ')}. Me avise o número certo pra cada um.`);
 
-  // Imagens — busca a lista real (sessão ou base do agente), sem inventar nome de arquivo.
+  // Imagens, busca a lista real (sessão ou base do agente), sem inventar nome de arquivo.
   const urlBaseFinal = (imgBase || '').replace(/\/$/,'');
   const todosSkusFilho = produtosOrdenados.map(({p}) => String(p['Código']||'')).filter(Boolean);
   // pai de cada grupo (pra aba Imagens do arquivo de Produto, que continua por produto pai)
@@ -2279,7 +2279,7 @@ async function gerarPlanilha() {
       if (cod) skusPai.push(String(cod));
     }
   }
-  // Fonte das imagens, em ordem: (1) Cloudflare ao vivo — sempre a verdade do momento;
+  // Fonte das imagens, em ordem: (1) Cloudflare ao vivo, sempre a verdade do momento;
   // (2) base do agente, só se o Worker não responder; (3) lista subida nesta sessão.
   const skusParaBuscar = [...new Set([...todosSkusFilho, ...skusPai])];
   let imagensDb = await buscarImagensDoCloudflare(skusParaBuscar);
@@ -2287,7 +2287,7 @@ async function gerarPlanilha() {
   if (imagensDb === null) {
     imagensDb = await buscarImagensDoBanco(skusParaBuscar);
     fonteImagens = 'base do agente (Cloudflare não respondeu)';
-    errosGeracao.push('Não consegui consultar o Cloudflare agora — usei a lista salva na base, que pode estar desatualizada.');
+    errosGeracao.push('Não consegui consultar o Cloudflare agora. Usei a lista salva na base, que pode estar desatualizada.');
   }
   const temAlgumaFonteImagem = !!(window._imagensIndex && window._imagensIndex.size) || (kb?.imagens_disponiveis_count||0) > 0 || imagensDb.size > 0;
   const imagensDoSku = (sku) => {
@@ -2295,7 +2295,7 @@ async function gerarPlanilha() {
     const achadas = (window._imagensIndex && window._imagensIndex.get(chave)) || imagensDb.get(chave) || [];
     return achadas.slice().sort((a,b) => a.seq - b.seq);
   };
-  // aba Imagens do arquivo de Variações — por SKU do filho (modelo novo)
+  // aba Imagens do arquivo de Variações, por SKU do filho (modelo novo)
   const imagensVariacao = [];
   const semImgVar = [];
   produtosOrdenados.forEach(({p}) => {
@@ -2305,13 +2305,13 @@ async function gerarPlanilha() {
     if (!achadas.length) { if (temAlgumaFonteImagem) semImgVar.push(sku); return; }
     achadas.forEach(img => imagensVariacao.push({ 'Código':'', 'Variação (Código)': id, 'Variação (SKU)': sku, 'Imagem': urlBaseFinal ? `${urlBaseFinal}/${img.filename}` : img.filename }));
   });
-  // aba Imagens do arquivo de Produto — por SKU do pai
+  // aba Imagens do arquivo de Produto, por SKU do pai
   const imgs = [];
   Object.values(paiPorGrupo).forEach(({ paiId, cod, nome }) => {
     if (!cod) return;
     imagensDoSku(cod).forEach(img => imgs.push({ 'Código':'', 'Produto (Código)': String(paiId||''), 'Produto (Nome)': nome, 'Imagem': urlBaseFinal ? `${urlBaseFinal}/${img.filename}` : img.filename }));
   });
-  if (!temAlgumaFonteImagem) errosGeracao.push('Nenhuma imagem encontrada (nem no Cloudflare, nem na base) — as abas Imagens saíram vazias (sem a lista, não inventamos nomes de arquivo).');
+  if (!temAlgumaFonteImagem) errosGeracao.push('Nenhuma imagem encontrada (nem no Cloudflare, nem na base). As abas Imagens saíram vazias (sem a lista, não inventamos nomes de arquivo).');
   else if (semImgVar.length) errosGeracao.push(`${pl(semImgVar.length,'variação','variações')} sem imagem no Cloudflare (SKU ex: ${semImgVar.slice(0,3).join(', ')}${semImgVar.length>3?'...':''})`);
   window._fonteImagens = fonteImagens;
 
@@ -2335,8 +2335,8 @@ async function gerarPlanilha() {
   // Consolidar avisos agrupados (evita repetir a mesma mensagem centenas de vezes)
   if (semMarca.length) errosGeracao.push(`${pl(semMarca.length,'produto','produtos')} sem marca preenchida (ex: ID ${semMarca.slice(0,3).join(', ')}${semMarca.length>3?'...':''})`);
   if (semCategoria.length) errosGeracao.push(`${pl(semCategoria.length,'produto','produtos')} sem categoria preenchida (Grupo setorial vazio) (ex: ID ${semCategoria.slice(0,3).join(', ')}${semCategoria.length>3?'...':''})`);
-  Object.entries(marcaSemCod).forEach(([marca, n]) => errosGeracao.push(`Marca "${marca}" sem código Zydon mapeado — afeta ${pl(n,'produto','produtos')}`));
-  Object.entries(catSemCod).forEach(([cat, n]) => errosGeracao.push(`Categoria "${cat}" sem código Zydon mapeado — afeta ${pl(n,'produto','produtos')}`));
+  Object.entries(marcaSemCod).forEach(([marca, n]) => errosGeracao.push(`Marca "${marca}" sem código Zydon mapeado (afeta ${pl(n,'produto','produtos')})`));
+  Object.entries(catSemCod).forEach(([cat, n]) => errosGeracao.push(`Categoria "${cat}" sem código Zydon mapeado (afeta ${pl(n,'produto','produtos')})`));
 
   // Atualizar progresso para 100%
   updateProgress(progDiv, products.length, products.length);
@@ -2351,7 +2351,7 @@ async function gerarPlanilha() {
 
   // Mensagem com relatório de erros
   const nAvulsos = rows.length - Object.keys(grupos).length;
-  let msg = `Planilhas geradas com sucesso:<br><strong>${pl(rows.length,'produto','produtos')}</strong> na aba Produtos (${pl(Object.keys(grupos).length,'família','famílias')} + ${pl(nAvulsos,'avulso','avulsos')}) · <strong>${pl(variacoesFinal.length,'SKU','SKUs')}</strong> na aba Variações · <strong>${pl(imgs.length + imagensVariacao.length,'imagem','imagens')}</strong> · fonte: ${escapeHtml(window._fonteImagens||'—')}`;
+  let msg = `Planilhas geradas com sucesso:<br><strong>${pl(rows.length,'produto','produtos')}</strong> na aba Produtos (${pl(Object.keys(grupos).length,'família','famílias')} + ${pl(nAvulsos,'avulso','avulsos')}) · <strong>${pl(variacoesFinal.length,'SKU','SKUs')}</strong> na aba Variações · <strong>${pl(imgs.length + imagensVariacao.length,'imagem','imagens')}</strong> · fonte: ${escapeHtml(window._fonteImagens||'não informada')}`;
   if (errosGeracao.length) {
     msg += buildReportHtml(errosGeracao);
   }
@@ -2367,7 +2367,7 @@ function buildReportHtml(erros) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// PREPARAR IMAGENS DO FORNECEDOR — casar foto com produto, renomear, redimensionar
+// PREPARAR IMAGENS DO FORNECEDOR: casar foto com produto, renomear, redimensionar
 // ══════════════════════════════════════════════════════════════════
 let imgPrepProducts = null;   // linhas da planilha (reaproveita 'products' se já carregada)
 let imgPrepFiles = [];        // File[] das fotos selecionadas
@@ -2391,7 +2391,7 @@ document.getElementById('imgprep-file-fotos').addEventListener('change', functio
 enableDragDrop('imgprep-file-planilha');
 enableDragDrop('imgprep-file-fotos');
 
-// Remove tudo que não é letra/número antes de comparar — cada fábrica usa separador
+// Remove tudo que não é letra/número antes de comparar, cada fábrica usa separador
 // diferente no nome do arquivo (hífen, underscore, espaço), então "ABC-123" e
 // "abc_123_foto1.jpg" precisam bater mesmo com pontuação diferente.
 function normalizarParaComparar(s) {
@@ -2490,7 +2490,7 @@ function associarImagemManual(idx, produtoId) {
   }
 }
 
-// Redimensiona a imagem no navegador via Canvas — sem precisar de servidor
+// Redimensiona a imagem no navegador via Canvas, sem precisar de servidor
 function redimensionarImagem(file, maxDim=1000, quality=0.85) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -2563,7 +2563,7 @@ async function gerarZipImagens() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// VALIDAÇÃO — COMPARAR PLANILHA MANUAL vs GERADA PELO AGENTE
+// VALIDAÇÃO: COMPARAR PLANILHA MANUAL vs GERADA PELO AGENTE
 // ══════════════════════════════════════════════════════════════════
 let valManualRows = null, valAgenteRows = null;
 
@@ -2670,15 +2670,15 @@ function compararPlanilhas() {
     html += `</div>`;
   }
 
-  // Ranking de colunas que mais divergem — é o dado mais acionável
+  // Ranking de colunas que mais divergem, é o dado mais acionável
   const ranking = Object.entries(diffPorColuna).sort((a,b) => b[1]-a[1]);
   if (ranking.length) {
     html += `<div class="diff-ranking">
-      <div class="diff-ranking-head">Colunas que mais divergem — ajustar nessa ordem</div>
+      <div class="diff-ranking-head">Colunas que mais divergem (ajustar nessa ordem)</div>
       ${ranking.slice(0,15).map(([col,n]) => `<div class="diff-ranking-row"><span class="diff-ranking-col">${col}</span><span class="diff-ranking-n">${pl(n,'produto','produtos')}</span></div>`).join('')}
     </div>`;
   } else {
-    html += `<div class="alert alert-ok">✓ Nenhuma divergência encontrada — o agente está replicando exatamente o padrão manual!</div>`;
+    html += `<div class="alert alert-ok">✓ Nenhuma divergência encontrada. O agente está replicando exatamente o padrão manual!</div>`;
   }
 
   addAgentMsg(html, '', 'validar-results');
@@ -2747,7 +2747,7 @@ function exportarComparacao() {
 
 function reabrirRelatorio() {
   const erros = window._ultimoRelatorio || [];
-  if (!erros.length) { addAgentMsg('Nenhum aviso na última geração — tudo certo!'); return; }
+  if (!erros.length) { addAgentMsg('Nenhum aviso na última geração. Tudo certo!'); return; }
   addAgentMsg(`<strong>Relatório da última geração:</strong>` + buildReportHtml(erros));
 }
 
@@ -2764,10 +2764,10 @@ function downloadArquivo(n) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// CATEGORIAS SIGNUS x ZYDON — compara o Categoria Treeview do Signus com
+// CATEGORIAS SIGNUS x ZYDON: compara o Categoria Treeview do Signus com
 // o que já está cadastrado na Zydon (kb.categorias_zydon) e gera o arquivo
 // de importação só das categorias novas. Funcionalidade separada da
-// curadoria de produtos — pensada pra onboarding de categoria nova.
+// curadoria de produtos, pensada pra onboarding de categoria nova.
 // ══════════════════════════════════════════════════════════════════
 let catSignusFlat = null; // Map id -> {nome, pai}
 
@@ -2815,7 +2815,7 @@ function renderCategoriasResultado(mapa) {
     html += `<div class="alert alert-ok">✓ Todas as categorias desse arquivo já existem cadastradas na Zydon.</div>`;
   } else {
     html += `<div class="step-card">
-      <div class="step-card-lbl">${pl(novas.length,'categoria nova','categorias novas')} — ainda não estão na Zydon</div>
+      <div class="step-card-lbl">${pl(novas.length,'categoria nova','categorias novas')} que ainda não estão na Zydon</div>
       <div style="font-size:12px;max-height:320px;overflow:auto">
         ${novas.map(n => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
           <div><strong>${escapeHtml(n.nome)}</strong><div style="color:var(--t5);font-size:11px">Código ${n.id}${n.pai?` · pai ${n.pai}`:''}</div></div>
@@ -2834,12 +2834,12 @@ function renderCategoriasResultado(mapa) {
   window._categoriasTodas = Array.from(mapa.entries()).map(([id, info]) => ({ id, ...info }));
 }
 
-// A Zydon não só guarda um número de ORDER por categoria — o arquivo dela
+// A Zydon não só guarda um número de ORDER por categoria, o arquivo dela
 // lista as linhas na própria sequência da árvore: cada categoria aparece
 // logo depois do pai, e os irmãos entre si já saem na ordem do ORDER deles
 // (é isso que dá pra ver pelas cores quando abre a planilha: cada bloco
 // colorido é um pai com os filhos dele logo abaixo, em sequência). Então não
-// basta calcular o ORDER certo — a ordem das LINHAS no arquivo gerado também
+// basta calcular o ORDER certo, a ordem das LINHAS no arquivo gerado também
 // precisa seguir essa travessia em profundidade, senão continua parecendo
 // fora de ordem mesmo com o número certo na coluna.
 function ordenarLinhasComoArvore(rows) {
@@ -2864,7 +2864,7 @@ function ordenarLinhasComoArvore(rows) {
   }
   visitar('__raiz__');
   // Órfãos: categoria cujo "Código pai" não está no próprio arquivo (ex: pai
-  // de outro ramo da árvore que não veio nesse lote) — inclui no final, sem
+  // de outro ramo da árvore que não veio nesse lote), inclui no final, sem
   // perder nenhuma linha.
   rows.forEach(r => { if (!visitados.has(r['Código'])) resultado.push(r); });
   return resultado;
@@ -2897,13 +2897,13 @@ function compararNomesCategoriaZydon(a, b) {
 async function gerarArquivoCategoriaZydon() {
   const todas = window._categoriasTodas || [];
   if (!todas.length) return;
-  // O Signus é o ERP — quem manda na hierarquia (Nome, Código pai) é sempre o
+  // O Signus é o ERP, quem manda na hierarquia (Nome, Código pai) é sempre o
   // treeview do Signus, nunca a Zydon. O ORDER também não vem mais do que já
-  // está salvo/cadastrado na Zydon — vira sempre calculado pelo nome dentro de
+  // está salvo/cadastrado na Zydon, vira sempre calculado pelo nome dentro de
   // cada grupo de irmãos (mesmo "Código pai"): Acessórios primeiro, depois
   // numérico por quantidade de polos (1P, 1P+N, 2P, 2P+N, 3P...), e alfabético
   // pro resto. Isso é intencional mesmo quando diverge do que já está
-  // registrado na Zydon hoje (ex: "Disjuntores a Gás" antes de "a Vácuo" —
+  // registrado na Zydon hoje (ex: "Disjuntores a Gás" antes de "a Vácuo",
   // o cadastro antigo tinha isso invertido).
   const porPai = new Map();
   todas.forEach(n => {
@@ -2936,7 +2936,7 @@ async function gerarArquivoCategoriaZydon() {
   XLSX.writeFile(wb, `Zydon_Importa_Categoria_${new Date().toISOString().slice(0,10)}.xlsx`);
 
   // Categoria nova que sai nesse arquivo (pra subir na Zydon) tem que sair reconhecida
-  // AQUI TAMBÉM — senão o botão Produtos continua sem saber o código dela até alguém
+  // AQUI TAMBÉM, senão o botão Produtos continua sem saber o código dela até alguém
   // lembrar de clicar num botão separado. Salva na base do agente no mesmo clique.
   if (currentProfile?.is_admin && (window._categoriasNovas||[]).length) {
     await sincronizarCategoriasNaBase();
@@ -2970,7 +2970,7 @@ document.getElementById('cat-signus-file').addEventListener('change', function(e
 enableDragDrop('cat-signus-file');
 
 // ══════════════════════════════════════════════════════════════════
-// (Tela "Características" removida — o botão Produtos já trata multi-linha
+// (Tela "Características" removida: o botão Produtos já trata multi-linha
 // por produto e gera as 3 planilhas certas direto, essa comparação separada
 // não é mais necessária.)
 // ══════════════════════════════════════════════════════════════════
@@ -3033,7 +3033,7 @@ async function send() {
     document.getElementById('send-btn').disabled=false; return;
   }
 
-  // Claude API — a chave em si mora só no servidor (Edge Function claude-chat), nunca no browser
+  // Claude API, a chave em si mora só no servidor (Edge Function claude-chat), nunca no browser
   showTyping();
   try {
     const reply = await callClaude(txt);
@@ -3052,7 +3052,7 @@ async function send() {
 
 function showBase() {
   if (!kb || !Object.keys(kb.marcas||{}).length) { addAgentMsg('Base ainda vazia.'); return; }
-  let html = `<strong>Base de conhecimento — ${VERSION}</strong><br><br>`;
+  let html = `<strong>Base de conhecimento ${VERSION}</strong><br><br>`;
   html += `<strong>Marcas cadastradas:</strong>`;
   Object.entries(kb.marcas).forEach(([k,v])=>{
     html += `<div class="base-card"><div class="base-marca">${v.nome_exibicao||k}</div>
@@ -3061,7 +3061,7 @@ function showBase() {
   html += `<br><strong>Marcas Zydon:</strong> ${Object.keys(kb.marcas_zydon||{}).length}<br>`;
   html += `<strong>Categorias:</strong> ${Object.keys(kb.categorias_zydon||{}).length}<br>`;
   html += `<strong>Regras globais:</strong> ${(kb.regras_globais||[]).length}<br>`;
-  html += `<strong>CD padrão:</strong> ${kb.codigos_zydon?.centro_distribuicao?.codigo} — ${kb.codigos_zydon?.centro_distribuicao?.nome}<br>`;
+  html += `<strong>CD padrão:</strong> ${kb.codigos_zydon?.centro_distribuicao?.codigo}, ${kb.codigos_zydon?.centro_distribuicao?.nome}<br>`;
   html += `<strong>Unidade padrão:</strong> ${kb.codigos_zydon?.unidade_padrao?.codigo} (${kb.codigos_zydon?.unidade_padrao?.abreviacao})`;
   addAgentMsg(html);
 }
@@ -3069,7 +3069,7 @@ function showBase() {
 function buildContext() {
   const marcas = Object.keys(kb?.marcas||{}).join(', ') || 'nenhuma';
   const map = kb?.mapeamento_campos || {};
-  return `Você é o Agente Jet da Jet Supply (${VERSION}) — curadoria de produtos Signus → Zydon B2B.
+  return `Você é o Agente Jet da Jet Supply (${VERSION}), responsável pela curadoria de produtos Signus → Zydon B2B.
 Jet Supply: distribuidora MRO, +45.000 produtos, +300 marcas.
 Código Zydon = ID Signus | SKU = Código Signus | Categoria = Grupo setorial.
 Marcas cadastradas: ${marcas}
@@ -3080,7 +3080,7 @@ INSTRUÇÕES: Responda em pt-BR, direto, máx 4 linhas. Sem markdown (**, ##, --
 
 // Guarda a conversa livre com o Claude por usuário, pra não perder o contexto num refresh.
 // Não persiste o resto do chat (planilhas geradas, pendências) porque isso depende do
-// arquivo carregado, que também some no refresh — restaurar só os balões ficaria órfão.
+// arquivo carregado, que também some no refresh, restaurar só os balões ficaria órfão.
 function chatHistoryKey() { return currentUser ? `jet_chat_history_${currentUser.id}` : null; }
 function saveChatHistory() { const k = chatHistoryKey(); if (k) localStorage.setItem(k, JSON.stringify(chatHistory)); }
 function loadChatHistory() {
@@ -3179,7 +3179,7 @@ function renderHistorico() {
 
 function showWelcomeMsg() {
   addAgentMsg(
-    `Olá! Sou o <strong>Agente Jet ${VERSION}</strong> — curadoria de produtos da Jet Supply.<br><br>
+    `Olá! Sou o <strong>Agente Jet ${VERSION}</strong>. Cuido da curadoria de produtos da Jet Supply.<br><br>
     Processo o lote do Signus, valido os dados, aplico o que sei e pergunto o que não sei. Gero 3 arquivos prontos para importar na Zydon com relatório de erros.<br><br>
     ${(() => {
       const temChave = kb?.codigos_zydon?.claude_key_status?.configured;
