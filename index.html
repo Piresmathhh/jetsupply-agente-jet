@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.35 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.36 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -774,7 +774,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.35';
+const VERSION = 'v5.36';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2132,7 +2132,14 @@ async function gerarPlanilha() {
       if (!valoresPorNome.has(c.nome)) valoresPorNome.set(c.nome, new Set());
       valoresPorNome.get(c.nome).add(c.valor);
     }));
-    eixosPorGrupo[grpCod] = [...valoresPorNome.entries()].filter(([,v]) => v.size > 1).map(([n]) => n)
+    // Uma variação conhecida da Zydon (Número de Polos, Corrente Nominal) SEMPRE vira eixo,
+    // mesmo que o valor seja igual pro grupo todo — porque a família pode já estar separada
+    // por polos (ex: grupo só de 1P), e ainda assim a Zydon espera o valor em cada variação
+    // pra formar a combinação ("2A + 1P Monopolar"). Pra características ainda não mapeadas,
+    // só vira eixo se de fato variar (evita encher de Curva/Tensão/Frequência).
+    eixosPorGrupo[grpCod] = [...valoresPorNome.entries()]
+      .filter(([n,v]) => EIXOS_VARIACAO_ZYDON[n] || v.size > 1)
+      .map(([n]) => n)
       .sort((a,b) => (EIXOS_VARIACAO_ZYDON[a]?.ordem||99) - (EIXOS_VARIACAO_ZYDON[b]?.ordem||99));
   });
 
