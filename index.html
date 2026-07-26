@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.39 · 22/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.40 · 22/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -443,17 +443,6 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
           <strong>Selecionar arquivo</strong>
           <p>Exportação do Signus (.xlsx)</p>
           <span class="upload-z-hint">ou arraste o arquivo aqui</span>
-        </label>
-      </div>
-    </div>
-    <div class="sb-sec" style="flex-shrink:0">
-      <div class="sb-lbl">Lista de imagens (opcional)</div>
-      <div id="imglist-area">
-        <label class="upload-z" for="imglist-in" style="padding:10px 8px">
-          <input type="file" id="imglist-in" accept=".xlsx,.xls,.csv">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>
-          <strong style="font-size:12px">Nomes de imagens reais</strong>
-          <span class="upload-z-hint">só gera as que existem, sem inventar</span>
         </label>
       </div>
     </div>
@@ -617,6 +606,14 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
       </div>
     </div>
 
+    <div class="settings-card">
+      <div class="step-card-lbl">Imagens dos produtos</div>
+      <div style="font-size:12px;color:var(--t4);line-height:1.5;margin-bottom:10px">
+        Na hora de gerar, o agente pergunta ao Cloudflare quantas imagens cada produto tem de verdade — se você subir uma foto nova, ela já entra na próxima geração. Não precisa manter planilha.
+      </div>
+      <div id="imglist-area"></div>
+    </div>
+
     <div class="settings-card" id="nonadmin-settings-note" style="display:none">
       <div class="step-card-lbl">Compartilhado com a equipe</div>
       <div style="font-size:12px;color:var(--t4);line-height:1.5">A chave da API Claude e a URL das imagens são configuradas pelo administrador e já funcionam automaticamente pra você — não precisa (e não dá) mexer aqui.</div>
@@ -774,7 +771,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.39';
+const VERSION = 'v5.40';
 let products = [];
 let kb = null;
 let pendentes = [];
