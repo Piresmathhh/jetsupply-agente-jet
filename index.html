@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.36 · 21/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.37 · 21/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -774,7 +774,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.36';
+const VERSION = 'v5.37';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -2143,16 +2143,36 @@ async function gerarPlanilha() {
       .sort((a,b) => (EIXOS_VARIACAO_ZYDON[a]?.ordem||99) - (EIXOS_VARIACAO_ZYDON[b]?.ordem||99));
   });
 
-  // Ordem dos produtos dentro do grupo: amperagem, depois polos (1P, 1P+N, 2P, 3P...).
+  // ORDEM GERAL DA LISTA: Linha do produto → Curva de Disparo (B antes de C antes de D) →
+  // Número de Polos (1P, 1P+N, 2P...) → Amperagem. Os 3 primeiros definem a ordem das
+  // FAMÍLIAS entre si (senão a lista "se perde" ao trocar de linha/curva); a amperagem
+  // ordena dentro da família. A aba Valores segue exatamente esta mesma sequência.
+  const infoGrupo = (grp) => {
+    const p0 = grp[0] || {};
+    return {
+      linha: String(p0['Linha de produto']||''),
+      curva: String(eixoValor(p0,'Curva de Disparo')||''),
+      polos: String(eixoValor(p0,'Número de Polos')||''),
+    };
+  };
   const produtosOrdenados = [];
-  Object.entries(grupos).forEach(([grpCod, grp]) => {
-    grp.slice().sort((a,b) => {
-      const aAmp = ampNum(eixoValor(a,'Corrente Nominal')), bAmp = ampNum(eixoValor(b,'Corrente Nominal'));
-      const A = isNaN(aAmp) ? extrairValorVariacao(a).num : aAmp, B = isNaN(bAmp) ? extrairValorVariacao(b).num : bAmp;
-      if (A !== B) return A - B;
-      return compararNomesCategoriaZydon(eixoValor(a,'Número de Polos'), eixoValor(b,'Número de Polos'));
-    }).forEach(p => produtosOrdenados.push({ p, grpCod }));
-  });
+  Object.entries(grupos)
+    .sort(([,ga],[,gb]) => {
+      const A = infoGrupo(ga), B = infoGrupo(gb);
+      const dLinha = A.linha.localeCompare(B.linha, 'pt-BR', { numeric:true, sensitivity:'base' });
+      if (dLinha) return dLinha;
+      const dCurva = A.curva.localeCompare(B.curva, 'pt-BR', { numeric:true, sensitivity:'base' });
+      if (dCurva) return dCurva;
+      return compararNomesCategoriaZydon(A.polos, B.polos);
+    })
+    .forEach(([grpCod, grp]) => {
+      grp.slice().sort((a,b) => {
+        const aAmp = ampNum(eixoValor(a,'Corrente Nominal')), bAmp = ampNum(eixoValor(b,'Corrente Nominal'));
+        const A = isNaN(aAmp) ? extrairValorVariacao(a).num : aAmp, B = isNaN(bAmp) ? extrairValorVariacao(b).num : bAmp;
+        if (A !== B) return A - B;
+        return compararNomesCategoriaZydon(eixoValor(a,'Número de Polos'), eixoValor(b,'Número de Polos'));
+      }).forEach(p => produtosOrdenados.push({ p, grpCod }));
+    });
 
   // Aba "Variações de Produtos" (1 linha por SKU filho) + aba "Valores" (1 linha por eixo).
   const variacoesFinal = [];   // Variações de Produtos
@@ -2190,9 +2210,11 @@ async function gerarPlanilha() {
       const cfg = EIXOS_VARIACAO_ZYDON[nomeEixo];
       if (!cfg) eixosDesconhecidos.add(nomeEixo);
       valoresVar.push({
+        // "Variação de Produto (Código)" aponta pra VARIAÇÃO (o produto filho), não pro pai —
+        // fica igual à coluna Código e casa com o SKU da coluna seguinte, que também é do filho.
         'Código': id,
         'Valor': c ? c.valor : '',
-        'Variação de Produto (Código)': String(grpCod||''),
+        'Variação de Produto (Código)': id,
         'Variação de Produto (SKU)': sku,
         'Variação (Código)': cfg ? cfg.variation_id : '',
         'Variação (Nome)': nomeEixo,
