@@ -389,7 +389,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.41 · 26/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.42 · 26/07/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -771,7 +771,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.41';
+const VERSION = 'v5.42';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1588,17 +1588,21 @@ function normalizarBaseImagem(nomeArquivo) {
 // depender de planilha nem de a base estar atualizada.
 const URL_WORKER_IMAGENS = 'https://agente-jet-imagens.marcos-rangel.workers.dev';
 
-// Pergunta ao Cloudflare quais imagens existem HOJE para esses SKUs.
-// Devolve null (em vez de vazio) se o Worker não responder, pra quem chamou
-// saber que precisa cair na retaguarda em vez de achar que não tem imagem.
-async function buscarImagensDoCloudflare(skus) {
-  const unicos = Array.from(new Set((skus||[]).map(s => String(s||'').trim()).filter(Boolean)));
-  if (!unicos.length) return new Map();
+// O plano gratuito da Cloudflare deixa cada chamada ao Worker fazer no máximo
+// 50 consultas ao bucket, e o Worker faz uma por SKU. Passando disso ele estoura
+// e devolve erro sem cabeçalho de CORS, o que chega no navegador como um
+// "Failed to fetch" seco. Por isso o agente quebra o pedido em lotes de 40 e
+// manda alguns em paralelo. Medido: 50 SKUs passa, 55 já falha.
+const LOTE_WORKER_IMAGENS = 40;
+const PARALELO_WORKER_IMAGENS = 12;
+
+// Uma chamada ao Worker. Devolve null se não der pra confiar na resposta.
+async function buscarLoteNoCloudflare(skus) {
   try {
     const resp = await fetch(`${URL_WORKER_IMAGENS}/imagens`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ skus: unicos }),
+      body: JSON.stringify({ skus }),
     });
     if (!resp.ok) return null;
     const dados = await resp.json();
@@ -1611,6 +1615,36 @@ async function buscarImagensDoCloudflare(skus) {
   } catch (e) {
     return null; // rede fora, CORS, Worker caído, quem chamou usa a base
   }
+}
+
+// Pergunta ao Cloudflare quais imagens existem HOJE para esses SKUs.
+// Devolve null (em vez de vazio) se qualquer lote falhar, pra quem chamou
+// saber que precisa cair na retaguarda em vez de achar que não tem imagem.
+async function buscarImagensDoCloudflare(skus) {
+  const unicos = Array.from(new Set((skus||[]).map(s => String(s||'').trim()).filter(Boolean)));
+  if (!unicos.length) return new Map();
+
+  const lotes = [];
+  for (let i = 0; i < unicos.length; i += LOTE_WORKER_IMAGENS) {
+    lotes.push(unicos.slice(i, i + LOTE_WORKER_IMAGENS));
+  }
+
+  const mapa = new Map();
+  let proximo = 0, falhou = false;
+
+  async function trabalhador() {
+    while (proximo < lotes.length && !falhou) {
+      const lote = lotes[proximo++];
+      const parcial = await buscarLoteNoCloudflare(lote);
+      if (parcial === null) { falhou = true; return; }
+      parcial.forEach((v, k) => mapa.set(k, v));
+    }
+  }
+
+  const nTrabalhadores = Math.min(PARALELO_WORKER_IMAGENS, lotes.length);
+  await Promise.all(Array.from({ length: nTrabalhadores }, trabalhador));
+
+  return falhou ? null : mapa;
 }
 
 // Busca as imagens de uma lista de SKUs direto na base (tabela imagens_disponiveis),
