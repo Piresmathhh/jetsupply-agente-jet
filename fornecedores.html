@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>De-Para Signus · Agente Jet</title>
+<style>[hidden]{display:none!important}
+/* selo de perfil reconhecido tem texto longo: quebra linha em tela estreita (a v4 estourava 400px aqui) */
+#profMatch .pill{white-space:normal;max-width:100%;border-radius:10px}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="fornecedores/jet-ui.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><span>fornecedor</span><span class="to">&rarr;</span><span class="dst">Signus</span></div>
+      <h1>De-Para Signus</h1>
+      <a href="./" class="note" style="margin-left:10px">Voltar ao Agente</a>
+    </div>
+    <div class="prof">
+      <label class="label" for="profSel">Perfil do fornecedor</label>
+      <select id="profSel"></select>
+      <span id="newProfBox" class="inline-form" hidden>
+        <input id="newProfName" placeholder="Nome do fornecedor" style="width:180px">
+        <button id="newProfOk" class="sm primary">Criar</button>
+        <button id="newProfCancel" class="sm ghost">Cancelar</button>
+      </span>
+      <button id="newProfBtn" class="sm">Novo perfil</button>
+      <button id="saveProf" class="sm">Salvar</button>
+      <span id="saveState" class="save-state off">sem banco</span>
+      <span id="quem" class="note"></span>
+    </div>
+  </div>
+  <nav class="steps" role="tablist" id="steps">
+    <button class="step" role="tab" data-step="arquivo" aria-selected="true"><span class="n">1</span>Arquivo <span class="cnt" id="cntArquivo"></span></button>
+    <button class="step" role="tab" data-step="colunas"><span class="n">2</span>Colunas <span class="cnt" id="cntColunas"></span></button>
+    <button class="step" role="tab" data-step="categorias"><span class="n">3</span>Categorias <span class="cnt" id="cntCategorias"></span></button>
+    <button class="step" role="tab" data-step="textos"><span class="n">4</span>Nomes e descricoes <span class="cnt" id="cntTextos"></span></button>
+    <button class="step" role="tab" data-step="revisar"><span class="n">5</span>Revisar e exportar <span class="cnt" id="cntRevisar"></span></button>
+    <button class="step sep" role="tab" data-step="bases"><span class="n">&#8801;</span>Bases Signus</button>
+  </nav>
+  <div class="aibar" id="aiBar" hidden>
+    <span class="pill ai">IA</span><span id="aiMsg" class="note"></span>
+    <div class="progress" id="aiProg"><i></i></div>
+    <button id="aiStop" class="sm">Parar</button>
+  </div>
+</header>
+
+<main class="wrap">
+<div id="gate" class="banner" hidden></div>
+
+<!-- 1 ARQUIVO -->
+<section data-pane="arquivo">
+  <div class="section-head">
+    <div class="stack" style="gap:4px">
+      <h2>Planilha do fornecedor</h2>
+      <p class="muted">Suba o arquivo como a marca mandou (.xlsx, .xls ou .csv). O arquivo fica so no seu navegador. O que e salvo e o perfil: o de-para de colunas, valores e categorias daquele fornecedor.</p>
+    </div>
+  </div>
+  <div id="sampleBanner" class="banner" hidden>
+    <span><b>Exemplo carregado:</b> amostra de 101 linhas da planilha Mega Nexus (Stanley Black &amp; Decker). Suba o arquivo completo para processar tudo.</span>
+  </div>
+  <div class="stack" style="margin-top:14px">
+    <label class="drop" id="drop" for="fileIn">
+      <strong>Arraste a planilha aqui ou clique para escolher</strong>
+      <span class="muted">.xlsx, .xls, .csv</span>
+      <input type="file" id="fileIn" accept=".xlsx,.xls,.csv,.xlsm" hidden>
+    </label>
+    <div class="panel stack" id="filePanel" hidden>
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <span class="label">Arquivo</span><b id="fileName" class="mono"></b>
+        </div>
+        <div class="row">
+          <label class="label" for="sheetSel">Aba</label><select id="sheetSel"></select>
+          <label class="label" for="hdrRow">Linha do cabecalho</label><input id="hdrRow" type="number" min="1" style="width:70px">
+          <label class="label" for="keySel">Coluna chave (ref. do fornecedor)</label><select id="keySel"></select>
+        </div>
+      </div>
+      <div class="tiles" id="fileTiles"></div>
+      <div id="profMatch"></div>
+      <div class="tbl-wrap" style="max-height:52vh"><table id="rawTbl"></table></div>
+      <p class="note">Linhas com um unico campo preenchido sao tratadas como <b>secao</b> (ex.: "SEM FIO - SERRAS SABRE - 20V"). Elas nao viram produto, mas viram contexto para agrupar e sugerir categoria.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2 COLUNAS -->
+<section data-pane="colunas" hidden>
+  <div class="section-head">
+    <div class="stack" style="gap:4px">
+      <h2>De-para de colunas</h2>
+      <p class="muted">Para cada campo do layout de migracao do Signus, escolha de onde vem o valor. <b>Coluna</b> copia do fornecedor, <b>Fixo</b> usa o mesmo valor para todos, <b>Modelo</b> junta colunas (ex.: <span class="mono">{MARCA} {ITEM}</span>) e <b>Derivado</b> reaproveita outro campo Signus ja montado.</p>
+    </div>
+    <div class="row">
+      <button id="autoMap">Sugerir pelos nomes</button>
+      <button id="aiMap" class="ai" hidden>Sugerir com IA</button>
+      <button id="savePadrao" class="sm ghost" title="Grava os valores fixos deste perfil como padrao para novos perfis">Fixos como padrao Jet</button>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="panel stack" style="gap:10px">
+      <div class="row" style="justify-content:space-between">
+        <h3>Filtros de exclusao</h3>
+        <button id="addFilter" class="sm">Adicionar regra</button>
+      </div>
+      <div id="filters" class="stack" style="gap:6px"></div>
+      <p class="note" id="filterNote"></p>
+    </div>
+    <div class="panel row" style="gap:10px">
+      <h3 style="margin-right:auto">Siglas preservadas na capitalizacao</h3>
+      <input id="siglas" class="mono" style="flex:1;min-width:220px" placeholder="ex.: SDS, HSS, FLEXVOLT">
+    </div>
+    <div id="mapGrid" class="map-grid"></div>
+  </div>
+</section>
+
+<!-- 3 CATEGORIAS -->
+<section data-pane="categorias" hidden>
+  <div class="section-head">
+    <div class="stack" style="gap:4px">
+      <h2>Categorias</h2>
+      <p class="muted">Cada grupo de produtos recebe uma categoria da arvore do Signus. Quando a arvore ainda nao tem o tipo de produto, a IA propoe o caminho em ate 4 niveis e ele entra na <b>arvore proposta</b>, para aprovar e cadastrar no Signus.</p>
+    </div>
+    <div class="row">
+      <div class="chips" id="catView">
+        <button class="chip" data-v="grupos" aria-pressed="true">Grupos</button>
+        <button class="chip" data-v="arvore">Arvore proposta</button>
+      </div>
+    </div>
+  </div>
+  <div id="catGrupos" class="stack">
+    <div class="panel row" style="gap:10px">
+      <button id="aiCats" class="ai" hidden>Sugerir categorias com IA</button>
+      <button id="aiCarac" class="ai" hidden>Extrair caracteristicas com IA</button>
+      <button id="claimFree" class="sm">Assumir 20 grupos livres</button>
+      <span class="row" style="gap:6px;margin-left:auto"><label class="label" for="groupBy">Agrupar por</label><select id="groupBy"></select></span>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <div class="chips" id="catFilter">
+        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+        <button class="chip" data-f="meus">Meus</button>
+        <button class="chip" data-f="livres">Sem responsavel</button>
+        <button class="chip" data-f="sem">Sem categoria</button>
+        <button class="chip" data-f="pend">Nao aprovados</button>
+      </div>
+      <input id="grpSearch" placeholder="Buscar grupo ou exemplo" style="width:220px">
+    </div>
+    <div id="treeWarn"></div>
+    <div class="tbl-wrap"><table id="grpTbl"></table></div>
+    <datalist id="catProdList"></datalist>
+  </div>
+  <div id="catArvore" class="stack" hidden>
+    <div class="panel row" style="gap:10px">
+      <button id="aiConsol" class="ai" hidden>Consolidar arvore com IA</button>
+      <button id="relink">Religar com a arvore do Signus</button>
+      <button id="exportTree">Exportar arvore proposta .xlsx</button>
+      <span class="note" id="propNote" style="margin-left:auto"></span>
+    </div>
+    <div id="consolBox"></div>
+    <div id="propTree" class="ptree"></div>
+  </div>
+</section>
+
+<!-- 4 TEXTOS -->
+<section data-pane="textos" hidden>
+  <div class="section-head">
+    <div class="stack" style="gap:4px">
+      <h2>Nomes e descricoes</h2>
+      <p class="muted">O nome sai no padrao Jet por regras e a IA so padroniza o tipo de produto, uma vez por tipo. Cada item precisa de aprovacao. A descricao longa com IA e opcional.</p>
+    </div>
+  </div>
+  <div class="stack">
+    <details class="panel" id="padraoBox">
+      <summary>Padrao de nome e regras <span class="note" id="padraoResumo"></span></summary>
+      <div class="stack" style="margin-top:12px">
+        <label class="stack" style="gap:4px"><span class="label">Ordem do nome</span><input id="padraoNome" class="mono"></label>
+        <label class="stack" style="gap:4px"><span class="label">Regras do nome</span><textarea id="regrasNome" rows="9" class="mono"></textarea></label>
+        <label class="stack" style="gap:4px"><span class="label">Regras da descricao</span><textarea id="regrasDesc" rows="6" class="mono"></textarea></label>
+        <div class="row"><button id="savePadraoTxt" class="primary sm">Salvar regras para o time</button><button id="resetPadraoTxt" class="sm ghost">Voltar ao padrao</button><span class="note">Valem para todos os fornecedores.</span></div>
+      </div>
+    </details>
+    <div class="panel stack" style="gap:12px">
+      <div class="row" style="gap:10px">
+        <span class="pill info">sem IA</span>
+        <span class="note" style="flex:1;min-width:260px">As regras ja montam o nome de todos os itens: marca, codigo, voltagem, medidas, "Sem Bateria e Sem Carregador", o que acompanha o kit e a embalagem. So o <b>tipo</b> (ex.: "BR AR DIN" &rarr; "Broca para Metal") precisa de padronizacao.</span>
+      </div>
+      <div class="row" style="gap:10px">
+        <button id="aiTipos" class="ai" hidden>Padronizar tipos com IA</button>
+        <span class="note" id="tiposNote"></span>
+      </div>
+      <details>
+        <summary class="note">Gerar nome e descricao longa item a item com IA (mais caro: 1 chamada a cada 12 itens)</summary>
+        <div class="row" style="gap:10px;margin-top:10px">
+          <button id="aiTexts" class="ai" hidden>Gerar para os itens filtrados</button>
+          <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="genDesc" checked> incluir descricao longa</label>
+          <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="genRegen"> refazer os ja sugeridos</label>
+          <span class="row" style="gap:6px;margin-left:auto"><label class="label" for="txtLimit">Limite por rodada</label><select id="txtLimit"><option>40</option><option selected>100</option><option>300</option><option>1000</option></select></span>
+        </div>
+      </details>
+    </div>
+    <div class="chips" id="txtView">
+      <button class="chip" data-v="itens" aria-pressed="true">Itens</button>
+      <button class="chip" data-v="tipos">Tipos (vocabulario)</button>
+    </div>
+    <div id="tiposPane" class="stack" hidden>
+      <div class="row" style="justify-content:space-between">
+        <div class="chips" id="tipoFilter">
+          <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+          <button class="chip" data-f="sem">Sem padrao</button>
+          <button class="chip" data-f="com">Padronizados</button>
+        </div>
+        <input id="tipoSearch" placeholder="Buscar tipo" style="width:200px">
+      </div>
+      <p class="note">O vocabulario de tipos vale para todos os fornecedores: "SERRA SABRE" padronizado aqui ja vale para a proxima marca.</p>
+      <div class="tbl-wrap" style="max-height:none"><table id="tipoTbl"></table></div>
+      <div class="pager" id="tipoPager"></div>
+    </div>
+    <div id="itensPane" class="stack">
+    <div class="row" style="justify-content:space-between">
+      <div class="chips" id="txtFilter">
+        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+        <button class="chip" data-f="sug">Aguardando aprovacao</button>
+        <button class="chip" data-f="tipo">Tipo sem padrao</button>
+        <button class="chip" data-f="ok">Aprovados</button>
+      </div>
+      <div class="row">
+        <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="txtMine"> so meus grupos</label>
+        <select id="txtGroup" style="max-width:240px"></select>
+        <input id="txtSearch" placeholder="Buscar nome ou codigo" style="width:190px">
+        <button id="approveVisible" class="sm">Aprovar sugestoes da pagina</button>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="max-height:none"><table id="txtTbl"></table></div>
+    <div class="pager" id="txtPager"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 REVISAR -->
+<section data-pane="revisar" hidden>
+  <div class="section-head">
+    <div class="stack" style="gap:4px">
+      <h2>Revisar e exportar</h2>
+      <p class="muted">O arquivo sai com a aba de migracao no layout exato do Signus (50 colunas, mesma ordem e nomes), mais abas de apoio: Categoria Treeview, Caracteristicas e Criticas.</p>
+    </div>
+    <div class="row">
+      <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="useSug"> Usar nomes ainda nao aprovados</label>
+      <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="inclErr"> Incluir itens com erro</label>
+      <button id="exportBtn" class="primary">Exportar .xlsx</button>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="tiles" id="revTiles"></div>
+    <div class="row" style="justify-content:space-between">
+      <div class="chips" id="revFilter">
+        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+        <button class="chip" data-f="err">Com erro</button>
+        <button class="chip" data-f="warn">Com aviso</button>
+        <button class="chip" data-f="ok">Prontos</button>
+      </div>
+      <div class="row">
+        <label class="label" for="revCols">Colunas</label>
+        <select id="revCols"><option value="ess">Essenciais</option><option value="map">Todas mapeadas</option></select>
+        <input id="revSearch" placeholder="Buscar nome ou codigo" style="width:200px">
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="revTbl"></table></div>
+    <div class="pager" id="revPager"></div>
+  </div>
+</section>
+
+<!-- BASES -->
+<section data-pane="bases" hidden>
+  <div class="section-head">
+    <div class="stack" style="gap:4px">
+      <h2>Bases do Signus</h2>
+      <p class="muted">A arvore de categorias (Categoria Treeview) e a mesma base de categorias do Agente: categoria nova e cadastrada la e depois religada aqui. Os grupos de caracteristicas vem da exportacao do Signus; ao subir uma exportacao nova, ela substitui a base para todo o time (so admin).</p>
+    </div>
+  </div>
+  <div class="two">
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between"><h3>Categoria Treeview</h3><span id="treeInfo" class="pill"></span></div>
+      <p class="note">Vem da base de categorias do Agente (somente leitura aqui).</p>
+      <input type="file" id="treeIn" accept=".xls,.xlsx" hidden>
+      <div class="tbl-wrap" style="max-height:50vh"><table id="treeTbl"></table></div>
+    </div>
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between"><h3>Grupos de caracteristicas</h3><span id="caracInfo" class="pill"></span></div>
+      <label class="btn" for="caracIn" style="width:max-content">Substituir pela exportacao do Signus (.xls)</label>
+      <input type="file" id="caracIn" accept=".xls,.xlsx" hidden>
+      <div class="tbl-wrap" style="max-height:50vh"><table id="caracTbl"></table></div>
+    </div>
+  </div>
+  <div class="panel stack" style="margin-top:14px">
+    <h3>Premissas deste layout</h3>
+    <dl class="kv">
+      <dt>Codigo</dt><dd>Sai em branco: o Signus gera na importacao.</dd>
+      <dt>Dimensoes</dt><dd>Convertidas para centimetros (o Signus exporta ALTURA_CM, LARGURA_CM, PROFUNDIDADE_CM). Confirmar se a importacao tambem espera cm.</dd>
+      <dt>Peso</dt><dd>Em kg.</dd>
+      <dt>Categoria Treeview</dt><dd>O layout de migracao nao tem coluna de treeview. A categoria sai numa aba de apoio, por codigo de barras e ref. do fornecedor, para o vinculo na plataforma.</dd>
+      <dt>Campos Sim/Nao</dt><dd>Sem valor padrao ate confirmar o formato que o Signus aceita (S/N, Sim/Nao ou 1/0).</dd>
+    </dl>
+  </div>
+</section>
+</main>
+<div id="toast" class="toast" hidden></div>
+
+<script type="module" src="fornecedores/app.js"></script>
+</body>
+</html>

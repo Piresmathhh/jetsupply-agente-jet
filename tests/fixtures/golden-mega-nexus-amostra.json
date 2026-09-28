@@ -1,0 +1,1251 @@
+{
+ "itens": 88,
+ "secoes": 13,
+ "rows": [
+  {
+   "ref": "DCPS3506",
+   "secao": "EM BREVE",
+   "nome_regra": "Mangueira para Vibrador de Concreto DeWalt DCPS3506 50mm",
+   "tipo_bruto": "MANGUEIRA PARA VIBRADOR DE CONCRETO",
+   "ncm": "84679900",
+   "ean": "200457852683",
+   "altura_cm": 8,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS310N-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Vibrador de Concreto Mochila DeWalt DCPS310N-XJ 60V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "VIBRADOR DE CONCRETO MOCHILA",
+   "ncm": "84672999",
+   "ean": "2009016765178",
+   "altura_cm": 38,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS320N-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Vibrador de Concreto DeWalt DCPS320N-XJ 60V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "VIBRADOR DE CONCRETO",
+   "ncm": "84672999",
+   "ean": "2004905291462",
+   "altura_cm": 26.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS330N-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Régua Vibratoría DeWalt DCPS330N-XJ 60V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "RÉGUA VIBRATORÍA",
+   "ncm": "84791010",
+   "ean": "2002138026325",
+   "altura_cm": 49.4,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS7154N-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Placa Compactadora DeWalt DCPS7154N-XJ 60V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "PLACA COMPACTADORA",
+   "ncm": "84294000",
+   "ean": "2003774701522",
+   "altura_cm": 44,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS660N-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Compactador de Solo DeWalt DCPS660N-XJ 60V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "COMPACTADOR DE SOLO",
+   "ncm": "84294000",
+   "ean": "2001142978835",
+   "altura_cm": 38.6,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCD150Z2",
+   "secao": "EM BREVE",
+   "nome_regra": "Perfuratriz Diamantada DeWalt DCD150Z2 60V",
+   "tipo_bruto": "PERFURATRIZ DIAMANTADA",
+   "ncm": "84672100",
+   "ean": "200506277528",
+   "altura_cm": 13,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS151-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Suporte para Perfuratriz Diamantada DeWalt DCPS151-XJ",
+   "tipo_bruto": "SUPORTE PARA PERFURATRIZ DIAMANTADA",
+   "ncm": "84679900",
+   "ean": "2001751460318",
+   "altura_cm": 35,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCE6820B",
+   "secao": "EM BREVE",
+   "nome_regra": "Tanque de Água DeWalt DCE6820B",
+   "tipo_bruto": "TANQUE DE ÁGUA",
+   "ncm": "84135090",
+   "ean": "200203297669",
+   "altura_cm": 35.81,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCB1112-B2",
+   "secao": "EM BREVE",
+   "nome_regra": "Carregador Rápido DeWalt DCB1112-B2",
+   "tipo_bruto": "CARREGADOR RÁPIDO",
+   "ncm": "85044010",
+   "ean": "200229752708",
+   "altura_cm": 24.1,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS3382-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Mangueira para Vibrador de Concreto DeWalt DCPS3382-XJ 38mm",
+   "tipo_bruto": "MANGUEIRA PARA VIBRADOR DE CONCRETO",
+   "ncm": "84679900",
+   "ean": "2009912196144",
+   "altura_cm": 7.9,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS3502-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Mangueira para Vibrador de Concreto DeWalt DCPS3502-XJ 50mm",
+   "tipo_bruto": "MANGUEIRA PARA VIBRADOR DE CONCRETO",
+   "ncm": "84679900",
+   "ean": "2005151202394",
+   "altura_cm": 8,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS3505-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Mangueira para Vibrador de Concreto DeWalt DCPS3505-XJ 50mm",
+   "tipo_bruto": "MANGUEIRA PARA VIBRADOR DE CONCRETO",
+   "ncm": "84679900",
+   "ean": "2006662568672",
+   "altura_cm": 8,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCPS3592-XJ",
+   "secao": "EM BREVE",
+   "nome_regra": "Mangueira para Vibrador de Concreto DeWalt DCPS3592-XJ 59mm",
+   "tipo_bruto": "MANGUEIRA PARA VIBRADOR DE CONCRETO",
+   "ncm": "84679900",
+   "ean": "2009642034624",
+   "altura_cm": 8,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCBPS0554",
+   "secao": "EM BREVE",
+   "nome_regra": "Bateria DeWalt DCBPS0554 10Ah",
+   "tipo_bruto": "BATERIA",
+   "ncm": "85076000",
+   "ean": "200763861874",
+   "altura_cm": 12.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCBPSC0550-B2",
+   "secao": "EM BREVE",
+   "nome_regra": "Carregador DeWalt DCBPSC0550-B2 550W",
+   "tipo_bruto": "CARREGADOR",
+   "ncm": "85044010",
+   "ean": "200633178033",
+   "altura_cm": 30.8,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCF6202",
+   "secao": "EM BREVE",
+   "nome_regra": "Alimentador Automático de Parafusos para Parafusadeira DeWalt DCF6202",
+   "tipo_bruto": "ALIMENTADOR AUTOMÁTICO DE PARAFUSOS PARA PARAFUSADEIRA",
+   "ncm": "84679900",
+   "ean": "200106113790",
+   "altura_cm": 23.8,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCW211B-B3",
+   "secao": "EM BREVE",
+   "nome_regra": "Lixadeira Roto Orbital DeWalt DCW211B-B3 20V 5\" 125mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "LIXADEIRA ROTO ORBITAL",
+   "ncm": "84672999",
+   "ean": "200304373569",
+   "altura_cm": 15,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCD7781D1TBR",
+   "secao": "EM BREVE",
+   "nome_regra": "Paraf/Furad de Impacto DeWalt DCD7781D1TBR 20V Bivolt 1/2\" - Com 1 Bateria 2Ah, Carregador e Maleta",
+   "tipo_bruto": "PARAF/FURAD DE IMPACTO",
+   "ncm": "84672992",
+   "ean": "200217831514",
+   "altura_cm": 11.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCD7781D1KTBR",
+   "secao": "EM BREVE",
+   "nome_regra": "Paraf/Furad de Impacto DeWalt DCD7781D1KTBR 20V Bivolt 1/2\" - Com 1 Bateria 2Ah, Carregador e Maleta",
+   "tipo_bruto": "PARAF/FURAD DE IMPACTO",
+   "ncm": "84672992",
+   "ean": "200106922095",
+   "altura_cm": 11.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao",
+    "Nome com mais de 120 caracteres"
+   ]
+  },
+  {
+   "ref": "DCD7781D2KTBR",
+   "secao": "EM BREVE",
+   "nome_regra": "Paraf/Furad de Impacto DeWalt DCD7781D2KTBR 20V Bivolt 1/2\" - Com 2 Baterias 2Ah, Carregador e Maleta",
+   "tipo_bruto": "PARAF/FURAD DE IMPACTO",
+   "ncm": "84672992",
+   "ean": "200711482021",
+   "altura_cm": 11.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao",
+    "Nome com mais de 120 caracteres"
+   ]
+  },
+  {
+   "ref": "DCK2222MP2T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Combo DeWalt DCK2222MP2T-BR 1/2\" 13mm - Com 2 Baterias 5Ah, Carregador e Maleta",
+   "tipo_bruto": "COMBO",
+   "ncm": "84672992",
+   "ean": "200129323862",
+   "altura_cm": 16.4,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao",
+    "Nome com mais de 120 caracteres"
+   ]
+  },
+  {
+   "ref": "DCD86MP2T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Paraf/Furad Impacto DeWalt DCD86MP2T-BR 1/2\" 13mm - Com 2 Baterias 5Ah, Carregador e Maleta",
+   "tipo_bruto": "PARAF/FURAD IMPACTO",
+   "ncm": "84672992",
+   "ean": "200271562010",
+   "altura_cm": 12.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCF86MP2T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Paraf Impacto DeWalt DCF86MP2T-BR 1/2\" 13mm - Com 2 Baterias 5Ah, Carregador e Maleta",
+   "tipo_bruto": "PARAF IMPACTO",
+   "ncm": "84672992",
+   "ean": "200610316854",
+   "altura_cm": 12.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCG45MP2T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Esmerilhadeira DeWalt DCG45MP2T-BR 5\" 125mm - Com 2 Baterias 5Ah, Carregador e Maleta",
+   "tipo_bruto": "ESMERILHADEIRA",
+   "ncm": "84672999",
+   "ean": "200490319761",
+   "altura_cm": 12.7,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCF99MP2T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Chave de Impacto DeWalt DCF99MP2T-BR 1/2\" 13mm - Com 2 Baterias 5Ah, Carregador e Maleta",
+   "tipo_bruto": "CHAVE DE IMPACTO",
+   "ncm": "84672999",
+   "ean": "200363076906",
+   "altura_cm": 12.6,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCF92MP2T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Chave de Impacto DeWalt DCF92MP2T-BR 1/2\" 13mm - Com 2 Baterias 5Ah, Carregador e Maleta",
+   "tipo_bruto": "CHAVE DE IMPACTO",
+   "ncm": "84672999",
+   "ean": "200880431035",
+   "altura_cm": 12.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCG404B-B2",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Esmerilhadeira Angular Compacta DeWalt DCG404B-B2 20V 5\" 125mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "ESMERILHADEIRA ANGULAR COMPACTA",
+   "ncm": "84672999",
+   "ean": "200890194630",
+   "altura_cm": 11.41,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCG420B-B3",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Retificadeira Reta Compacta DeWalt DCG420B-B3 20V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "RETIFICADEIRA RETA COMPACTA",
+   "ncm": "84672999",
+   "ean": "200278496462",
+   "altura_cm": 8.89,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCG422B-B3",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Retificadeira Angular Compacta DeWalt DCG422B-B3 20V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "RETIFICADEIRA ANGULAR COMPACTA",
+   "ncm": "84672999",
+   "ean": "200529029647",
+   "altura_cm": 8.89,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCN920B",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Pregador DeWalt DCN920B 20V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "PREGADOR",
+   "ncm": "84672999",
+   "ean": "200303376141",
+   "altura_cm": 15.4,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCCS1100B",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Pulverizador de Produtos Químicos para Concreto DeWalt DCCS1100B 20V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "PULVERIZADOR DE PRODUTOS QUÍMICOS PARA CONCRETO",
+   "ncm": "84242000",
+   "ean": "200107462583",
+   "altura_cm": 53,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCB6112-B3",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Bateria DeWalt DCB6112-B3 20/60V 12Ah",
+   "tipo_bruto": "BATERIA",
+   "ncm": "85076000",
+   "ean": "200338274801",
+   "altura_cm": 14.29,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCB210YY",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Bateria DeWalt DCB210YY 20V 10Ah",
+   "tipo_bruto": "BATERIA",
+   "ncm": "85076000",
+   "ean": "200250188330",
+   "altura_cm": 13,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCD1007QQ1T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Paraf/Furad de Impacto DeWalt DCD1007QQ1T-BR 20V 1/2\" 13mm",
+   "tipo_bruto": "PARAF/FURAD DE IMPACTO",
+   "ncm": "84672992",
+   "ean": "200772299019",
+   "altura_cm": 26,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCK2101QQ2T-BR",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Combo Paraf DeWalt DCK2101QQ2T-BR 20V Bivolt 1/2\"",
+   "tipo_bruto": "COMBO PARAF",
+   "ncm": "84672992",
+   "ean": "200530070010",
+   "altura_cm": 25,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao",
+    "Nome com mais de 120 caracteres"
+   ]
+  },
+  {
+   "ref": "DCM200B",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Lixadeira de Cinta DeWalt DCM200B 20V 18\" 457mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "LIXADEIRA DE CINTA",
+   "ncm": "84672999",
+   "ean": "200502953983",
+   "altura_cm": 15,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCF512EB-B3",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Chave de Catraca DeWalt DCF512EB-B3 20V 1/2\" 13mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "CHAVE DE CATRACA",
+   "ncm": "84672999",
+   "ean": "200261464430",
+   "altura_cm": 7,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCF513EB-B3",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Chave de Catraca DeWalt DCF513EB-B3 20V 3/8\" 10mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "CHAVE DE CATRACA",
+   "ncm": "84672999",
+   "ean": "200171428461",
+   "altura_cm": 7,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCF514B-B3",
+   "secao": "LANÇAMENTOS DEWALT",
+   "nome_regra": "Chave de Catraca DeWalt DCF514B-B3 20V 1/4\" 6,35mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "CHAVE DE CATRACA",
+   "ncm": "84672999",
+   "ean": "200621827448",
+   "altura_cm": 7,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "DCK200ME2GT-BR",
+   "secao": "ÚLTIMAS OPORTUNIDADES",
+   "nome_regra": "Combo Paraf/Furad de Imp DeWalt DCK200ME2GT-BR 20V 1/2\" 13mm",
+   "tipo_bruto": "COMBO PARAF/FURAD DE IMP",
+   "ncm": "84672992",
+   "ean": "200103705806",
+   "altura_cm": 60,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SBH910B-B3",
+   "secao": "EM BREVE",
+   "nome_regra": "Martelete Perfurador/Rompedor SDS Plus sem Fio Stanley SBH910B-B3 20V - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "MARTELETE PERFURADOR/ROMPEDOR SDS PLUS SEM FIO",
+   "ncm": "84672993",
+   "ean": "200697873967",
+   "altura_cm": 109,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SBW921M2T-BR",
+   "secao": "EM BREVE",
+   "nome_regra": "Chave de Impacto Stanley SBW921M2T-BR 20V 1/2\" 13mm - Com 2 Baterias 4Ah, Carregador e Maleta",
+   "tipo_bruto": "CHAVE DE IMPACTO",
+   "ncm": "84672999",
+   "ean": "200599713828",
+   "altura_cm": 2100,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SBW921B-B3",
+   "secao": "EM BREVE",
+   "nome_regra": "Chave de Impacto ½” Stanley SBW921B-B3 20V 13mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "CHAVE DE IMPACTO ½”",
+   "ncm": "84672999",
+   "ean": "200873479983",
+   "altura_cm": 11000,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SG9115-B2",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Esmerilhadeira Angular Stanley SG9115-B2 220V 950W 4-1/2\"",
+   "tipo_bruto": "ESMERILHADEIRA ANGULAR",
+   "ncm": "84672999",
+   "ean": "200171591721",
+   "altura_cm": 33,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SG9115-BR",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Esmerilhadeira Angular Stanley SG9115-BR 127V 950W 4-1/2\"",
+   "tipo_bruto": "ESMERILHADEIRA ANGULAR",
+   "ncm": "84672999",
+   "ean": "200108934270",
+   "altura_cm": 33,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SCD10D1-BR",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Parafusadeira Stanley SCD10D1-BR 12V 3/8\" 10mm",
+   "tipo_bruto": "PARAFUSADEIRA",
+   "ncm": "84672992",
+   "ean": "200425861877",
+   "altura_cm": 50,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SCH10D1-BR",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Parafusadeira Stanley SCH10D1-BR 12V 3/8\" 10mm",
+   "tipo_bruto": "PARAFUSADEIRA",
+   "ncm": "84672992",
+   "ean": "200450092543",
+   "altura_cm": 50,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SCI10D1-BR",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Parafusadeira de Impacto Stanley SCI10D1-BR 12V Bivolt 1/4\"",
+   "tipo_bruto": "PARAFUSADEIRA DE IMPACTO",
+   "ncm": "84672992",
+   "ean": "200356585941",
+   "altura_cm": 50,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SBE150B-B3",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Politriz Roto Orbital Stanley SBE150B-B3 20V 5\" 127mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "POLITRIZ ROTO ORBITAL",
+   "ncm": "84672999",
+   "ean": "200851788038",
+   "altura_cm": 15,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SBE150M2T-BR",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Politriz Roto Orbital Stanley SBE150M2T-BR 20V Bivolt 5\" - Com 2 Baterias 4Ah, Carregador e Maleta",
+   "tipo_bruto": "POLITRIZ ROTO ORBITAL",
+   "ncm": "84672999",
+   "ean": "200898097230",
+   "altura_cm": 33,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "SBE130B-B3",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Politriz Roto Orbital Stanley SBE130B-B3 20V 3\" 76mm - Sem Bateria e Sem Carregador",
+   "tipo_bruto": "POLITRIZ ROTO ORBITAL",
+   "ncm": "84672999",
+   "ean": "200190851943",
+   "altura_cm": 12,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IWHT36343-LA",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Trena Irwin IWHT36343-LA",
+   "tipo_bruto": "TRENA",
+   "ncm": "90178010",
+   "ean": "200403454190",
+   "altura_cm": 350,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IWHT36346-LA",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Trena Irwin IWHT36346-LA",
+   "tipo_bruto": "TRENA",
+   "ncm": "90178010",
+   "ean": "200861047323",
+   "altura_cm": 440,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IWST93220",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Cinturão Irwin IWST93220",
+   "tipo_bruto": "CINTURÃO",
+   "ncm": "63079090",
+   "ean": "200113192276",
+   "altura_cm": 60,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IWST93900",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Bolso Compacto Porta Ferramentas Irwin IWST93900",
+   "tipo_bruto": "BOLSO COMPACTO PORTA FERRAMENTAS",
+   "ncm": "42029200",
+   "ean": "200113659182",
+   "altura_cm": 37,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IWST93950",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Bolso Medio Porta Ferramentas Irwin IWST93950",
+   "tipo_bruto": "BOLSO MEDIO PORTA FERRAMENTAS",
+   "ncm": "42029200",
+   "ean": "200146724369",
+   "altura_cm": 40,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IW14092",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Bolso Porta Ferramentas Irwin IW14092",
+   "tipo_bruto": "BOLSO PORTA FERRAMENTAS",
+   "ncm": "63079090",
+   "ean": "2001303147124",
+   "altura_cm": 29,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "1864081",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Conjunto de Alicates Isolados Irwin 1864081 - Embalagem com 2",
+   "tipo_bruto": "CONJUNTO DE ALICATES ISOLADOS",
+   "ncm": "82032010",
+   "ean": "200431848190",
+   "altura_cm": 26.4,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "1864080",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Conjunto de Alicates Isolados Irwin 1864080 - Embalagem com 3",
+   "tipo_bruto": "CONJUNTO DE ALICATES ISOLADOS",
+   "ncm": "82032010",
+   "ean": "200791336344",
+   "altura_cm": 22.5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IRHT83100",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Levantador de Precisão Irwin IRHT83100",
+   "tipo_bruto": "LEVANTADOR DE PRECISÃO",
+   "ncm": "84254910",
+   "ean": "200100466359",
+   "altura_cm": 14,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IW1694LA",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Arco de Pua Irwin IW1694LA 10\"",
+   "tipo_bruto": "ARCO DE PUA",
+   "ncm": "82051000",
+   "ean": "200990639758",
+   "altura_cm": 7,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IWHT97400",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Rodel Reposição Serie Irwin IWHT97400",
+   "tipo_bruto": "RODEL REPOSIÇÃO SERIE",
+   "ncm": "82079000",
+   "ean": "200109090920",
+   "altura_cm": 2,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IWHT97406",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Cortador de Piso Serie Irwin IWHT97406",
+   "tipo_bruto": "CORTADOR DE PISO SERIE",
+   "ncm": "84649090",
+   "ean": "200609950007",
+   "altura_cm": 14,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "IW45929",
+   "secao": "LANÇAMENTOS",
+   "nome_regra": "Display + Irwin IW45929",
+   "tipo_bruto": "DISPLAY +",
+   "ncm": "90178010",
+   "ean": "2005629774453",
+   "altura_cm": 5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "LXHT14350",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Alicate de Vedação Lenox LXHT14350",
+   "tipo_bruto": "ALICATE DE VEDAÇÃO",
+   "ncm": "82055900",
+   "ean": "200600009872",
+   "altura_cm": 8,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "209205012",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Arco de Serra Baixo Perfil Lenox 209205012 12\"",
+   "tipo_bruto": "ARCO DE SERRA BAIXO PERFIL",
+   "ncm": "82021000",
+   "ean": "200391609701",
+   "altura_cm": 41,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "12132HT50",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Arco de Serra de Alta Tensao Lenox 12132HT50 12\"",
+   "tipo_bruto": "ARCO DE SERRA DE ALTA TENSAO",
+   "ncm": "82021000",
+   "ean": "200262262905",
+   "altura_cm": 2,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "1213188300",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Arco de Serra Leve Lenox 1213188300 12\"",
+   "tipo_bruto": "ARCO DE SERRA LEVE",
+   "ncm": "82021000",
+   "ean": "200607994683",
+   "altura_cm": 13,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "10771FLK1G",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Estilete Dobravel Lamina Fixa Lenox 10771FLK1G",
+   "tipo_bruto": "ESTILETE DOBRAVEL LAMINA FIXA",
+   "ncm": "82119290",
+   "ean": "200262262905",
+   "altura_cm": 2,
+   "erros": [
+    "EAN duplicado (linha 79)"
+   ],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "20353SSRK1",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Estilete Retratil Lenox 20353SSRK1 18mm",
+   "tipo_bruto": "ESTILETE RETRATIL",
+   "ncm": "82119390",
+   "ean": "20010257403893",
+   "altura_cm": 21,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "20354SSFK1",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Estilete Utilitario de Uso Geral Lenox 20354SSFK1",
+   "tipo_bruto": "ESTILETE UTILITARIO DE USO GERAL",
+   "ncm": "82119290",
+   "ean": "200262262905",
+   "altura_cm": 2,
+   "erros": [
+    "EAN duplicado (linha 79)"
+   ],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "20350GOLD5C",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Laminas Reposição Bim.- Lenox 20350GOLD5C - Embalagem com 5",
+   "tipo_bruto": "LAMINAS REPOSIÇÃO BIM.-",
+   "ncm": "82119400",
+   "ean": "",
+   "altura_cm": 1,
+   "erros": [],
+   "avisos": [
+    "EAN invalido removido: 20044651083",
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "20142V032HE",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Laminas Mini Arco Serra Lenox 20142V032HE 10\" - Embalagem com 10",
+   "tipo_bruto": "LAMINAS MINI ARCO SERRA",
+   "ncm": "82029100",
+   "ean": "200262262905",
+   "altura_cm": 2,
+   "erros": [
+    "EAN duplicado (linha 79)"
+   ],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "20144V218HE",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Laminas Serra Bim Lenox 20144V218HE 12\" - Embalagem com 10",
+   "tipo_bruto": "LAMINAS SERRA BIM",
+   "ncm": "82029100",
+   "ean": "200792386317",
+   "altura_cm": 1,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "20145V224HE",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Laminas Serra Bim Lenox 20145V224HE 12\" - Embalagem com 10",
+   "tipo_bruto": "LAMINAS SERRA BIM",
+   "ncm": "82029100",
+   "ean": "200262262905",
+   "altura_cm": 2,
+   "erros": [
+    "EAN duplicado (linha 79)"
+   ],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "20975975",
+   "secao": "FERRAMENTAS MANUAIS LENOX",
+   "nome_regra": "Mini Arco de Serra Lenox 20975975 10\"",
+   "tipo_bruto": "MINI ARCO DE SERRA",
+   "ncm": "82021000",
+   "ean": "200286306081",
+   "altura_cm": 1,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "WP1200-LA",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Acessorio Politriz Black+Decker WP1200-LA 10\"",
+   "tipo_bruto": "ACESSORIO POLITRIZ",
+   "ncm": "59119000",
+   "ean": "2008357435368",
+   "altura_cm": 5,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "BCK22S1S-BR",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Combo Paraf/Furad.imp Black+Decker BCK22S1S-BR 20V 3/8\" 10mm - Com 1 Bateria 1,5Ah, Carregador e Bolsa",
+   "tipo_bruto": "COMBO PARAF/FURAD.IMP",
+   "ncm": "84672992",
+   "ean": "200673818616",
+   "altura_cm": 22,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "BCRTA601-BR",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Parafusadeira Monta Moveis Hexdriver Black+Decker BCRTA601-BR 4V 6,35mm",
+   "tipo_bruto": "PARAFUSADEIRA MONTA MOVEIS HEXDRIVER",
+   "ncm": "84672992",
+   "ean": "200106723166",
+   "altura_cm": 21,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "LD12SC-BR",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Parafusadeira Black+Decker LD12SC-BR 12V 3/8\" 10mm - Com Maleta",
+   "tipo_bruto": "PARAFUSADEIRA",
+   "ncm": "84672992",
+   "ean": "200748498569",
+   "altura_cm": 26,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "LD12SP-BR",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Parafusadeira Black+Decker LD12SP-BR 12V Bivolt 3/8\"",
+   "tipo_bruto": "PARAFUSADEIRA",
+   "ncm": "84672992",
+   "ean": "200106955086",
+   "altura_cm": 9,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "LD12S-BR",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Parafusadeira Black+Decker LD12S-BR 12V Bivolt 3/8\"",
+   "tipo_bruto": "PARAFUSADEIRA",
+   "ncm": "84672992",
+   "ean": "200411554615",
+   "altura_cm": 20,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "BDHT20345",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Mini Arco de Serra Black+Decker BDHT20345 10\" 254mm",
+   "tipo_bruto": "MINI ARCO DE SERRA",
+   "ncm": "82021000",
+   "ean": "2001674527723",
+   "altura_cm": 34,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "BD115BR",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Serra Marmore Black+Decker BD115BR 127V 100W 4-1/2\"",
+   "tipo_bruto": "SERRA MARMORE",
+   "ncm": "84672200",
+   "ean": "200263404564",
+   "altura_cm": 20,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "BD115B2",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Serra Marmore Black+Decker BD115B2 220V 100W 4-1/2\"",
+   "tipo_bruto": "SERRA MARMORE",
+   "ncm": "84672200",
+   "ean": "200100780103",
+   "altura_cm": 20,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "PW1450TD-B2",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Lavadora de Pressao Black+Decker PW1450TD-B2 220V 1400W",
+   "tipo_bruto": "LAVADORA DE PRESSAO",
+   "ncm": "84243010",
+   "ean": "200187227874",
+   "altura_cm": 47,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  },
+  {
+   "ref": "PW1450TDL-BR",
+   "secao": "OUTLET / LIQUIDA ESTOQUE - APROVEITE PREÇOS PROMOCIONAIS - QUANTIDADE LIMITADA (CONSULTE)",
+   "nome_regra": "Lavadora Alt.pres.c/Alca Black+Decker PW1450TDL-BR 127V 1400W",
+   "tipo_bruto": "LAVADORA ALT.PRES.C/ALCA",
+   "ncm": "84243010",
+   "ean": "200368137596",
+   "altura_cm": 40,
+   "erros": [],
+   "avisos": [
+    "Sem categoria treeview",
+    "Nome aguardando aprovacao"
+   ]
+  }
+ ]
+}
