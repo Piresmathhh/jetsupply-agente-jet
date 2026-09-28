@@ -1,0 +1,197 @@
+{
+ "assinatura": "ajuste|altura m|base reduzida|cest|class fiscal ncm|codigo de barras coletiva|codigo de barras unitaria|coluna l|comprimento m|cst|descricao do produto|emb master|emb unit multiplo|excecao ncm mg|exclusao st sp|icms|ipi|item|largura m|lp|marca|mva|observacao geral|observacao sp|observacoes gerais|origem|peso bruto kg|peso liquido kg|sbu vtex|status",
+ "atualizado": "2026-09-26T12:14:22.255Z",
+ "chave": "ITEM",
+ "filtros": [],
+ "grupoPor": "__secao",
+ "grupos": {},
+ "headerRow": 0,
+ "id": "mega-nexus-sbd",
+ "map": {
+  "Altura": {
+   "m": "col",
+   "src": "ALTURA (M)",
+   "t": "m_cm"
+  },
+  "Aplicar regra de mínimo de venda": {
+   "m": "vazio"
+  },
+  "Aplicar regra de múltiplo por embalagem": {
+   "m": "vazio"
+  },
+  "Categoria de preço": {
+   "m": "vazio"
+  },
+  "Categoria de produto": {
+   "m": "vazio"
+  },
+  "Categoria fiscal": {
+   "m": "vazio"
+  },
+  "Classificação fiscal - NCM": {
+   "m": "col",
+   "src": "CLASS. FISCAL (NCM)",
+   "t": "ncm"
+  },
+  "Curva ABC": {
+   "m": "vazio"
+  },
+  "Código": {
+   "m": "vazio"
+  },
+  "Código de barras": {
+   "m": "col",
+   "src": "CÓDIGO DE BARRAS UNITÁRIA",
+   "t": "ean"
+  },
+  "Código do Fornecedor Padrão": {
+   "m": "col",
+   "src": "ITEM",
+   "t": "texto"
+  },
+  "Código genérico": {
+   "m": "vazio"
+  },
+  "Desativado": {
+   "m": "vazio"
+  },
+  "Descrição do produto e-commerce": {
+   "m": "vazio"
+  },
+  "Descrição técnica": {
+   "m": "vazio"
+  },
+  "Especificação técnica": {
+   "m": "vazio"
+  },
+  "Estoque máximo": {
+   "m": "vazio"
+  },
+  "Estoque mínimo": {
+   "m": "vazio"
+  },
+  "Exibe na cotação de venda": {
+   "m": "vazio"
+  },
+  "Fabricante": {
+   "m": "vazio"
+  },
+  "Fabricação própria": {
+   "m": "vazio"
+  },
+  "Garantia (em dias)": {
+   "m": "vazio"
+  },
+  "Grupo Setorial": {
+   "m": "vazio"
+  },
+  "Gênero": {
+   "m": "vazio"
+  },
+  "Habilitado para faturamento": {
+   "m": "vazio"
+  },
+  "Largura": {
+   "m": "col",
+   "src": "LARGURA (M)",
+   "t": "m_cm"
+  },
+  "Linha de produto": {
+   "m": "vazio"
+  },
+  "Marca": {
+   "m": "col",
+   "src": "MARCA",
+   "t": "texto"
+  },
+  "Mensagem de Crítica": {
+   "m": "vazio"
+  },
+  "Mercadoria/Serviço (M/S)": {
+   "m": "fixo",
+   "v": "M"
+  },
+  "Nome": {
+   "m": "col",
+   "src": "DESCRIÇÃO DO PRODUTO",
+   "t": "texto"
+  },
+  "Nome da página para URL amigável": {
+   "m": "derivado",
+   "src": "Nome",
+   "t": "url"
+  },
+  "Nome reduzido": {
+   "m": "derivado",
+   "src": "Nome",
+   "t": "cortar60"
+  },
+  "Observação": {
+   "m": "vazio"
+  },
+  "Origem do produto": {
+   "m": "col",
+   "src": "ORIGEM",
+   "t": "origem"
+  },
+  "Palavras chaves": {
+   "m": "vazio"
+  },
+  "Peso (extendido)": {
+   "m": "col",
+   "src": "PESO BRUTO (KG)",
+   "t": "numero"
+  },
+  "Profundidade": {
+   "m": "col",
+   "src": "COMPRIMENTO (M)",
+   "t": "m_cm"
+  },
+  "Quantidade de peças por embalagem": {
+   "m": "vazio"
+  },
+  "Quantidade mínima para venda / compra": {
+   "m": "vazio"
+  },
+  "Quantidade por embalagem na compra": {
+   "m": "col",
+   "src": "EMB MASTER",
+   "t": "inteiro"
+  },
+  "Quantidade por embalagem na venda": {
+   "m": "col",
+   "src": "EMB UNIT MULTIPLO",
+   "t": "inteiro"
+  },
+  "Rastreabilidade": {
+   "m": "vazio"
+  },
+  "Rastreabilidade na devolução": {
+   "m": "vazio"
+  },
+  "Retirar o produto da sugestão automática de necessidade de compra (base consumo)": {
+   "m": "vazio"
+  },
+  "Selo": {
+   "m": "vazio"
+  },
+  "Status migração": {
+   "m": "vazio"
+  },
+  "Unidade de medida": {
+   "m": "fixo",
+   "v": "UN"
+  },
+  "Unidade de negócio - Sigla": {
+   "m": "vazio"
+  },
+  "Volume": {
+   "m": "vazio"
+  }
+ },
+ "nome": "Mega Nexus (SBD)",
+ "sheet": "Planilha4",
+ "siglas": "",
+ "split": {},
+ "vmap": {}
+}
