@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agente Jet - Jet Supply</title>
+<!-- jet-ui: visual novo, adotado tela a tela (so vale dentro de elementos com class="jet-ui") -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="ui/jet-ui-escopo.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -389,7 +393,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.42 · 26/07/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.43 · 28/09/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -573,12 +577,16 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--t1)
 </section>
 
 <!-- VIEW: Histórico (auditoria) -->
-<section class="view-panel view-full" id="view-historico">
+<section class="view-panel view-full jet-ui" id="view-historico">
   <div class="view-scroll">
-    <div class="view-h1">Histórico de alterações</div>
-    <div class="view-sub">Quem mexeu em quê na base de conhecimento: marcas, categorias, regras e exclusões de conta. Os últimos 100 registros.</div>
-    <input type="text" id="historico-busca" class="cfg-inp" placeholder="Buscar por pessoa ou ação..." style="margin-bottom:14px" oninput="renderHistorico()">
-    <div id="historico-list"></div>
+    <div class="section-head" style="margin-top:0">
+      <div class="stack" style="gap:4px">
+        <h2>Histórico de alterações</h2>
+        <p class="muted">Quem mexeu em quê na base de conhecimento: marcas, categorias, regras e exclusões de conta. Os últimos 100 registros.</p>
+      </div>
+    </div>
+    <input type="text" id="historico-busca" placeholder="Buscar por pessoa ou ação..." style="width:100%;margin-bottom:14px" oninput="renderHistorico()">
+    <div id="historico-list" class="stack" style="gap:8px"></div>
   </div>
 </section>
 
@@ -775,7 +783,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.42';
+const VERSION = 'v5.43';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -3201,16 +3209,16 @@ function renderHistorico() {
   let itens = kb?.historico || [];
   if (busca) itens = itens.filter(h => (h.usuario||'').toLowerCase().includes(busca) || (h.acao||'').toLowerCase().includes(busca));
   if (!itens.length) {
-    el.innerHTML = `<div class="pend-empty" style="text-align:left">${busca ? 'Nada encontrado para essa busca.' : 'Nenhum registro ainda. Assim que alguém cadastrar marca, categoria ou regra, aparece aqui.'}</div>`;
+    el.innerHTML = `<p class="note">${busca ? 'Nada encontrado para essa busca.' : 'Nenhum registro ainda. Assim que alguém cadastrar marca, categoria ou regra, aparece aqui.'}</p>`;
     return;
   }
   el.innerHTML = itens.map(h => `
-    <div class="settings-card" style="padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <div>
-        <div style="font-size:13px;color:var(--t1)">${h.acao}</div>
-        <div style="font-size:11px;color:var(--t5);margin-top:2px">${h.usuario}</div>
+    <div class="panel row" style="padding:12px 16px;justify-content:space-between;flex-wrap:nowrap">
+      <div class="stack" style="gap:2px;min-width:0">
+        <span>${escapeHtml(h.acao)}</span>
+        <span class="note">${escapeHtml(h.usuario)}</span>
       </div>
-      <div style="font-size:11px;color:var(--t5);white-space:nowrap">${h.data}</div>
+      <span class="note mono" style="white-space:nowrap">${escapeHtml(h.data)}</span>
     </div>
   `).join('');
 }
