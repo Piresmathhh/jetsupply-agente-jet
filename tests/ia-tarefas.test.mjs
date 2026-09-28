@@ -106,3 +106,13 @@ test('requisicao: modelo por tarefa vale acima do nivel', () => {
   const lc = TAREFAS.categorias.entrada({ grupos: [{ g: 'x' }] });
   assert.equal(montarRequisicao('categorias', lc, ctx, cfg).model, 'claude-opus-5');
 });
+
+test('requisicao: textos so nome usa "textos", com descricao usa "textos_descricao"', () => {
+  const cfg = { modelos: { padrao: 'claude-opus-5' }, esforco: { padrao: 'low' }, tarefas: { textos: { modelo: 'claude-haiku-4-5' }, textos_descricao: { modelo: 'claude-sonnet-5', esforco: 'low' } } };
+  const soNome = montarRequisicao('textos', TAREFAS.textos.entrada({ itens: [{ i: 'r1', fatos: 'ITEM: X1' }] }), ctx, cfg);
+  assert.equal(soNome.model, 'claude-haiku-4-5');
+  assert.equal(soNome.output_config.effort, undefined);
+  const comDesc = montarRequisicao('textos', TAREFAS.textos.entrada({ com_descricao: true, itens: [{ i: 'r1', fatos: 'ITEM: X1' }] }), ctx, cfg);
+  assert.equal(comDesc.model, 'claude-sonnet-5');
+  assert.equal(comDesc.output_config.effort, 'low');
+});

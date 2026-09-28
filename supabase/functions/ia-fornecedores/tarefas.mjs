@@ -290,6 +290,7 @@ Responda no formato pedido: itens = [{"i":1,"valores":[{"id":"<id da caracterist
 // Modelos padrao por nivel. Sobrescritos por configuracoes.fornecedores_ia =
 //   { modelos: { rapido, padrao, complexo }, esforco: {...}, tarefas: { textos: { modelo, esforco }, ... } }
 // "tarefas" vale acima do nivel: permite trocar o modelo de uma tarefa so (ex.: textos, a mais cara).
+// "textos_descricao" vale para textos com descricao longa (so nome usa "textos").
 export const MODELOS_PADRAO = {
   modelos: { rapido: 'claude-haiku-4-5', padrao: 'claude-opus-5', complexo: 'claude-opus-5' },
   esforco: { padrao: 'low', complexo: 'high' },
@@ -298,7 +299,8 @@ export const MODELOS_PADRAO = {
 // Monta o corpo da chamada a Messages API. Haiku 4.5 nao aceita "effort"; os demais aceitam.
 export function montarRequisicao(tarefa, lote, ctx, cfg = MODELOS_PADRAO) {
   const t = TAREFAS[tarefa];
-  const porTarefa = cfg?.tarefas?.[tarefa] || {};
+  const chave = tarefa === 'textos' && lote[0]?.comDescricao && cfg?.tarefas?.textos_descricao ? 'textos_descricao' : tarefa;
+  const porTarefa = cfg?.tarefas?.[chave] || {};
   const modelo = porTarefa.modelo || cfg?.modelos?.[t.nivel] || MODELOS_PADRAO.modelos[t.nivel];
   const esforco = porTarefa.esforco ?? cfg?.esforco?.[t.nivel] ?? MODELOS_PADRAO.esforco[t.nivel];
   const output_config = { format: { type: 'json_schema', schema: t.esquema } };
