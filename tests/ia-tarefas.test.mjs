@@ -96,3 +96,13 @@ test('requisicao: modelo por nivel, effort fora do Haiku, saida em json_schema',
   assert.equal(rc.model, 'claude-sonnet-5');
   assert.equal(rc.output_config.effort, 'medium');
 });
+
+test('requisicao: modelo por tarefa vale acima do nivel', () => {
+  const lt = TAREFAS.textos.entrada({ itens: [{ i: 'r1', fatos: 'ITEM: X1' }] });
+  const cfg = { modelos: { padrao: 'claude-opus-5' }, esforco: { padrao: 'low' }, tarefas: { textos: { modelo: 'claude-sonnet-5', esforco: 'medium' } } };
+  const rt = montarRequisicao('textos', lt, ctx, cfg);
+  assert.equal(rt.model, 'claude-sonnet-5');
+  assert.equal(rt.output_config.effort, 'medium');
+  const lc = TAREFAS.categorias.entrada({ grupos: [{ g: 'x' }] });
+  assert.equal(montarRequisicao('categorias', lc, ctx, cfg).model, 'claude-opus-5');
+});
