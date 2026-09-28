@@ -77,6 +77,33 @@ Novos tipos podem ser adicionados enviando exemplos para o Matheus incluir na fu
 
 ---
 
+## Fornecedores (De-Para Signus)
+
+Tela `fornecedores.html` (item **Fornecedores** na barra lateral): transforma a planilha de qualquer fabricante no layout de migração de produtos do Signus (50 colunas), com categorias, nomes padronizados e aprovação em equipe.
+
+| Onde | O que é |
+|---|---|
+| `fornecedores/engine.mjs` | Motor puro (leitura, de-para, críticas, nome por regras), testado em `tests/` |
+| `fornecedores/app.js` | Tela: banco (Supabase + realtime), IA e exportação |
+| `supabase/functions/ia-fornecedores/` | IA no servidor: o navegador manda só `{ tarefa, dados }`; os prompts ficam aqui |
+| `supabase/migrations/` | Tabelas do módulo, RLS, custo da IA (`ia_uso_resumo`) |
+
+Modelos da IA em `configuracoes.fornecedores_ia` (dá para trocar sem mexer em código). Hoje: tipos e características no Haiku 4.5, categorias no Opus 5, nomes item a item no Haiku 4.5 e descrição longa no Sonnet 5.
+
+---
+
+## Visual (jet-ui)
+
+O Agente usa a paleta do `jet-ui`, com tema claro e escuro automático (segue o sistema). `ui/jet-ui-tokens.css` e `ui/jet-ui-escopo.css` são gerados de `fornecedores/jet-ui.css` por `node scripts/gerar-jet-ui-escopo.mjs`; não edite à mão.
+
+---
+
+## Testes
+
+`npm test` roda o motor (incluindo o golden da amostra Mega Nexus, anonimizada), as tarefas de IA e a checagem do CSS gerado. O CI roda os testes e a checagem de sintaxe do `index.html` em todo PR.
+
+---
+
 ## Base de conhecimento (`conhecimento.json`)
 
 | O que contém | Quantidade |
