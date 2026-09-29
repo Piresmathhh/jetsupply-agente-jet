@@ -169,13 +169,13 @@ Implementar os `[ico:]` / `[img:]` / `[av:]` e demais assets que o plano deixou 
 3. Regenerar cada lote com **GPT Image 2** via OpenRouter (`gpt2`) em paralelo. Para ícones ou camadas recortadas, pedir PNG com **fundo transparente**; para um fundo completo, preservar o fundo necessário. Adaptar o prompt à arte (foto, textura, 3D etc.); não impor estilo flat a todo asset. Inicie cada comando em segundo plano e execute `wait` antes de encaixar qualquer resultado. Exemplo para dois ícones independentes:
 
 ```bash
-uv run ~/.agents/skills/openrouter-img/scripts/generate_image.py \
+uv run .claude/skills/openrouter-img/scripts/generate_image.py \
   --prompt "Recreate this UI icon/asset exactly. Flat, clean edges. Transparent background. No extra padding, no mockup frame." \
   --input-image design-systems/<slug>/assets/crops/{id}.png \
   --filename design-systems/<slug>/assets/{id}.png \
   --model gpt2 --resolution 1K --aspect-ratio 1:1 &
 
-uv run ~/.agents/skills/openrouter-img/scripts/generate_image.py \
+uv run .claude/skills/openrouter-img/scripts/generate_image.py \
   --prompt "Recreate this UI icon/asset exactly. Flat, clean edges. Transparent background. No extra padding, no mockup frame." \
   --input-image design-systems/<slug>/assets/crops/{id-2}.png \
   --filename design-systems/<slug>/assets/{id-2}.png \

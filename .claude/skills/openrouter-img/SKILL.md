@@ -15,10 +15,10 @@ Gera imagens pela **Image API** do OpenRouter (`POST /api/v1/images`). Chave: `O
 
 ```bash
 # Listar top 10 + preços ao vivo do endpoint
-uv run ~/.agents/skills/openrouter-img/scripts/generate_image.py --list --top
+uv run .claude/skills/openrouter-img/scripts/generate_image.py --list --top
 
 # Gerar
-uv run ~/.agents/skills/openrouter-img/scripts/generate_image.py \
+uv run .claude/skills/openrouter-img/scripts/generate_image.py \
   --prompt "..." --filename "yyyy-mm-dd-hh-mm-ss-name.png" \
   --model flash --resolution 1K --aspect-ratio 16:9
 ```
