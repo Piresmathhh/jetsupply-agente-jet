@@ -343,7 +343,7 @@ button,input,select,textarea{font-family:inherit}
       <div class="auth-row">
         <label class="auth-lbl">Senha</label>
         <div style="position:relative">
-          <input type="password" id="signup-password" class="auth-inp" style="padding-right:38px" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+          <input type="password" id="signup-password" class="auth-inp" style="padding-right:38px" placeholder="letras e números, sem senha comum" autocomplete="new-password">
           <button type="button" onclick="toggleSenha('signup-password',this)" aria-label="Mostrar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1">👁</button>
         </div>
       </div>
@@ -391,7 +391,7 @@ button,input,select,textarea{font-family:inherit}
       <div class="auth-row">
         <label class="auth-lbl">Nova senha</label>
         <div style="position:relative">
-          <input type="password" id="reset-password" class="auth-inp" style="padding-right:38px" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+          <input type="password" id="reset-password" class="auth-inp" style="padding-right:38px" placeholder="letras e números, sem senha comum" autocomplete="new-password">
           <button type="button" onclick="toggleSenha('reset-password',this)" aria-label="Mostrar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1">👁</button>
         </div>
       </div>
@@ -432,7 +432,7 @@ button,input,select,textarea{font-family:inherit}
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.45 · 29/09/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.46 · 29/09/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
@@ -823,7 +823,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.45';
+const VERSION = 'v5.46';
 let products = [];
 let kb = null;
 let pendentes = [];
@@ -1116,6 +1116,34 @@ async function authLogin() {
   await onAuthReady(data.session);
 }
 
+// Confere se a senha já apareceu em vazamentos públicos (base Have I Been Pwned, a mesma do recurso
+// pago do Supabase). Modelo k-anonimato: só os 5 primeiros caracteres do SHA-1 saem do navegador,
+// a senha nunca. Se a consulta falhar (rede, bloqueio), não impede o cadastro: devolve 0.
+async function senhaVazada(senha) {
+  try {
+    const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(senha));
+    const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const r = await fetch('https://api.pwnedpasswords.com/range/' + hex.slice(0, 5), { headers: { 'Add-Padding': 'true' } });
+    if (!r.ok) return 0;
+    const linha = (await r.text()).split('\n').find(l => l.startsWith(hex.slice(5) + ':'));
+    return linha ? (parseInt(linha.split(':')[1], 10) || 0) : 0;
+  } catch { return 0; }
+}
+async function recusarSenhaVazada(senha) {
+  const n = await senhaVazada(senha);
+  if (!n) return false;
+  showAuthMsg(`Essa senha já apareceu em ${n.toLocaleString('pt-BR')} vazamentos de dados na internet. Escolha outra.`, 'err');
+  return true;
+}
+// O Supabase recusa senha fora das regras do painel (tamanho mínimo, letras, números) com mensagem em inglês.
+function msgErroSenha(error) {
+  const m = error?.message || '';
+  const min = m.match(/at least (\d+) characters/i);
+  if (min) return `A senha precisa ter pelo menos ${min[1]} caracteres.`;
+  if (error?.code === 'weak_password' || /should contain|weak password/i.test(m)) return 'A senha está fraca: use letras maiúsculas, minúsculas e números (e símbolos, se o sistema pedir).';
+  return m;
+}
+
 async function authSignup() {
   const nome = document.getElementById('signup-nome').value.trim();
   const email = document.getElementById('signup-email').value.trim();
@@ -1125,9 +1153,10 @@ async function authSignup() {
   if (password.length < 6) { showAuthMsg('A senha precisa ter pelo menos 6 caracteres.','err'); return; }
   if (password !== password2) { showAuthMsg('As senhas não são iguais.','err'); return; }
   document.getElementById('auth-signup-btn').disabled = true;
+  if (await recusarSenhaVazada(password)) { document.getElementById('auth-signup-btn').disabled = false; return; }
   const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nome } } });
   document.getElementById('auth-signup-btn').disabled = false;
-  if (error) { showAuthMsg(error.message,'err'); return; }
+  if (error) { showAuthMsg(msgErroSenha(error),'err'); return; }
   if (data.session) { await onAuthReady(data.session); return; }
   // Confirmação de e-mail obrigatória: mostra a vista de "confira seu e-mail"
   document.getElementById('auth-pending-email').textContent = email;
@@ -1157,9 +1186,10 @@ async function authResetPassword() {
   if (p1.length < 6) { showAuthMsg('A senha precisa ter pelo menos 6 caracteres.','err'); return; }
   if (p1 !== p2) { showAuthMsg('As senhas não são iguais.','err'); return; }
   document.getElementById('auth-reset-btn').disabled = true;
+  if (await recusarSenhaVazada(p1)) { document.getElementById('auth-reset-btn').disabled = false; return; }
   const { error } = await sb.auth.updateUser({ password: p1 });
   document.getElementById('auth-reset-btn').disabled = false;
-  if (error) { showAuthMsg(error.message,'err'); return; }
+  if (error) { showAuthMsg(msgErroSenha(error),'err'); return; }
   showAuthMsg('Senha atualizada! Entrando...','ok');
   inPasswordRecovery = false;
   const { data } = await sb.auth.getSession();
