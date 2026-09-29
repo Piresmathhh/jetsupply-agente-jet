@@ -6,7 +6,11 @@
 <title>De-Para Signus · Agente Jet</title>
 <style>[hidden]{display:none!important}
 /* selo de perfil reconhecido tem texto longo: quebra linha em tela estreita (a v4 estourava 400px aqui) */
-#profMatch .pill{white-space:normal;max-width:100%;border-radius:10px}</style>
+#profMatch .pill{white-space:normal;max-width:100%;border-radius:10px}
+/* botao de volta ao Agente: link com cara de botao, bem visivel no canto esquerdo */
+a.voltar{text-decoration:none;margin-right:6px}
+a.voltar:hover{border-color:var(--ink)}
+@media (max-width:520px){.brand .brand-mark{display:none}}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="ui/tema.js"></script>
@@ -19,9 +23,9 @@
 <header class="top">
   <div class="top-in">
     <div class="brand">
+      <a href="./" class="btn voltar" title="Voltar para o Agente Jet">&larr; Agente Jet</a>
       <div class="brand-mark" aria-hidden="true"><span>fornecedor</span><span class="to">&rarr;</span><span class="dst">Signus</span></div>
       <h1>De-Para Signus</h1>
-      <a href="./" class="note" style="margin-left:10px">Voltar ao Agente</a>
     </div>
     <div class="prof">
       <label class="label" for="profSel">Perfil do fornecedor</label>
