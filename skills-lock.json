@@ -12,6 +12,24 @@
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
       "computedHash": "4dd886b0196bf43729d954ae326016f2bd9f5f79d892500b407c33a753362f14"
+    },
+    "img-to-html": {
+      "source": "rtadewald/skills",
+      "sourceType": "github",
+      "skillPath": "img-to-html/SKILL.md",
+      "computedHash": "d4de8899b7770e0c8edf70a3913e5c62ff03ca899d1e7772f2b7c917df65f348"
+    },
+    "openrouter-img": {
+      "source": "rtadewald/skills",
+      "sourceType": "github",
+      "skillPath": "openrouter-img/SKILL.md",
+      "computedHash": "422f0d22d0ce5065cea91e08cf85a2ed20cf8d47bf2c63a118def0474cdfe412"
+    },
+    "to-wireframe": {
+      "source": "rtadewald/skills",
+      "sourceType": "github",
+      "skillPath": "to-wireframe/SKILL.md",
+      "computedHash": "fe26e22205b2e2f6da375c7dd90fdf76e5f55b9666a0fbf2c038576f87cfe452"
     }
   }
 }
