@@ -7,6 +7,7 @@
 <!-- jet-ui: paleta (claro/escuro) para o Agente inteiro + componentes para telas com class="jet-ui" -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="ui/tema.js"></script>
 <link rel="stylesheet" href="ui/jet-ui-tokens.css">
 <link rel="stylesheet" href="ui/jet-ui-escopo.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -273,8 +274,13 @@ button,input,select,textarea{font-family:inherit}
   .chat{padding:12px}
   .msg{max-width:100%}
   .preview,.diff-table,.report-wrap{overflow-x:auto}
+  /* botao de tema vira so um icone */
+  .topbar [data-tema-btn]{font-size:0;width:30px;padding:4px 0;text-align:center}
+  .topbar [data-tema-btn]::before{font-size:14px;line-height:1;content:'\25D0'}
+  .topbar [data-tema-btn][data-tema="light"]::before{content:'\2600'}
+  .topbar [data-tema-btn][data-tema="dark"]::before{content:'\263E'}
 }
-@media (max-width:390px){.topbar-name{display:none}}
+@media (max-width:480px){.topbar-name{display:none}}
 </style>
 </head>
 <body>
@@ -426,13 +432,14 @@ button,input,select,textarea{font-family:inherit}
   <div class="topbar-div"></div>
   <div>
     <div class="topbar-name">Agente Jet</div>
-    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.44 · 28/09/2026</span></div>
+    <div class="topbar-sub">Curadoria de produtos · Signus → Zydon · <span style="color:var(--on-navy-faint)">v5.45 · 29/09/2026</span></div>
   </div>
   <div class="topbar-r">
     <div class="status-dot" id="gh-dot"></div>
     <span class="status-txt" id="gh-txt">Conectando...</span>
     <button class="sync-btn" onclick="desfazerUltimaAcao()" id="undo-btn" style="display:none"></button>
     <button class="sync-btn" onclick="syncBase()" id="sync-btn" style="display:none">Sincronizar base</button>
+    <button class="sync-btn" data-tema-btn type="button">Tema: automático</button>
     <span class="user-chip" id="user-chip" style="display:none"></span>
     <button class="logout-btn" onclick="logout()" id="logout-btn" style="display:none">Sair</button>
   </div>
@@ -816,7 +823,7 @@ async function mudarPapelUsuario(userId, novoPapel) {
 // ══════════════════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
-const VERSION = 'v5.44';
+const VERSION = 'v5.45';
 let products = [];
 let kb = null;
 let pendentes = [];
