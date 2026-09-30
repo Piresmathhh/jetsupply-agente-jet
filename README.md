@@ -94,7 +94,7 @@ Modelos da IA em `configuracoes.fornecedores_ia` (dá para trocar sem mexer em c
 
 ## Visual
 
-O Agente e a tela de Fornecedores usam **Material Design 3** (fonte Roboto), com tema claro e escuro (automático ou pelo menu da conta). As cores são o esquema padrão do Material gerado a partir do azul-marinho da Jet (#15375B) pela biblioteca oficial `@material/material-color-utilities`.
+O Agente e a tela de Fornecedores usam a estrutura do **Material Design 3** (fonte Roboto) com a identidade da Jet: barra superior e menu lateral em azul-marinho (#15375B), fundo cinza neutro, laranja do logo (#EA5618) como detalhe e cantos de 8px. Tema claro e escuro (automático ou pelo menu da conta).
 
 | Arquivo | Uso |
 |---|---|
