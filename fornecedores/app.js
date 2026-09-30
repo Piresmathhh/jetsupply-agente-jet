@@ -32,6 +32,13 @@ const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtN = n => Number(n).toLocaleString('pt-BR');
+// Rotulos e mensagens que vem do motor (engine.mjs fica igual ao testado em tests/, sem acento): acentuados so na tela e no arquivo.
+const ACENTOS = { Identificacao:'Identificação', Classificacao:'Classificação', Logistica:'Logística', operacao:'operação', espacos:'espaços',
+  Numero:'Número', digitos:'dígitos', digito:'dígito', MAIUSCULAS:'MAIÚSCULAS', invalido:'inválido', invalida:'inválida', Dimensao:'Dimensão',
+  aprovacao:'aprovação', ocorrencia:'ocorrência', codigo:'código', unitario:'unitário', nao:'não' };
+const FRASES = { 'Categoria proposta, ainda nao existe no Signus': 'Categoria nova, ainda não existe no Signus', 'Sem categoria treeview': 'Sem categoria', 'Slug de URL': 'Endereço de página (URL)' };
+const acento = s => { s = String(s ?? ''); return FRASES[s] || s.replace(/[A-Za-z]+/g, w => ACENTOS[w] || w); };
+const chamadas = n => n === 1 ? '1 chamada' : fmtN(n) + ' chamadas';
 function toast(msg, ms=3200){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true, ms); }
 
 /* ============ state ============ */
@@ -52,6 +59,7 @@ const S = {
   catFilter: 'todos', revFilter: 'todos', revPage: 0,
   openVmap: null,
   verVazios: false, gruposAbertos: new Set(), manterVisiveis: new Set(), // etapa 2: campos vazios ficam escondidos
+  grpMais: new Set(), // etapa 3: grupos com a linha de detalhes aberta
   aiCtl: null,
   G: {}, T: {}, Y: {}, prop: {}, txtView: 'itens', tipoFilter: 'todos', tipoPage: 0, me: null, names: {}, subs: [],
   catView: 'grupos', grpSearch: '', txtFilter: 'todos', txtPage: 0, deferRender: false,
@@ -74,21 +82,21 @@ async function saveProfile(){
   S.P.atualizado = new Date().toISOString();
   S.profiles[S.P.id] = S.P;
   if (!S.online) { S.dirty = false; renderSaveState(); return; }
-  if (!S.podeEditar) { S.dirty = false; renderSaveState(); toast('Seu acesso e so de leitura: o perfil nao foi salvo.'); return; }
+  if (!S.podeEditar) { S.dirty = false; renderSaveState(); toast('Seu acesso é só de leitura: o perfil não foi salvo.'); return; }
   if (S.saving) { scheduleSave(); return; }
   S.saving = true; renderSaveState();
   const { id, nome, assinatura, atualizado, ...config } = JSON.parse(JSON.stringify(S.P));
   const { error } = await sb.from('fornecedor_perfis').upsert({ id, nome, assinatura, config });
-  if (error) toast('Nao foi possivel salvar o perfil (' + error.message + ').');
+  if (error) toast('Não foi possível salvar o perfil (' + error.message + ').');
   else { S.dirty = false; S.salvos.add(id); }
   S.saving = false; renderSaveState();
 }
 function renderSaveState(){
   const el = $('#saveState');
   if (!S.online) { el.textContent = 'sem banco'; el.className = 'save-state off'; return; }
-  if (!S.podeEditar) { el.textContent = 'so leitura'; el.className = 'save-state off'; return; }
+  if (!S.podeEditar) { el.textContent = 'só leitura'; el.className = 'save-state off'; return; }
   if (S.saving) { el.textContent = 'salvando...'; el.className = 'save-state'; return; }
-  el.textContent = S.dirty ? 'alteracoes nao salvas' : 'salvo'; el.className = 'save-state' + (S.dirty ? ' dirty' : '');
+  el.textContent = S.dirty ? 'alterações não salvas' : 'salvo'; el.className = 'save-state' + (S.dirty ? ' dirty' : '');
 }
 function markDirty(){ S.dirty = true; renderSaveState(); scheduleSave(); }
 let saveTimer = null;
@@ -200,7 +208,7 @@ async function writeMany(kind, entries){ // entries: [[key, patch]]
     lotes.get(cols).push(row);
   }
   if (!S.online || (K.perfil && !S.P) || !entries.length) return;
-  if (!S.podeEditar) { toast('Seu acesso e so de leitura: a alteracao nao foi salva.'); return; }
+  if (!S.podeEditar) { toast('Seu acesso é só de leitura: a alteração não foi salva.'); return; }
   try {
     if (K.perfil && !S.salvos.has(S.P.id)) await saveProfile(); // a linha do grupo/texto precisa do perfil no banco
     for (const rows of lotes.values()) {
@@ -209,7 +217,7 @@ async function writeMany(kind, entries){ // entries: [[key, patch]]
         if (error) throw error;
       }
     }
-  } catch (e) { toast('Nao foi possivel salvar (' + (e.message || 'erro') + '). Tente de novo.'); }
+  } catch (e) { toast('Não foi possível salvar (' + (e.message || 'erro') + '). Tente de novo.'); }
 }
 const setGroup = (k, patch) => writeMany('g', [[k, patch]]);
 const setText = (k, patch) => writeMany('t', [[k, patch]]);
@@ -252,7 +260,7 @@ function subscribeProfile(){
       for (const r of ts) if (!S.T[r.ref]) S.T[r.ref] = KINDS.t.doBanco(r);
       softRefresh();
     })
-    .catch(e => toast('Nao foi possivel ler os grupos e nomes deste perfil (' + (e.message || 'erro') + ').'));
+    .catch(e => toast('Não foi possível ler os grupos e nomes deste perfil (' + (e.message || 'erro') + ').'));
 }
 // Vocabulario de tipos e arvore proposta valem para todos os fornecedores.
 function subscribeGlobal(){
@@ -290,8 +298,8 @@ async function resolveNames(ids){
 }
 function whoHtml(id){
   if (!id) return '';
-  const nm = S.names[id] || (id === S.me ? 'Voce' : 'Alguem');
-  return `<span class="who ${id === S.me ? 'me' : ''}" title="${esc(nm)}"><i>${esc(initials(nm))}</i>${esc(id === S.me ? 'Voce' : nm.split(' ')[0])}</span>`;
+  const nm = S.names[id] || (id === S.me ? 'Você' : 'Alguém');
+  return `<span class="who ${id === S.me ? 'me' : ''}" title="${esc(nm)}"><i>${esc(initials(nm))}</i>${esc(id === S.me ? 'Você' : nm.split(' ')[0])}</span>`;
 }
 
 /* ============ AI ============ */
@@ -301,7 +309,7 @@ async function ia(tarefa, dados, signal){
   if (signal && signal.aborted) throw { code: 'cancelled' };
   const { data, error } = await sb.functions.invoke('ia-fornecedores', { body: { tarefa, dados } });
   if (signal && signal.aborted) throw { code: 'cancelled' };
-  if (error) throw { code: 'rede', message: 'Nao foi possivel falar com o servidor (' + error.message + ').' };
+  if (error) throw { code: 'rede', message: 'Não foi possível falar com o servidor (' + error.message + ').' };
   if (data && data.error) throw { code: data.codigo || 'erro', message: data.error };
   return (data && data.resultado) || [];
 }
@@ -318,8 +326,8 @@ function endAI(msg){
 }
 function aiErr(e){
   const c = e && e.code;
-  if (c === 'cancelled') return 'Interrompido. O que ja tinha sido gerado ficou salvo.';
-  return (e && e.message) || 'A IA nao respondeu (' + (c || 'erro') + '). O que ja foi gerado ficou salvo.';
+  if (c === 'cancelled') return 'Interrompido. O que já tinha sido gerado ficou salvo.';
+  return (e && e.message) || 'A IA não respondeu (' + (c || 'erro') + '). O que já foi gerado ficou salvo.';
 }
 async function aiSuggestMapping(){
   if (!aiAvailable() || !S.P) return;
@@ -361,7 +369,7 @@ function catBatchesPending(){
 async function aiSuggestCats(){
   if (!aiAvailable() || !S.P) return;
   const pending = catBatchesPending();
-  if (!pending.length) { toast('Todos os grupos deste filtro ja tem categoria ou proposta.'); return; }
+  if (!pending.length) { toast('Todos os grupos deste filtro já têm categoria.'); return; }
   const signal = startAI();
   const BATCH = 25; let done = 0, found = 0, prop = 0, mixed = 0;
   try {
@@ -379,7 +387,7 @@ async function aiSuggestCats(){
       await writeMany('g', entries);
       done += chunk.length; compute(); renderGroups(); renderCounts();
     }
-    endAI(`${found} grupos com categoria existente, ${prop} com categoria nova proposta, ${mixed} grupos mistos (use "Item a item").`);
+    endAI(`${found} grupos com categoria existente, ${prop} com categoria nova, ${mixed} grupos mistos (use "Item a item").`);
   } catch (e) { endAI(aiErr(e)); }
   compute(); refreshAll();
 }
@@ -387,32 +395,32 @@ async function aiExtractCarac(){
   if (!aiAvailable() || !S.P) return;
   const cg = caracGroups();
   const targets = S.out.filter(r => !r.excl && r.g && r.g.gc && cg[r.g.gc] && !S.caracVals[r.ix]);
-  if (!targets.length) { toast('Nenhum item com grupo de caracteristicas definido (ou todos ja extraidos).'); return; }
+  if (!targets.length) { toast('Nenhum item com grupo de características definido (ou todos já extraídos).'); return; }
   const byGc = {}; targets.forEach(r => (byGc[r.g.gc] ||= []).push(r));
   const signal = startAI(); let done = 0;
   try {
     for (const [gc, list] of Object.entries(byGc)) {
       for (let b = 0; b < list.length; b += 30) {
         const chunk = list.slice(b, b + 30);
-        progAI(done, targets.length, `Extraindo caracteristicas: ${done} de ${targets.length}`);
+        progAI(done, targets.length, `Extraindo características: ${done} de ${targets.length}`);
         const res = await ia('caracteristicas', { grupo: gc, itens: chunk.map(r => ({ i: String(r.ix), nome: r.o['Nome'], descricao: r.o['Descrição técnica'] || '' })) }, signal);
         for (const x of res) if (x.valores && typeof x.valores === 'object') S.caracVals[Number(x.i)] = x.valores;
         done += chunk.length;
       }
     }
-    endAI(`Caracteristicas extraidas para ${Object.keys(S.caracVals).length} itens. Elas saem na aba Caracteristicas do arquivo.`);
+    endAI(`Características extraídas para ${Object.keys(S.caracVals).length} itens. Elas saem na aba Características do arquivo.`);
   } catch (e) { endAI(aiErr(e)); }
   renderGroups();
 }
 async function aiConsolidate(){
   if (!aiAvailable()) return;
   const props = [...proposals().entries()];
-  if (props.length < 2) { toast('Poucas categorias propostas para consolidar.'); return; }
-  const signal = startAI(); progAI(0, 1, 'Revisando a arvore proposta');
+  if (props.length < 2) { toast('Poucas categorias novas para juntar.'); return; }
+  const signal = startAI(); progAI(0, 1, 'Revisando as categorias novas');
   try {
     const res = await ia('consolidar_arvore', { propostos: props.slice(0, 500).map(([caminho, grupos]) => ({ caminho, grupos })) }, signal);
     S.consol = res.map(x => ({ de: x.de, para: x.para, motivo: x.motivo || '', on: true }));
-    endAI(S.consol.length ? `${S.consol.length} ajustes sugeridos. Revise antes de aplicar.` : 'A arvore proposta ja esta coerente.');
+    endAI(S.consol.length ? `${S.consol.length} ajustes sugeridos. Revise antes de aplicar.` : 'As categorias novas já estão coerentes.');
   } catch (e) { endAI(aiErr(e)); }
   renderArvore();
 }
@@ -427,14 +435,14 @@ async function aiTexts(){
   if (!aiAvailable() || !S.P || !S.out) return;
   const regen = $('#genRegen').checked, withDesc = $('#genDesc').checked, lim = Number($('#txtLimit').value);
   const rows = filteredTextRows().filter(r => r.key && (regen || !(S.T[r.key] && S.T[r.key].nome)) && !(S.T[r.key] && S.T[r.key].st === 'aprovado')).slice(0, lim);
-  if (!rows.length) { toast('Nenhum item sem sugestao neste filtro. Marque "refazer os ja sugeridos" para gerar de novo.'); return; }
+  if (!rows.length) { toast('Nenhum item sem sugestão neste filtro. Marque "refazer os já sugeridos" para gerar de novo.'); return; }
   const signal = startAI();
   const BATCH = withDesc ? 12 : 25; let done = 0;
   try {
     for (let b = 0; b < rows.length; b += BATCH) {
       const chunk = rows.slice(b, b + BATCH);
       const porKey = new Map(chunk.map(r => [r.key, r]));
-      progAI(done, rows.length, `Gerando nomes${withDesc ? ' e descricoes' : ''}: ${done} de ${rows.length}`);
+      progAI(done, rows.length, `Gerando nomes${withDesc ? ' e descrições' : ''}: ${done} de ${rows.length}`);
       const res = await ia('textos', {
         perfil_id: S.P.id, com_descricao: withDesc,
         itens: chunk.map(r => ({ i: r.key, categoria: r.cat ? r.cat.path : (r.g && r.g.prop) || r.item.ctx || '', fatos: itemFacts(r) })),
@@ -449,19 +457,20 @@ async function aiTexts(){
       await writeMany('t', entries);
       done += chunk.length; compute(); renderTextos(); renderCounts();
     }
-    endAI(`${done} itens com sugestao. Revise e aprove.`);
+    endAI(`${done} itens com sugestão. Revise e aprove.`);
   } catch (e) { endAI(aiErr(e)); }
   compute(); refreshAll();
 }
 function refreshAIButtons(){
   const on = aiAvailable();
-  $('#aiMap').hidden = !on; $('#aiCats').hidden = !on; $('#aiTexts').hidden = !on; $('#aiConsol').hidden = !on; $('#aiTipos').hidden = !on;
+  $('#aiMap').hidden = !on; $('#aiMap').title = '1 chamada de IA'; $('#aiConsol').title = '1 chamada de IA'; $('#aiCats').hidden = !on; $('#aiTexts').hidden = !on; $('#aiConsol').hidden = !on; $('#aiTipos').hidden = !on;
   $('#aiCarac').hidden = !on || !Object.values(S.G).some(g => g.gc);
 }
 
 /* ============ render: arquivo ============ */
 function renderArquivo(){
   $('#sampleBanner').hidden = !S.isSample;
+  renderFaltas();
   const has = S.grid.length > 0; $('#filePanel').hidden = !has; if (!has) return;
   $('#fileName').textContent = S.fileName;
   $('#sheetSel').innerHTML = S.wb.SheetNames.map(s => `<option ${s===S.sheetName?'selected':''}>${esc(s)}</option>`).join('');
@@ -469,10 +478,10 @@ function renderArquivo(){
   $('#keySel').innerHTML = S.headers.map((h,i) => `<option value="${i}" ${i===S.keyCol?'selected':''}>${esc(h)}</option>`).join('');
   const ex = S.out ? S.out.filter(r=>r.excl).length : 0;
   $('#fileTiles').innerHTML = [
-    ['Linhas de produto', S.items.length], ['Secoes detectadas', S.sections], ['Colunas', S.headers.length], ['Excluidos', ex],
+    ['Linhas de produto', S.items.length], ['Seções detectadas', S.sections], ['Colunas', S.headers.length], ['Excluídos', ex],
   ].map(([l,v]) => `<div class="tile"><span class="label">${l}</span><b>${fmtN(v)}</b></div>`).join('');
-  $('#profMatch').innerHTML = S.match ? `<span class="pill ok">Perfil reconhecido pelo cabecalho: ${esc(S.match.p.nome)} (${Math.round(S.match.s*100)}% igual)</span>`
-    : (S.P ? `<span class="pill">Usando perfil: ${esc(S.P.nome)}</span>` : `<span class="pill warn">Nenhum perfil para este cabecalho. Crie um em "Novo perfil".</span>`);
+  $('#profMatch').innerHTML = S.match ? `<span class="pill ok">Perfil reconhecido pelo cabeçalho: ${esc(S.match.p.nome)} (${Math.round(S.match.s*100)}% igual)</span>`
+    : (S.P ? `<span class="pill">Usando perfil: ${esc(S.P.nome)}</span>` : `<span class="pill warn">Nenhum perfil para este cabeçalho. Crie um em "Novo perfil".</span>`);
   const start = Math.max(0, S.headerRow - 2), end = Math.min(S.grid.length, S.headerRow + 40);
   const nc = S.headers.length;
   let h = '<thead><tr><th>#</th>' + S.headers.map((x,i)=>`<th>${i===S.keyCol?'&#9670; ':''}${esc(x)}</th>`).join('') + '</tr></thead><tbody>';
@@ -500,7 +509,7 @@ function distinctFor(c){
   }
   return [...seen.entries()].sort((a,b)=>b[1]-a[1]);
 }
-const MODOS = [['vazio','Vazio','o campo sai em branco'],['col','Coluna','copia uma coluna da planilha'],['fixo','Fixo','mesmo valor para todos os itens'],['modelo','Modelo','junta colunas e texto, ex.: {MARCA} {ITEM}'],['derivado','Derivado','reaproveita outro campo do Signus ja montado']];
+const MODOS = [['vazio','Vazio','o campo sai em branco'],['col','Coluna','copia uma coluna da planilha'],['fixo','Valor fixo','mesmo valor para todos os itens'],['modelo','Juntar colunas','junta colunas e texto, ex.: {MARCA} {ITEM}'],['derivado','Copiar campo','copia outro campo do Signus já montado, ex.: Nome reduzido a partir do Nome']];
 const MODOS_AJUDA = MODOS.map(([, l, d]) => l + ': ' + d).join('\n');
 function renderColunas(){
   const grid = $('#mapGrid');
@@ -517,7 +526,7 @@ function renderColunas(){
   $('#toggleVazios').textContent = S.verVazios ? 'Esconder campos vazios' : `Mostrar campos vazios (${nVazios})`;
   const srcOpts = sel => '<option value="">(coluna)</option>' + S.headers.map(h => `<option ${h===sel?'selected':''}>${esc(h)}</option>`).join('');
   const derOpts = sel => '<option value="">(campo Signus)</option>' + COLS.filter(c=>!OUT_ONLY.has(c)).map(h => `<option ${h===sel?'selected':''}>${esc(h)}</option>`).join('');
-  const trOpts = sel => TRANSFORMS.map(([k,l]) => `<option value="${k}" ${k===(sel||'texto')?'selected':''}>${l}</option>`).join('');
+  const trOpts = sel => TRANSFORMS.map(([k,l]) => `<option value="${k}" ${k===(sel||'texto')?'selected':''}>${esc(acento(l))}</option>`).join('');
   let html = '';
   for (const [gname, cols] of GROUPS) {
     const setN = cols.filter(c => (S.P.map[c]?.m || 'vazio') !== 'vazio').length;
@@ -525,7 +534,7 @@ function renderColunas(){
     const visiveis = aberto ? cols : cols.filter(c => (S.P.map[c]?.m || 'vazio') !== 'vazio' || S.manterVisiveis.has(c));
     const ocultos = cols.length - visiveis.length;
     const btnGrupo = S.verVazios ? '' : ocultos ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Mostrar ${ocultos} ${ocultos === 1 ? 'vazio' : 'vazios'}</button>` : S.gruposAbertos.has(gname) ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Esconder vazios</button>` : '';
-    html += `<div class="map-group${visiveis.length ? '' : ' fechado'}"><header><h3>${gname}</h3><span class="row" style="gap:8px">${btnGrupo}<span class="pill ${setN?'info':''}">${setN} de ${cols.length}</span></span></header>`;
+    html += `<div class="map-group${visiveis.length ? '' : ' fechado'}"><header><h3>${esc(acento(gname))}</h3><span class="row" style="gap:8px">${btnGrupo}<span class="pill ${setN?'info':''}">${setN} de ${cols.length}</span></span></header>`;
     for (const c of visiveis) {
       const m = S.P.map[c] || {m:'vazio'}; const set = m.m !== 'vazio';
       const id = 'm' + COLS.indexOf(c);
@@ -535,8 +544,8 @@ function renderColunas(){
       else if (m.m === 'modelo') { mid = `<input class="mono" data-f="v" data-c="${esc(c)}" value="${esc(m.v)}" placeholder="{COLUNA} texto {OUTRA}" aria-label="Modelo para ${esc(c)}">`; tr = `<select data-f="t" data-c="${esc(c)}">${trOpts(m.t)}</select>`; }
       else if (m.m === 'derivado') { mid = `<select data-f="src" data-c="${esc(c)}">${derOpts(m.src)}</select>`; tr = `<select data-f="t" data-c="${esc(c)}">${trOpts(m.t)}</select>`; }
       const vmN = Object.keys(S.P.vmap[c] || {}).filter(k => S.P.vmap[c][k] !== '').length;
-      const vmBtn = set && m.m !== 'fixo' ? `<button class="sm ghost" data-vmap="${esc(c)}">Valores${vmN ? ' ('+vmN+')' : ''}</button>` : '';
-      const note = c === 'Nome' ? '<small>os nomes aprovados na etapa 4 substituem este valor</small>' : c === 'Descrição do produto e-commerce' ? '<small>preenchida pelas descricoes aprovadas na etapa 4</small>' : (HINTS[c] ? `<small>${esc(HINTS[c])}</small>` : '');
+      const vmBtn = set && m.m !== 'fixo' ? `<button class="sm ghost" data-vmap="${esc(c)}" title="Trocar valores que o fornecedor escreve diferente do Signus">Trocar valores${vmN ? ' ('+vmN+')' : ''}</button>` : '';
+      const note = c === 'Nome' ? '<small>os nomes aprovados na etapa 4 substituem este valor</small>' : c === 'Descrição do produto e-commerce' ? '<small>preenchida pelas descrições aprovadas na etapa 4</small>' : (HINTS[c] ? `<small>${esc(acento(HINTS[c]))}</small>` : '');
       html += `<div class="map-row ${set?'set':''}">
         <div class="tgt"><span class="dot"></span>${esc(c)} ${m.ia?'<span class="pill ai">IA</span>':''}${note}</div>
         <select id="${id}" data-f="m" data-c="${esc(c)}" aria-label="Origem do campo ${esc(c)}" title="${esc(MODOS_AJUDA)}">
@@ -555,29 +564,23 @@ function renderColunas(){
 function renderVmap(c){
   const d = distinctFor(c); const vm = S.P.vmap[c] || {};
   if (!d.length) return `<div class="vmap"><span class="note">Sem valores para mapear.</span></div>`;
-  return `<div class="vmap"><div style="grid-column:1/-1" class="row"><span class="label">De-para de valores: ${esc(c)}</span><span class="note">deixe em branco para manter o valor original</span><button class="sm ghost" data-vmapclose style="margin-left:auto">Fechar</button></div>` +
+  return `<div class="vmap"><div style="grid-column:1/-1" class="row"><span class="label">Trocar valores: ${esc(c)}</span><span class="note">deixe em branco para manter o valor original</span><button class="sm ghost" data-vmapclose style="margin-left:auto">Fechar</button></div>` +
     d.map(([v,n]) => `<div class="vm"><span title="${esc(v)} (${n})">${esc(v)} <span class="muted">(${n})</span></span><span class="muted">&rarr;</span><input class="mono" data-vm="${esc(c)}" data-from="${esc(v)}" value="${esc(vm[v]||'')}"></div>`).join('') + '</div>';
 }
 function renderFilters(){
-  const ops = [['contem','contem'],['igual','igual a'],['vazio','esta vazia'],['naovazio','esta preenchida'],['secao','secao contem']];
+  const ops = [['contem','contém'],['igual','igual a'],['vazio','está vazia'],['naovazio','está preenchida'],['secao','seção contém']];
   $('#filters').innerHTML = (S.P.filtros || []).map((f,i) => `<div class="row" style="gap:6px">
     <span class="note">Excluir linha quando</span>
-    <select data-fi="${i}" data-k="col" aria-label="Coluna do filtro">${f.op==='secao'?'<option value="__secao" selected>(secao)</option>':''}${S.headers.map(h=>`<option ${h===f.col?'selected':''}>${esc(h)}</option>`).join('')}</select>
+    <select data-fi="${i}" data-k="col" aria-label="Coluna do filtro">${f.op==='secao'?'<option value="__secao" selected>(seção)</option>':''}${S.headers.map(h=>`<option ${h===f.col?'selected':''}>${esc(h)}</option>`).join('')}</select>
     <select data-fi="${i}" data-k="op" aria-label="Condicao">${ops.map(([k,l])=>`<option value="${k}" ${k===f.op?'selected':''}>${l}</option>`).join('')}</select>
     ${['vazio','naovazio'].includes(f.op) ? '' : `<input data-fi="${i}" data-k="v" value="${esc(f.v)}" class="mono" style="width:220px" aria-label="Valor">`}
-    <button class="sm ghost" data-fdel="${i}" aria-label="Remover regra">Remover</button></div>`).join('') || '<p class="note">Nenhuma regra. Ex.: excluir quando OBSERVACOES GERAIS contem "SUBSTITUIDO", ou quando STATUS igual a "NP".</p>';
+    <button class="sm ghost" data-fdel="${i}" aria-label="Remover regra">Remover</button></div>`).join('') || '<p class="note">Nenhuma regra. Ex.: excluir quando OBSERVAÇÕES GERAIS contém "SUBSTITUIDO", ou quando STATUS igual a "NP".</p>';
   const ex = S.out ? S.out.filter(r=>r.excl).length : 0;
   const dp = S.out ? S.out.filter(r=>r.dup).length : 0;
-  $('#filterNote').textContent = S.out ? `${fmtN(ex - dp)} de ${fmtN(S.items.length)} linhas excluidas pelas regras. ${dp ? fmtN(dp) + ' repeticoes da mesma ref. tambem ficam de fora (vale a ultima ocorrencia, que costuma estar na secao de categoria e nao em Lancamentos).' : ''}` : '';
+  $('#filterNote').textContent = S.out ? `${fmtN(ex - dp)} de ${fmtN(S.items.length)} linhas excluídas pelas regras. ${dp ? fmtN(dp) + ' repetições da mesma ref. também ficam de fora (vale a última ocorrência, que costuma estar na seção de categoria e não em Lançamentos).' : ''}` : '';
 }
 
 /* ============ render: categorias ============ */
-function treeOptions(sel){
-  const byL = {};
-  for (const t of S.tree) { const grp = t.path.split(' > ').slice(0,-1).join(' > '); (byL[grp] ||= []).push(t); }
-  return '<option value="">(sem categoria)</option>' + Object.entries(byL).map(([g, list]) =>
-    `<optgroup label="${esc(g)}">${list.map(t=>`<option value="${esc(t.id)}" ${t.id===sel?'selected':''}>${esc(t.nome)} (${esc(t.id)})</option>`).join('')}</optgroup>`).join('');
-}
 function filteredGroups(){
   let gl = groupsList(); const f = S.catFilter;
   if (f === 'meus') gl = gl.filter(g => S.G[g.key]?.resp === S.me);
@@ -588,45 +591,68 @@ function filteredGroups(){
   if (q) gl = gl.filter(g => norm(g.key).includes(q) || norm(g.ex.join(' ')).includes(q) || norm(S.G[g.key]?.prop).includes(q));
   return gl;
 }
+function treeDatalist(){
+  if (S._treeListN === S.tree.length) return;
+  S._treeListN = S.tree.length;
+  $('#treeList').innerHTML = S.tree.map(t => `<option value="${esc(t.path)}"></option>`).join('');
+}
+function catStatus(d){
+  const mot = d.motivo ? ` title="${esc(d.motivo)}"` : '';
+  if (d.tree) return (d.fonte === 'ia' ? `<span class="pill ${d.conf === 'alta' ? 'ok' : d.conf === 'media' ? 'ai' : 'warn'}"${mot}>IA: confiança ${esc(d.conf === 'media' ? 'média' : d.conf || '?')}</span> ` : '') + `<span class="note">código ${esc(d.tree)}</span>`;
+  if (d.prop) return `<span class="pill info"${mot}>categoria nova</span> <span class="note">vai para aprovação em Categorias novas</span>`;
+  if (d.misto) return `<span class="pill warn"${mot}>grupo misto</span> <span class="note">produtos diferentes: use "Item a item" em Mais</span>`;
+  if (d.semMatch) return `<span class="pill err"${mot}>IA sem sugestão</span>`;
+  return '';
+}
 function renderGroups(){
   $('#catGrupos').hidden = S.catView !== 'grupos'; $('#catArvore').hidden = S.catView !== 'arvore';
   $$('#catView .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === S.catView ? 'true' : 'false'));
   if (S.catView === 'arvore') { renderArvore(); return; }
   const tbl = $('#grpTbl');
-  $('#groupBy').innerHTML = `<option value="__secao">Secao da planilha</option>` + S.headers.map(h => `<option ${S.P?.grupoPor===h?'selected':''}>${esc(h)}</option>`).join('');
+  $('#groupBy').innerHTML = `<option value="__secao">Seção da planilha</option>` + S.headers.map(h => `<option ${S.P?.grupoPor===h?'selected':''}>${esc(h)}</option>`).join('');
   if (S.P) $('#groupBy').value = S.P.grupoPor || '__secao';
   const roots = [...new Set(S.tree.map(t=>t.path.split(' > ')[0]))];
   const nonElec = S.out && groupsList().some(g => S.G[g.key]?.prop);
-  $('#treeWarn').innerHTML = S.tree.length && roots.length < 3 && S.out ? `<div class="banner"><span>A arvore do Signus carregada tem ${S.tree.length} folhas em <b>${esc(roots.join(', '))}</b>. O que nao couber nela vira categoria proposta${nonElec ? ' (veja em Arvore proposta)' : ''}.</span></div>` : '';
-  if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; return; }
+  $('#treeWarn').innerHTML = S.tree.length && roots.length < 3 && S.out ? `<div class="banner"><span>A árvore do Signus carregada tem ${S.tree.length} categorias em <b>${esc(roots.join(', '))}</b>. O que não couber nela vira categoria nova${nonElec ? ' (veja em Categorias novas)' : ''}.</span></div>` : '';
+  if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#aprovarAlta').hidden = true; return; }
+  treeDatalist();
   const cg = caracGroups();
+  const x = situacao();
+  const pend = catBatchesPending().length;
+  $('#aiCats').textContent = 'Sugerir categorias com IA' + (pend ? ` (${fmtN(pend)} grupos, ${chamadas(Math.ceil(pend / 25))})` : '');
+  const nCarac = S.out.filter(r => !r.excl && r.g && r.g.gc && cg[r.g.gc] && !S.caracVals[r.ix]).length;
+  $('#aiCarac').textContent = 'Extrair características com IA' + (nCarac ? ` (${fmtN(nCarac)} itens, ${chamadas(Math.ceil(nCarac / 30))})` : '');
+  $('#aprovarAlta').hidden = !x.alta || !S.podeEditar;
+  $('#aprovarAlta').textContent = `Aprovar os de confiança alta (${fmtN(x.alta || 0)})`;
   const gl = filteredGroups();
   resolveNames(gl.map(g => S.G[g.key]?.resp).filter(Boolean));
-  let h = '<thead><tr><th>Grupo</th><th class="num">Itens</th><th>Exemplos</th><th>Categoria</th><th>IA</th><th>Responsavel</th><th>Aprovado</th><th>Categoria de produto</th><th>Grupo de caract.</th><th></th></tr></thead><tbody>';
+  let h = '<thead><tr><th>Grupo</th><th style="min-width:300px">Categoria</th><th>Responsável</th><th>Aprovado</th><th></th></tr></thead><tbody>';
   for (const g of gl.slice(0, 300)) {
     const d = S.G[g.key] || {};
-    const conf = d.fonte === 'ia' ? `<span class="pill ${d.tree ? (d.conf==='alta'?'ok':d.conf==='media'?'ai':'warn') : d.prop ? 'info' : 'err'}" title="${esc(d.motivo||'')}">${d.tree ? esc(d.conf||'ia') : d.prop ? 'nova' : d.misto ? 'misto' : 'sem match'}</span>` : (d.tree || d.prop ? '<span class="pill">manual</span>' : '');
-    const nC = g.rows.filter(r => S.caracVals[r.ix]).length;
     const isSplit = g.key.includes(' :: ');
     const baseKey = isSplit ? g.key.split(' :: ')[0] : g.key;
-    const catCell = `<select data-gk="${esc(g.key)}" data-gf="tree" style="max-width:240px">${treeOptions(d.tree || '')}</select>` +
-      (d.tree && treeById(d.tree) ? `<div class="note">${esc(treeById(d.tree).path)}</div>` : '') +
-      (!d.tree ? `<input data-gk="${esc(g.key)}" data-gf="prop" value="${esc(d.prop||'')}" placeholder="ou proponha: Nivel 1 > Nivel 2 > Nivel 3" style="width:100%;margin-top:4px;font-size:12px" aria-label="Categoria proposta">` : '');
+    const valor = d.tree && treeById(d.tree) ? treeById(d.tree).path : (d.prop || '');
+    const aberto = S.grpMais.has(g.key);
     h += `<tr>
-      <td style="min-width:190px"><b>${esc(isSplit ? g.key.split(' :: ')[1] : g.key)}</b>${g.ctx && g.ctx !== g.key ? `<div class="note">${esc(isSplit ? baseKey : g.ctx)}</div>` : ''}</td>
-      <td class="num">${g.n}</td>
-      <td style="min-width:220px;max-width:320px"><span class="note clamp2" title="${esc(g.ex.join(' ; '))}">${esc(g.ex.slice(0,2).join(' ; '))}</span></td>
-      <td style="min-width:250px">${catCell}</td>
-      <td>${conf}</td>
+      <td style="min-width:220px;max-width:340px"><b>${esc(isSplit ? g.key.split(' :: ')[1] : g.key)}</b> <span class="note" style="display:inline">${fmtN(g.n)} ${g.n === 1 ? 'item' : 'itens'}</span>${g.ctx && g.ctx !== g.key ? `<div class="note">${esc(isSplit ? baseKey : g.ctx)}</div>` : ''}<span class="note clamp2 grp-ex" title="${esc(g.ex.join(' ; '))}">ex.: ${esc(g.ex.slice(0,2).join(' ; '))}</span></td>
+      <td><input class="cat-in" list="treeList" data-gk="${esc(g.key)}" data-gf="cat" value="${esc(valor)}" placeholder="Digite para buscar a categoria" aria-label="Categoria do grupo ${esc(g.key)}"><div style="margin-top:4px">${catStatus(d)}</div></td>
       <td>${d.resp ? whoHtml(d.resp) + (d.resp === S.me ? ` <button class="sm ghost" data-release="${esc(g.key)}">Soltar</button>` : '') : `<button class="sm" data-claim="${esc(g.key)}">Assumir</button>`}</td>
-      <td><input type="checkbox" data-gk="${esc(g.key)}" data-gf="ok" ${d.ok?'checked':''} aria-label="Grupo aprovado" ${!(d.tree||d.prop)?'disabled':''}>${d.ok && d.okPor ? `<div class="note">${whoHtml(d.okPor)}</div>` : ''}</td>
-      <td><input data-gk="${esc(g.key)}" data-gf="catProd" value="${esc(d.catProd||'')}" list="catProdList" style="width:150px" aria-label="Categoria de produto"></td>
-      <td><select data-gk="${esc(g.key)}" data-gf="gc" style="max-width:170px"><option value="">(nenhum)</option>${Object.values(cg).map(x=>`<option value="${esc(x.codigo)}" ${x.codigo===d.gc?'selected':''}>${esc(x.nome)}</option>`).join('')}</select>${nC?`<div class="note">${nC} com caracteristicas</div>`:''}</td>
-      <td>${S.P.grupoPor === '__secao' ? (isSplit ? `<button class="sm ghost" data-unsplit="${esc(baseKey)}">Juntar</button>` : (g.n > 1 ? `<button class="sm ghost" data-split="${esc(g.key)}" title="Classificar cada item deste grupo separadamente">Item a item</button>` : '')) : ''}</td>
+      <td><input type="checkbox" data-gk="${esc(g.key)}" data-gf="ok" ${d.ok?'checked':''} aria-label="Grupo aprovado" ${!(d.tree||d.prop)?'disabled title="Escolha a categoria antes de aprovar"':''}>${d.ok && d.okPor ? `<div class="note">${whoHtml(d.okPor)}</div>` : ''}</td>
+      <td><button class="sm ghost" data-mais="${esc(g.key)}" aria-expanded="${aberto}">${aberto ? 'Menos' : 'Mais'}</button></td>
     </tr>`;
+    if (aberto) {
+      const nC = g.rows.filter(r => S.caracVals[r.ix]).length;
+      const split = S.P.grupoPor === '__secao' ? (isSplit ? `<button class="sm ghost" data-unsplit="${esc(baseKey)}">Juntar de novo</button>` : (g.n > 1 ? `<button class="sm ghost" data-split="${esc(g.key)}" title="Classificar cada item deste grupo separadamente">Item a item</button>` : '')) : '';
+      h += `<tr class="mais"><td colspan="5"><div class="row" style="gap:16px;align-items:flex-end">
+        <label class="stack" style="gap:4px"><span class="label">Categoria de produto</span><input data-gk="${esc(g.key)}" data-gf="catProd" value="${esc(d.catProd||'')}" list="catProdList" style="width:200px"></label>
+        <label class="stack" style="gap:4px"><span class="label">Grupo de características</span><select data-gk="${esc(g.key)}" data-gf="gc" style="max-width:240px"><option value="">(nenhum)</option>${Object.values(cg).map(c=>`<option value="${esc(c.codigo)}" ${c.codigo===d.gc?'selected':''}>${esc(c.nome)}</option>`).join('')}</select></label>
+        ${nC ? `<span class="note">${nC} itens com características</span>` : ''}${split}
+        ${d.motivo ? `<span class="note" style="flex-basis:100%">Motivo da IA: ${esc(d.motivo)}</span>` : ''}
+      </div></td></tr>`;
+    }
   }
-  if (gl.length > 300) h += `<tr><td colspan="10" class="note">Mostrando 300 de ${gl.length} grupos. Use os filtros ou a busca.</td></tr>`;
-  if (!gl.length) h += `<tr><td colspan="10" class="note">Nenhum grupo neste filtro.</td></tr>`;
+  if (gl.length > 300) h += `<tr><td colspan="5" class="note">Mostrando 300 de ${gl.length} grupos. Use os filtros ou a busca.</td></tr>`;
+  if (!gl.length) h += `<tr><td colspan="5" class="note">Nenhum grupo neste filtro.</td></tr>`;
   tbl.innerHTML = h + '</tbody>';
   const cps = [...new Set(Object.values(S.G).map(x => x.catProd).filter(Boolean))];
   $('#catProdList').innerHTML = cps.map(c => `<option value="${esc(c)}">`).join('');
@@ -647,16 +673,16 @@ function renderArvore(){
   const walk = (obj, lvl) => Object.keys(obj).sort((a,b)=>a.localeCompare(b)).forEach(k => { const x = obj[k]; rows.push({ name:k, lvl, ...x }); walk(x._kids, lvl+1); });
   walk(root, 1);
   const nLeaf = rows.filter(r => r._leaf).length, nOk = rows.filter(r => r._leaf && S.prop[enc(r._path)]?.st === 'aprovada').length;
-  $('#propNote').textContent = `${nLeaf} categorias propostas, ${nOk} aprovadas`;
+  $('#propNote').textContent = `${nLeaf} categorias novas, ${nOk} aprovadas`;
   $('#propTree').innerHTML = rows.length ? rows.map(r => {
     const st = S.prop[enc(r._path)]; const ok = st && st.st === 'aprovada';
     const inSignus = exist.has(norm(r._path)) || S.tree.some(t => norm(t.path).endsWith(norm(r._path)));
     return `<div class="pnode l${r.lvl}">
-      <div class="nm"><b>${esc(r.name)}</b>${inSignus ? '<span class="exists">ja existe no Signus</span>' : ''}${r._leaf && ok ? `<span class="pill ok">aprovada</span> ${whoHtml(st.por)}` : ''}</div>
+      <div class="nm"><b>${esc(r.name)}</b>${inSignus ? '<span class="exists">já existe no Signus</span>' : ''}${r._leaf && ok ? `<span class="pill ok">aprovada</span> ${whoHtml(st.por)}` : ''}</div>
       <span class="note mono">${r._n} grupos${r._items ? ' / ' + r._items + ' itens' : ''}</span>
       <span class="row" style="gap:4px">${r._leaf ? `<button class="sm ghost" data-ren="${esc(r._path)}">Renomear</button>${ok ? `<button class="sm ghost" data-unapp="${esc(r._path)}">Desaprovar</button>` : `<button class="sm" data-app="${esc(r._path)}">Aprovar</button>`}` : ''}</span>
     </div>`;
-  }).join('') : '<p class="note" style="padding:12px 14px">Nenhuma categoria proposta ainda. Rode "Sugerir categorias com IA" na aba Grupos ou escreva a proposta direto na linha do grupo.</p>';
+  }).join('') : '<p class="note" style="padding:12px 14px">Nenhuma categoria nova ainda. Elas aparecem aqui quando a IA sugere uma categoria que não existe no Signus, ou quando alguém escreve o caminho completo na linha do grupo.</p>';
   const cb = $('#consolBox');
   if (S.consol && S.consol.length) {
     cb.innerHTML = `<div class="panel stack" style="gap:8px"><div class="row" style="justify-content:space-between"><h3>Ajustes sugeridos pela IA</h3><span class="row"><button class="sm primary" id="consolApply">Aplicar marcados</button><button class="sm ghost" id="consolDrop">Descartar</button></span></div>` +
@@ -674,8 +700,8 @@ async function renamePath(from, to){
 async function setPropStatus(path, st){
   S.prop[enc(path)] = { path, st, por: S.me || '', em: new Date().toISOString() };
   if (S.online) {
-    if (!S.podeEditar) toast('Seu acesso e so de leitura: a alteracao nao foi salva.');
-    else { const { error } = await sb.from('arvore_proposta').upsert({ caminho: path, status: st }); if (error) toast('Nao foi possivel salvar (' + error.message + ').'); }
+    if (!S.podeEditar) toast('Seu acesso é só de leitura: a alteração não foi salva.');
+    else { const { error } = await sb.from('arvore_proposta').upsert({ caminho: path, status: st }); if (error) toast('Não foi possível salvar (' + error.message + ').'); }
   }
   renderArvore();
 }
@@ -690,16 +716,16 @@ async function relink(){
     if (hit) entries.push([k, { tree: hit.id, prop: '', fonte: 'religado' }]);
   }
   await writeMany('g', entries); compute(); refreshAll();
-  toast(entries.length ? `${entries.length} grupos ligados a categorias que agora existem no Signus.` : 'Nenhuma categoria proposta encontrada na arvore atual do Signus. Quando a categoria for cadastrada na base de categorias do Agente, use Religar de novo.');
+  toast(entries.length ? `${entries.length} grupos ligados a categorias que agora existem no Signus.` : 'Nenhuma categoria nova foi encontrada no Signus ainda. Depois de cadastrar na base de categorias do Agente, clique de novo em "Atualizar com as categorias do Signus".');
 }
 async function exportTree(){
   const props = [...proposals().keys()].sort();
-  if (!props.length) { toast('Nenhuma categoria proposta para exportar.'); return; }
+  if (!props.length) { toast('Nenhuma categoria nova para exportar.'); return; }
   const aoa = [['NOME_PRIMEIRO_NIVEL','NOME_SEGUNDO_NIVEL','NOME_TERCEIRO_NIVEL','NOME_QUARTO_NIVEL','STATUS','GRUPOS_DE_PRODUTO']];
   const cnt = proposals();
-  for (const p of props) { const parts = p.split(' > '); aoa.push([parts[0]||'', parts[1]||'', parts[2]||'', parts[3]||'', S.prop[enc(p)]?.st === 'aprovada' ? 'Aprovada' : 'Proposta', cnt.get(p) || 0]); }
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Arvore proposta');
-  await saveXlsx(wb, `Arvore_proposta_${new Date().toISOString().slice(0,10)}.xlsx`, `${props.length} categorias exportadas.`);
+  for (const p of props) { const parts = p.split(' > '); aoa.push([parts[0]||'', parts[1]||'', parts[2]||'', parts[3]||'', S.prop[enc(p)]?.st === 'aprovada' ? 'Aprovada' : 'Aguardando aprovação', cnt.get(p) || 0]); }
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Categorias novas');
+  await saveXlsx(wb, `Categorias_novas_${new Date().toISOString().slice(0,10)}.xlsx`, `${props.length} categorias exportadas.`);
 }
 
 /* ============ render: textos ============ */
@@ -721,7 +747,22 @@ function nameSource(r){
   const t = S.T[r.key];
   if (t && t.nome) return t.editado ? ['editado', 'info'] : t.fonte === 'regra' ? ['regra', ''] : ['IA', 'ai'];
   const tf = r.item._rule?.tipoFonte;
-  return tf === 'regra' ? ['regra, tipo sem padrao', 'warn'] : ['regra', ''];
+  return tf === 'regra' ? ['regra, tipo sem padrão', 'warn'] : ['regra', ''];
+}
+// Pode ser aprovado em lote: tem nome, a IA nao marcou duvida e o tipo ja foi padronizado (ou o nome veio da IA).
+function aprovavel(r){
+  const t = S.T[r.key] || {};
+  if (t.st === 'aprovado' || !currentName(r) || t.duvida) return false;
+  return !(r.item._rule?.tipoFonte === 'regra' && !t.nome);
+}
+async function aprovarLote(rows, rotulo){
+  const ok = rows.filter(aprovavel);
+  const fora = rows.filter(r => S.T[r.key]?.st !== 'aprovado').length - ok.length;
+  if (!ok.length) { toast(fora ? `Nada para aprovar em lote: ${fmtN(fora)} ${fora === 1 ? 'item precisa' : 'itens precisam'} de revisão um a um (tipo sem padrão ou dúvida da IA).` : 'Nada para aprovar.'); return; }
+  if (ok.length > 40 && !confirm(`Aprovar ${fmtN(ok.length)} nomes ${rotulo}?\n\nConfira alguns antes. Cada aprovação fica registrada no seu nome.`)) return;
+  await writeMany('t', ok.map(r => [r.key, approvePatch(r)]));
+  compute(); renderTextos(); renderCounts();
+  toast(`${fmtN(ok.length)} nomes aprovados.` + (fora ? ` ${fmtN(fora)} ficaram para revisar um a um (tipo sem padrão ou dúvida da IA).` : ''), 6000);
 }
 function approvePatch(r){
   const t = S.T[r.key] || {};
@@ -737,7 +778,8 @@ function renderTextos(){
   $('#tiposPane').hidden = S.txtView !== 'tipos'; $('#itensPane').hidden = S.txtView !== 'itens';
   const tv = tipoList();
   const nSem = tv.filter(x => !x.voc?.tipo).length;
-  $('#tiposNote').textContent = S.out ? `${fmtN(tv.length)} tipos diferentes nesta planilha, ${fmtN(nSem)} sem padrao${nSem ? ` (cerca de ${Math.ceil(nSem / 50)} chamadas de IA)` : ''}.` : '';
+  $('#aiTipos').textContent = 'Padronizar tipos com IA' + (nSem ? ` (${fmtN(nSem)} tipos, ${chamadas(Math.ceil(nSem / 50))})` : '');
+  $('#tiposNote').textContent = S.out ? `${fmtN(tv.length)} tipos diferentes nesta planilha, ${fmtN(nSem)} sem padrão${nSem ? ` (cerca de ${Math.ceil(nSem / 50)} chamadas de IA)` : ''}.` : '';
   if (S.txtView === 'tipos') { renderTipos(tv); refreshAIButtons(); return; }
   const tbl = $('#txtTbl');
   if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#txtPager').innerHTML=''; return; }
@@ -745,10 +787,17 @@ function renderTextos(){
   const gl = groupsList();
   gsel.innerHTML = `<option value="">Todos os grupos (${gl.length})</option>` + gl.map(g => `<option value="${esc(g.key)}" ${g.key===cur?'selected':''}>${esc(g.key.slice(0,60))} (${g.n})</option>`).join('');
   const rows = filteredTextRows();
+  const nLote = rows.filter(aprovavel).length;
+  $('#approveVisible').textContent = nLote ? `Aprovar ${fmtN(nLote)} do filtro` : 'Aprovar o filtro';
+  $('#approveVisible').disabled = !nLote;
+  $('#approveVisible').title = 'Aprova de uma vez os nomes do filtro atual. Itens com tipo sem padrão ou dúvida da IA ficam para revisar um a um.';
+  const desc = $('#genDesc').checked, lim = Number($('#txtLimit').value);
+  const nIA = Math.min(lim, rows.filter(r => r.key && ($('#genRegen').checked || !(S.T[r.key] && S.T[r.key].nome)) && S.T[r.key]?.st !== 'aprovado').length);
+  $('#aiTexts').textContent = nIA ? `Gerar para ${fmtN(nIA)} itens (${chamadas(Math.ceil(nIA / (desc ? 12 : 25)))})` : 'Gerar para os itens filtrados';
   const PG = 40; const pages = Math.max(1, Math.ceil(rows.length / PG)); if (S.txtPage >= pages) S.txtPage = 0;
   const slice = rows.slice(S.txtPage * PG, S.txtPage * PG + PG);
   resolveNames(slice.map(r => S.T[r.key]?.por).filter(Boolean));
-  let h = '<thead><tr><th>Ref.</th><th>Nome original</th><th style="min-width:360px">Nome padronizado</th><th style="min-width:300px">Descricao longa</th><th>Status</th></tr></thead><tbody>';
+  let h = '<thead><tr><th>Ref.</th><th>Nome original</th><th style="min-width:360px">Nome padronizado</th><th style="min-width:300px">Descrição longa</th><th>Status</th></tr></thead><tbody>';
   for (const r of slice) {
     const t = S.T[r.key] || {};
     const ok = t.st === 'aprovado';
@@ -759,7 +808,7 @@ function renderTextos(){
       <td><div class="txt-orig">${esc(origName)}</div></td>
       <td><textarea class="txt-name" rows="2" data-tk="${esc(r.key)}" data-tf="nome" aria-label="Nome padronizado de ${esc(r.key)}">${esc(nm)}</textarea>
         <div class="note" style="margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill ${cls}">${esc(src)}</span>${nm.length} caracteres${t.duvida ? ' &middot; <span style="color:var(--warn)">' + esc(t.duvida) + '</span>' : ''}${!ok && r.item._rule?.tipoFonte === 'regra' && !t.nome ? ` &middot; tipo: <span class="mono">${esc(r.item._rule.raw)}</span>` : ''}</div></td>
-      <td><textarea class="txt-desc" data-tk="${esc(r.key)}" data-tf="desc" rows="3" placeholder="(sem descricao)" aria-label="Descricao de ${esc(r.key)}">${esc(t.desc||'')}</textarea></td>
+      <td><textarea class="txt-desc" data-tk="${esc(r.key)}" data-tf="desc" rows="3" placeholder="(sem descrição)" aria-label="Descrição de ${esc(r.key)}">${esc(t.desc||'')}</textarea></td>
       <td style="min-width:120px">${ok ? `<span class="pill ok">aprovado</span><div style="margin-top:4px">${whoHtml(t.por)}</div><button class="sm ghost" data-unok="${esc(r.key)}">Reabrir</button>` : `<button class="sm primary" data-ok="${esc(r.key)}">Aprovar</button>`}</td>
     </tr>`;
   }
@@ -767,7 +816,7 @@ function renderTextos(){
   tbl.innerHTML = h + '</tbody>';
   const all = S.out.filter(r => !r.excl && r.key);
   const nOk = all.filter(r => S.T[r.key]?.st === 'aprovado').length;
-  $('#txtPager').innerHTML = `<span class="muted">${fmtN(rows.length)} itens no filtro &middot; ${fmtN(nOk)} aprovados de ${fmtN(all.length)}</span><button class="sm" data-pg="-1" ${S.txtPage===0?'disabled':''}>Anterior</button><span class="mono">${S.txtPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.txtPage>=pages-1?'disabled':''}>Proxima</button>`;
+  $('#txtPager').innerHTML = `<span class="muted">${fmtN(rows.length)} itens no filtro &middot; ${fmtN(nOk)} aprovados de ${fmtN(all.length)}</span><button class="sm" data-pg="-1" ${S.txtPage===0?'disabled':''}>Anterior</button><span class="mono">${S.txtPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.txtPage>=pages-1?'disabled':''}>Próxima</button>`;
   refreshAIButtons();
 }
 function tipoList(){
@@ -776,8 +825,8 @@ function tipoList(){
   for (const r of S.out) {
     if (r.excl || !r.item._rule) continue;
     const { raw, rk } = r.item._rule; if (!rk) continue;
-    let x = m.get(rk); if (!x) { x = { rk, raw, n: 0, ex: [], ctx: r.item.ctx, voc: S.Y[rk] }; m.set(rk, x); }
-    x.n++; if (x.ex.length < 3) x.ex.push(String(descSrc(r.item) ?? '').replace(/\s+/g,' ').trim().slice(0, 140));
+    let x = m.get(rk); if (!x) { x = { rk, raw, n: 0, ex: [], ctx: r.item.ctx, voc: S.Y[rk], pend: 0, rows: [] }; m.set(rk, x); }
+    x.n++; if (r.key) { x.rows.push(r); if (S.T[r.key]?.st !== 'aprovado') x.pend++; } if (x.ex.length < 3) x.ex.push(String(descSrc(r.item) ?? '').replace(/\s+/g,' ').trim().slice(0, 140));
   }
   return [...m.values()].sort((a,b) => b.n - a.n);
 }
@@ -789,21 +838,22 @@ function renderTipos(tv){
   $$('#tipoFilter .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === S.tipoFilter ? 'true' : 'false'));
   const PG = 100; const pages = Math.max(1, Math.ceil(list.length / PG)); if (S.tipoPage >= pages) S.tipoPage = 0;
   const slice = list.slice(S.tipoPage * PG, S.tipoPage * PG + PG);
-  let h = '<thead><tr><th>Tipo na planilha</th><th class="num">Itens</th><th>Exemplo</th><th style="min-width:260px">Tipo padrao</th><th>Fonte</th></tr></thead><tbody>';
+  let h = '<thead><tr><th>Tipo na planilha</th><th class="num">Itens</th><th>Exemplo</th><th style="min-width:260px">Tipo padrão</th><th>Fonte</th><th>Nomes</th></tr></thead><tbody>';
   for (const x of slice) {
     const v = x.voc || {};
     h += `<tr><td class="mono">${esc(x.raw)}</td><td class="num">${x.n}</td><td style="max-width:420px"><span class="note clamp2" title="${esc(x.ex.join(' ; '))}">${esc(x.ex[0] || '')}</span></td>
-      <td><input data-yk="${esc(x.rk)}" data-raw="${esc(x.raw)}" value="${esc(v.tipo || '')}" placeholder="${esc(capitalize(x.raw.toLowerCase(), siglaSet()))}" style="width:100%" aria-label="Tipo padrao para ${esc(x.raw)}"></td>
-      <td>${v.tipo ? `<span class="pill ${v.fonte === 'ia' ? 'ai' : 'info'}">${v.fonte === 'ia' ? 'IA' : 'manual'}</span>` : '<span class="pill warn">sem padrao</span>'}</td></tr>`;
+      <td><input data-yk="${esc(x.rk)}" data-raw="${esc(x.raw)}" value="${esc(v.tipo || '')}" placeholder="${esc(capitalize(x.raw.toLowerCase(), siglaSet()))}" style="width:100%" aria-label="Tipo padrão para ${esc(x.raw)}"></td>
+      <td>${v.tipo ? `<span class="pill ${v.fonte === 'ia' ? 'ai' : 'info'}">${v.fonte === 'ia' ? 'IA' : 'manual'}</span>` : '<span class="pill warn">sem padrão</span>'}</td>
+      <td>${!x.pend ? '<span class="note">aprovados</span>' : v.tipo ? `<button class="sm" data-aptipo="${esc(x.rk)}" title="Aprova os nomes que usam este tipo">Aprovar ${fmtN(x.pend)}</button>` : `<span class="note">${fmtN(x.pend)} aguardando</span>`}</td></tr>`;
   }
-  if (!slice.length) h += '<tr><td colspan="5" class="note">Nenhum tipo neste filtro.</td></tr>';
+  if (!slice.length) h += '<tr><td colspan="6" class="note">Nenhum tipo neste filtro.</td></tr>';
   $('#tipoTbl').innerHTML = h + '</tbody>';
-  $('#tipoPager').innerHTML = `<span class="muted">${fmtN(list.length)} tipos</span><button class="sm" data-pg="-1" ${S.tipoPage===0?'disabled':''}>Anterior</button><span class="mono">${S.tipoPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.tipoPage>=pages-1?'disabled':''}>Proxima</button>`;
+  $('#tipoPager').innerHTML = `<span class="muted">${fmtN(list.length)} tipos</span><button class="sm" data-pg="-1" ${S.tipoPage===0?'disabled':''}>Anterior</button><span class="mono">${S.tipoPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.tipoPage>=pages-1?'disabled':''}>Próxima</button>`;
 }
 async function aiTipos(){
   if (!aiAvailable() || !S.out) return;
   const pend = tipoList().filter(x => !x.voc?.tipo);
-  if (!pend.length) { toast('Todos os tipos desta planilha ja tem padrao.'); return; }
+  if (!pend.length) { toast('Todos os tipos desta planilha já tem padrão.'); return; }
   const signal = startAI(); const BATCH = 50; let done = 0, n = 0;
   try {
     for (let b = 0; b < pend.length; b += BATCH) {
@@ -816,7 +866,7 @@ async function aiTipos(){
       await writeMany('y', entries); n += entries.length;
       done += chunk.length; compute(); renderTextos(); renderCounts();
     }
-    endAI(`${n} tipos padronizados. Os nomes ja foram remontados; revise e aprove.`);
+    endAI(`${n} tipos padronizados. Os nomes já foram remontados; revise e aprove.`);
   } catch (e) { endAI(aiErr(e)); }
   compute(); refreshAll();
 }
@@ -830,7 +880,7 @@ function renderRevisar(){
   const nErr = live.filter(r => r.errs.length).length, nWarn = live.filter(r => !r.errs.length && r.warns.length).length;
   const nOk = live.length - nErr - nWarn, nCat = live.filter(r => r.cat).length, nTx = live.filter(r => S.T[r.key]?.st === 'aprovado').length;
   $('#revTiles').innerHTML = [
-    ['Itens', live.length, ''], ['Prontos', nOk, 'ok'], ['Com aviso', nWarn, 'warn'], ['Com erro', nErr, 'err'], ['Com categoria', nCat, ''], ['Nome aprovado', nTx, ''], ['Excluidos', S.out.length - live.length, ''],
+    ['Itens', live.length, ''], ['Prontos', nOk, 'ok'], ['Com aviso', nWarn, 'warn'], ['Com erro', nErr, 'err'], ['Com categoria', nCat, ''], ['Nome aprovado', nTx, ''], ['Excluídos', S.out.length - live.length, ''],
   ].map(([l,v,c]) => `<div class="tile ${c}"><span class="label">${l}</span><b>${fmtN(v)}</b></div>`).join('');
   let rows = live;
   if (S.revFilter === 'err') rows = rows.filter(r => r.errs.length);
@@ -841,16 +891,16 @@ function renderRevisar(){
   const cols = $('#revCols').value === 'map' ? COLS.filter(c => S.P.map[c]?.m !== 'vazio') : ESS;
   const PG = 100; const pages = Math.max(1, Math.ceil(rows.length / PG)); if (S.revPage >= pages) S.revPage = 0;
   const slice = rows.slice(S.revPage*PG, S.revPage*PG + PG);
-  let h = `<thead><tr><th>Linha</th><th>Ref. fornecedor</th>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}<th>Categoria</th><th>Criticas</th></tr></thead><tbody>`;
+  let h = `<thead><tr><th>Linha</th><th>Ref. fornecedor</th>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}<th>Categoria</th><th>Críticas</th></tr></thead><tbody>`;
   for (const r of slice) {
     h += `<tr><td class="num">${r.item.r+1}</td><td class="mono">${esc(r.key)}</td>` + cols.map(c => {
       const v = r.o[c]; const num = typeof v === 'number';
       return `<td class="${num?'num':''}"><span class="clip" title="${esc(v)}">${esc(v)}</span></td>`;
     }).join('') + `<td>${r.cat ? `<span class="clip" title="${esc(r.cat.path)}">${esc(r.cat.nome)} <span class="muted mono">${esc(r.cat.id)}</span></span>` : r.g && r.g.prop ? `<span class="clip note" title="${esc(r.g.prop)}">proposta: ${esc(r.g.prop.split(' > ').pop())}</span>` : '<span class="muted">-</span>'}</td>
-    <td><div class="crit">${r.errs.map(e=>`<span class="e">${esc(e)}</span>`).join('')}${r.warns.map(w=>`<span class="w">${esc(w)}</span>`).join('')}</div></td></tr>`;
+    <td><div class="crit">${r.errs.map(e=>`<span class="e">${esc(acento(e))}</span>`).join('')}${r.warns.map(w=>`<span class="w">${esc(acento(w))}</span>`).join('')}</div></td></tr>`;
   }
   tbl.innerHTML = h + '</tbody>';
-  $('#revPager').innerHTML = `<span class="muted">${fmtN(rows.length)} itens</span><button class="sm" data-pg="-1" ${S.revPage===0?'disabled':''}>Anterior</button><span class="mono">${S.revPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.revPage>=pages-1?'disabled':''}>Proxima</button>`;
+  $('#revPager').innerHTML = `<span class="muted">${fmtN(rows.length)} itens</span><button class="sm" data-pg="-1" ${S.revPage===0?'disabled':''}>Anterior</button><span class="mono">${S.revPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.revPage>=pages-1?'disabled':''}>Próxima</button>`;
 }
 
 /* ============ bases ============ */
@@ -859,20 +909,20 @@ function renderBases(){
   $('#treeTbl').innerHTML = '<thead><tr><th>ID</th><th>Caminho</th><th>Plataforma</th></tr></thead><tbody>' + S.tree.map(t => `<tr><td class="num">${esc(t.id)}</td><td>${esc(t.path)}</td><td class="note">${esc(t.plat)}</td></tr>`).join('') + '</tbody>';
   const cg = caracGroups();
   $('#caracInfo').textContent = Object.keys(cg).length + ' grupos';
-  $('#caracTbl').innerHTML = '<thead><tr><th>Grupo</th><th>Seq.</th><th>Caracteristica</th><th>Tipo</th></tr></thead><tbody>' +
+  $('#caracTbl').innerHTML = '<thead><tr><th>Grupo</th><th>Seq.</th><th>Característica</th><th>Tipo</th></tr></thead><tbody>' +
     Object.values(cg).flatMap(g => g.caracs.map(c => `<tr><td>${esc(g.nome)} <span class="muted mono">${esc(g.codigo)}</span></td><td class="num">${c.seq}</td><td>${esc(c.nome)}</td><td class="note">${esc(c.tipo)}</td></tr>`)).join('') + '</tbody>';
 }
 // A arvore e a categorias_zydon do Agente (e a Categoria Treeview do Signus): ela nao e trocada por aqui.
 // Os grupos de caracteristicas ficam em signus_caracteristicas; so admin substitui.
 const caracDoBanco = r => ({ GRUPO_CARACT_ID: r.grupo_id, GRUPO_CARACT_CODIGO: r.grupo_codigo, GRUPO_CARACT_NOME: r.grupo_nome, CARACT_ID: r.caract_id, CARACT_SEQUENCIA: r.sequencia, CARACT_TIPO: r.tipo, CARACT_NOME: r.nome, CARACT_SITUACAO: r.situacao });
 async function importRef(file, kind){
-  if (kind === 'arvore') { toast('A arvore vem da base de categorias do Agente. Cadastre a categoria nova la e use "Religar".', 6000); return; }
-  if (!S.isAdmin) { toast('So admin substitui a base de caracteristicas do Signus.'); return; }
+  if (kind === 'arvore') { toast('A árvore vem da base de categorias do Agente. Cadastre a categoria nova lá e use "Atualizar com as categorias do Signus".', 6000); return; }
+  if (!S.isAdmin) { toast('Só admin substitui a base de características do Signus.'); return; }
   try {
     const wb = await readFile(file); const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { defval:'', raw:false });
     const need = ['GRUPO_CARACT_CODIGO','CARACT_NOME','CARACT_ID'];
-    if (!rows.length || !need.every(k => k in rows[0])) { toast('Arquivo nao parece a exportacao esperada (faltam colunas ' + need.join(', ') + ').'); return; }
+    if (!rows.length || !need.every(k => k in rows[0])) { toast('Arquivo não parece a exportação esperada (faltam colunas ' + need.join(', ') + ').'); return; }
     const linhas = rows.filter(r => String(r.GRUPO_CARACT_CODIGO).trim() && String(r.CARACT_ID).trim()).map(r => ({
       grupo_id: String(r.GRUPO_CARACT_ID || '').replace(/\.0$/, ''), grupo_codigo: String(r.GRUPO_CARACT_CODIGO).trim(), grupo_nome: String(r.GRUPO_CARACT_NOME || '').trim(),
       caract_id: String(r.CARACT_ID).replace(/\.0$/, '').trim(), sequencia: Number(r.CARACT_SEQUENCIA) || null, tipo: String(r.CARACT_TIPO || ''), nome: String(r.CARACT_NOME || '').trim(), situacao: String(r.CARACT_SITUACAO || ''),
@@ -884,15 +934,15 @@ async function importRef(file, kind){
     const antigas = (await lerTudo('signus_caracteristicas', 'grupo_codigo')).filter(r => !novas.has(r.grupo_codigo + '|' + r.caract_id));
     for (const r of antigas) await sb.from('signus_caracteristicas').delete().match({ grupo_codigo: r.grupo_codigo, caract_id: r.caract_id });
     S.carac = linhas.map(caracDoBanco);
-    toast(`Base atualizada para todo o time: ${linhas.length} caracteristicas.`);
+    toast(`Base atualizada para todo o time: ${linhas.length} características.`);
     compute(); refreshAll();
-  } catch (e) { toast('Nao foi possivel atualizar a base (' + (e.message || 'arquivo ilegivel') + ').'); }
+  } catch (e) { toast('Não foi possível atualizar a base (' + (e.message || 'arquivo ilegível') + ').'); }
 }
 
 /* ============ export ============ */
 async function saveXlsx(wb, filename, okMsg){
   try { XLSX.writeFile(wb, filename, { compression: true }); toast(okMsg); }
-  catch (e) { toast('Nao foi possivel gerar o arquivo.'); }
+  catch (e) { toast('Não foi possível gerar o arquivo.'); }
 }
 async function exportFile(){
   if (!S.out || !S.P) return;
@@ -906,30 +956,101 @@ async function exportFile(){
   for (let r = 1; r < main.length; r++) for (const c of textCols) { const a = XLSX.utils.encode_cell({r, c}); if (ws[a] && ws[a].v !== '') { ws[a].t = 's'; ws[a].v = String(ws[a].v); ws[a].z = '@'; } }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, SIGNUS_SHEET);
-  const tv = [['Ref. fornecedor','Código de barras','Nome','ID_CATEGORIA_TREEVIEW','NOME_CATEGORIA','CAMINHO','CATEGORIA_PROPOSTA','Grupo da planilha','Fonte']];
+  const tv = [['Ref. fornecedor','Código de barras','Nome','ID_CATEGORIA_TREEVIEW','NOME_CATEGORIA','CAMINHO','CATEGORIA_NOVA','Grupo da planilha','Fonte']];
   for (const r of live) tv.push([r.key, String(r.o['Código de barras']||''), r.o['Nome'], r.cat?.id || '', r.cat?.nome || '', r.cat?.path || '', r.cat ? '' : (r.g?.prop || ''), r.gk, r.g?.fonte || '']);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tv), 'Categoria Treeview');
   const cg = caracGroups(); const cv = [['Ref. fornecedor','Código de barras','Nome','GRUPO_CARACT_CODIGO','CARACT_ID','CARACT_NOME','VALOR']];
   for (const r of live) { const vals = S.caracVals[r.ix]; const g = r.g?.gc && cg[r.g.gc]; if (!vals || !g) continue;
     for (const c of g.caracs) if (vals[c.id]) cv.push([r.key, String(r.o['Código de barras']||''), r.o['Nome'], g.codigo, c.id, c.nome, vals[c.id]]); }
-  if (cv.length > 1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cv), 'Caracteristicas');
+  if (cv.length > 1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cv), 'Características');
   const cr = [['Linha na planilha','Ref. fornecedor','Nome','Tipo','Mensagem']];
-  for (const r of S.out) { if (r.excl) { cr.push([r.item.r+1, itemKey(r.item), '', 'Excluido', r.motivo || 'Removido']); continue; }
-    r.errs.forEach(e => cr.push([r.item.r+1, r.key, r.o['Nome'], 'Erro', e])); r.warns.forEach(w => cr.push([r.item.r+1, r.key, r.o['Nome'], 'Aviso', w])); }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cr), 'Criticas');
+  for (const r of S.out) { if (r.excl) { cr.push([r.item.r+1, itemKey(r.item), '', 'Excluído', acento(r.motivo || 'Removido')]); continue; }
+    r.errs.forEach(e => cr.push([r.item.r+1, r.key, r.o['Nome'], 'Erro', acento(e)])); r.warns.forEach(w => cr.push([r.item.r+1, r.key, r.o['Nome'], 'Aviso', acento(w)])); }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cr), 'Críticas');
   const d = new Date(); const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
   await saveXlsx(wb, `Signus_Migracao_${slugId(S.P.nome)}_${stamp}.xlsx`, `${fmtN(live.length)} produtos exportados.`);
 }
 
 /* ============ refresh ============ */
+// Situacao de cada etapa: alimenta o numero ao lado das abas e o painel "O que falta".
+function situacao(){
+  const x = { pronto: {} };
+  if (!S.P || !S.out) return x;
+  x.itens = S.out.filter(r => !r.excl);
+  const campos = GROUPS.flatMap(([, cols]) => cols);
+  x.campos = campos.filter(c => (S.P.map[c]?.m || 'vazio') !== 'vazio').length;
+  x.semColuna = COLS.filter(c => S.P.map[c]?.m === 'col' && (!S.P.map[c].src || !S.headers.includes(S.P.map[c].src)));
+  x.nomeOk = (S.P.map['Nome']?.m || 'vazio') !== 'vazio';
+  const gl = groupsList();
+  x.grupos = gl.length;
+  x.semCat = gl.filter(g => !S.G[g.key]?.tree && !S.G[g.key]?.prop).length;
+  x.gruposPend = gl.filter(g => !S.G[g.key]?.ok).length;
+  x.alta = gl.filter(g => { const d = S.G[g.key]; return d && d.fonte === 'ia' && d.tree && d.conf === 'alta' && !d.ok; }).length;
+  const comRef = x.itens.filter(r => r.key);
+  x.nomes = comRef.length;
+  x.nomesPend = comRef.filter(r => S.T[r.key]?.st !== 'aprovado').length;
+  x.tiposSem = tipoList().filter(t => !t.voc?.tipo).length;
+  x.erros = x.itens.filter(r => r.errs.length).length;
+  x.pronto = {
+    arquivo: S.items.length > 0,
+    colunas: x.nomeOk && !x.semColuna.length,
+    categorias: x.grupos > 0 && !x.semCat && !x.gruposPend,
+    textos: x.nomes > 0 && !x.nomesPend,
+    revisar: x.itens.length > 0 && !x.erros,
+  };
+  return x;
+}
 function renderCounts(){
-  $('#cntArquivo').textContent = S.items.length ? fmtN(S.items.length) : '';
-  $('#cntColunas').textContent = S.P ? COLS.filter(c => S.P.map[c]?.m !== 'vazio').length + '/' + (COLS.length - 2) : '';
-  const gl = S.P && S.out ? groupsList() : [];
-  $('#cntCategorias').textContent = gl.length ? gl.filter(g => S.G[g.key]?.tree || S.G[g.key]?.prop).length + '/' + gl.length : '';
-  const all = S.out ? S.out.filter(r => !r.excl && r.key) : [];
-  $('#cntTextos').textContent = all.length ? fmtN(all.filter(r => S.T[r.key]?.st === 'aprovado').length) + '/' + fmtN(all.length) : '';
-  $('#cntRevisar').textContent = S.out ? fmtN(S.out.filter(r => !r.excl && r.errs.length).length) + ' erros' : '';
+  const x = situacao();
+  const cnt = {
+    arquivo: S.items.length ? fmtN(S.items.length) + ' itens' : '',
+    colunas: !S.P ? '' : x.semColuna?.length ? x.semColuna.length + ' sem coluna' : (x.campos ?? '') + (x.campos != null ? ' campos' : ''),
+    categorias: x.grupos ? fmtN(x.grupos - x.gruposPend) + ' de ' + fmtN(x.grupos) : '',
+    textos: x.nomes ? fmtN(x.nomes - x.nomesPend) + ' de ' + fmtN(x.nomes) : '',
+    revisar: !x.itens ? '' : x.erros ? fmtN(x.erros) + (x.erros === 1 ? ' erro' : ' erros') : 'pronto',
+  };
+  const dica = {
+    arquivo: 'Itens lidos da planilha',
+    colunas: x.semColuna?.length ? 'Campos que apontam para uma coluna que não existe nesta planilha' : 'Campos do Signus preenchidos por este perfil',
+    categorias: 'Grupos com categoria aprovada',
+    textos: 'Nomes aprovados',
+    revisar: 'Itens com erro ficam fora do arquivo',
+  };
+  for (const [k, id] of [['arquivo','cntArquivo'],['colunas','cntColunas'],['categorias','cntCategorias'],['textos','cntTextos'],['revisar','cntRevisar']]) {
+    $('#' + id).textContent = cnt[k];
+    const b = $(`.step[data-step="${k}"]`);
+    b.classList.toggle('done', !!x.pronto[k]);
+    b.title = cnt[k] ? dica[k] + (x.pronto[k] ? ' (concluída)' : '') : '';
+  }
+  return x;
+}
+function linhaFalta(estado, titulo, nota, botao){
+  const ic = estado === 'ok' ? '&#10003;' : estado === 'err' ? '!' : '';
+  return `<div class="falta ${estado}"><span class="ic" aria-hidden="true">${ic}</span><div><b>${titulo}</b>${nota ? `<span class="note">${nota}</span>` : ''}</div>${botao || '<span></span>'}</div>`;
+}
+function renderFaltas(){
+  const box = $('#faltas');
+  if (!S.P || !S.out || !S.items.length) { box.hidden = true; return; }
+  const x = situacao();
+  const ir = (step, filtro, rot = 'Resolver') => `<button class="sm" data-goto="${step}" ${filtro ? `data-filtro="${filtro}"` : ''}>${rot}</button>`;
+  let h = `<header><div><h3>O que falta</h3><span class="note">${fmtN(x.itens.length)} produtos de <b>${esc(S.fileName)}</b> &middot; perfil <b>${esc(S.P.nome)}</b></span></div>${Object.values(x.pronto).every(Boolean) ? '<span class="pill ok">tudo pronto para exportar</span>' : ''}</header>`;
+  h += x.pronto.colunas
+    ? linhaFalta('ok', 'Colunas configuradas', `${x.campos} campos do Signus preenchidos por este perfil.`, ir('colunas', '', 'Ver'))
+    : linhaFalta('', !x.nomeOk ? 'Escolha de onde vem o Nome' : `${x.semColuna.length} ${x.semColuna.length === 1 ? 'campo aponta' : 'campos apontam'} para colunas que não existem nesta planilha`, !x.nomeOk ? '' : esc(x.semColuna.slice(0, 4).join(', ')) + (x.semColuna.length > 4 ? '...' : ''), ir('colunas'));
+  h += x.semCat
+    ? linhaFalta('', `${fmtN(x.semCat)} de ${fmtN(x.grupos)} grupos sem categoria`, 'Sugira com IA ou escolha na lista.', ir('categorias', 'cat:sem'))
+    : x.gruposPend
+      ? linhaFalta('', `${fmtN(x.gruposPend)} ${x.gruposPend === 1 ? 'grupo' : 'grupos'} com categoria para aprovar`, x.alta ? `${fmtN(x.alta)} de confiança alta podem ser aprovados de uma vez.` : '', ir('categorias', 'cat:pend'))
+      : linhaFalta('ok', `Todos os ${fmtN(x.grupos)} grupos com categoria aprovada`, '', ir('categorias', '', 'Ver'));
+  h += x.nomesPend
+    ? linhaFalta('', `${fmtN(x.nomesPend)} de ${fmtN(x.nomes)} nomes para aprovar`, x.tiposSem ? `Comece padronizando os ${fmtN(x.tiposSem)} tipos sem padrão (cerca de ${chamadas(Math.ceil(x.tiposSem / 50))} de IA).` : 'Dá para aprovar por tipo, por grupo ou o filtro inteiro.', ir('textos', x.tiposSem ? 'txt:tipos' : 'txt:sug'))
+    : linhaFalta('ok', `Todos os ${fmtN(x.nomes)} nomes aprovados`, '', ir('textos', '', 'Ver'));
+  h += x.erros
+    ? linhaFalta('err', `${fmtN(x.erros)} ${x.erros === 1 ? 'item' : 'itens'} com erro`, 'Ficam fora do arquivo até serem corrigidos.', ir('revisar', 'rev:err', 'Ver'))
+    : linhaFalta('ok', 'Nenhum item com erro', '', '');
+  const sai = x.itens.length - ($('#inclErr').checked ? 0 : x.erros);
+  h += `<footer><button class="primary" id="faltaExport">Exportar .xlsx</button><span class="note">${fmtN(sai)} produtos no arquivo${x.erros && !$('#inclErr').checked ? `; os ${fmtN(x.erros)} com erro ficam de fora` : ''}${x.nomesPend ? `; ${fmtN(x.nomesPend)} ainda sem nome aprovado saem com o nome da planilha` : ''}.</span></footer>`;
+  box.innerHTML = h; box.hidden = false;
 }
 function refreshAll(){
   compute(); renderCounts();
@@ -960,7 +1081,7 @@ $('#fileIn').addEventListener('change', e => { const f = e.target.files[0]; if (
 async function handleFile(f){
   toast('Lendo ' + f.name + '...', 8000);
   try { const wb = await readFile(f); openWorkbook(wb, f.name, false); toast(`${fmtN(S.items.length)} produtos lidos.`); }
-  catch (e) { toast('Nao foi possivel ler este arquivo. Confira se e .xlsx, .xls ou .csv.'); }
+  catch (e) { toast('Não foi possível ler este arquivo. Confira se é .xlsx, .xls ou .csv.'); }
 }
 $('#sheetSel').addEventListener('change', e => { loadSheet(e.target.value, true); if (S.P) { S.P.sheet = S.sheetName; markDirty(); } });
 $('#hdrRow').addEventListener('change', e => { const v = Math.max(1, parseInt(e.target.value)||1) - 1; S.headerRow = v; parseItems(); if (S.P) { S.P.headerRow = v; markDirty(); } refreshAll(); });
@@ -975,12 +1096,12 @@ function createProfile(){
   S.profiles[p.id] = p; S.profId = p.id; S.P = p; subscribeProfile();
   if (S.headers.length) autoMap(false);
   $('#newProfBox').hidden = true; $('#newProfBtn').hidden = false; $('#newProfName').value = '';
-  renderProfSel(); markDirty(); saveProfile(); go('colunas'); toast('Perfil criado com sugestoes pelos nomes das colunas. Revise.');
+  renderProfSel(); markDirty(); saveProfile(); go('colunas'); toast('Perfil criado com sugestões pelos nomes das colunas. Revise.');
 }
 $('#newProfOk').addEventListener('click', createProfile);
 $('#newProfName').addEventListener('keydown', e => { if (e.key === 'Enter') createProfile(); });
 $('#saveProf').addEventListener('click', () => { clearTimeout(saveTimer); saveProfile(); });
-$('#autoMap').addEventListener('click', () => { const n = autoMap(true); markDirty(); refreshAll(); toast(n ? `${n} campos vazios preenchidos pelos nomes das colunas.` : 'Nenhum campo vazio com correspondencia pelo nome.'); });
+$('#autoMap').addEventListener('click', () => { const n = autoMap(true); markDirty(); refreshAll(); toast(n ? `${n} campos vazios preenchidos pelos nomes das colunas.` : 'Nenhum campo vazio com correspondência pelo nome.'); });
 $('#aiMap').addEventListener('click', aiSuggestMapping);
 $('#aiCats').addEventListener('click', aiSuggestCats);
 $('#aiCarac').addEventListener('click', aiExtractCarac);
@@ -991,9 +1112,9 @@ $('#savePadrao').addEventListener('click', async () => {
   if (!S.P) return;
   const map = {}; for (const c of COLS) if (S.P.map[c]?.m === 'fixo' && S.P.map[c].v !== '') map[c] = { m:'fixo', v: S.P.map[c].v };
   S.padroes = { ...(S.padroes || {}), map };
-  if (!S.isAdmin) { toast('So admin grava o padrao do time. Ele vale nesta sessao.'); return; }
+  if (!S.isAdmin) { toast('Só admin grava o padrão do time. Ele vale nesta sessão.'); return; }
   const { error } = await sb.from('configuracoes').upsert({ chave: 'fornecedores_padroes', valor: { map } });
-  toast(error ? 'Nao foi possivel gravar o padrao (' + error.message + ').' : Object.keys(map).length + ' valores fixos gravados como padrao para novos perfis.');
+  toast(error ? 'Não foi possível gravar o padrão (' + error.message + ').' : Object.keys(map).length + ' valores fixos gravados como padrão para novos perfis.');
 });
 $('#siglas').addEventListener('change', e => { if (!S.P) return; S.P.siglas = e.target.value; markDirty(); refreshAll(); });
 $('#addFilter').addEventListener('click', () => { if (!S.P) return; S.P.filtros.push({ col: S.headers[0], op:'contem', v:'' }); markDirty(); renderFilters(); });
@@ -1023,20 +1144,41 @@ $('#mapGrid').addEventListener('click', e => {
   if (b.dataset.mgrp) { const g = b.dataset.mgrp; if (S.gruposAbertos.has(g)) S.gruposAbertos.delete(g); else S.gruposAbertos.add(g); renderColunas(); }
 });
 $('#toggleVazios').addEventListener('click', () => { S.verVazios = !S.verVazios; S.gruposAbertos.clear(); S.manterVisiveis.clear(); renderColunas(); });
-$('#mapSemArquivo').addEventListener('click', e => { if (e.target.closest('[data-goto]')) go('arquivo'); });
+const marcarChips = (sel, v, campo = 'f') => $$(sel + ' .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset[campo] === v ? 'true' : 'false'));
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-goto]'); if (!b) return;
+  const f = b.dataset.filtro || '';
+  if (f.startsWith('cat:')) { S.catView = 'grupos'; S.catFilter = f.slice(4); marcarChips('#catFilter', S.catFilter); }
+  if (f === 'txt:tipos') { S.txtView = 'tipos'; S.tipoFilter = 'sem'; S.tipoPage = 0; }
+  else if (f.startsWith('txt:')) { S.txtView = 'itens'; S.txtFilter = f.slice(4); S.txtPage = 0; marcarChips('#txtFilter', S.txtFilter); }
+  if (f.startsWith('rev:')) { S.revFilter = f.slice(4); S.revPage = 0; marcarChips('#revFilter', S.revFilter); }
+  go(b.dataset.goto); window.scrollTo(0, 0);
+});
+document.addEventListener('click', e => { if (e.target.closest('#faltaExport')) exportFile(); });
 $('#groupBy').addEventListener('change', e => { if (!S.P) return; S.P.grupoPor = e.target.value; markDirty(); refreshAll(); });
 $('#catView').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.catView = b.dataset.v; renderGroups(); });
 $('#grpTbl').addEventListener('change', async e => {
   const el = e.target; const gk = el.dataset.gk; if (!gk) return;
   const f = el.dataset.gf; const patch = {};
-  if (f === 'tree') { patch.tree = el.value; patch.fonte = el.value ? 'manual' : ''; patch.conf = ''; patch.semMatch = false; if (el.value) patch.prop = ''; }
-  else if (f === 'prop') { patch.prop = normPath(el.value); patch.fonte = 'manual'; patch.semMatch = false; }
+  if (f === 'cat') {
+    // um campo so: categoria existente (busca na lista) ou caminho completo com ">" para categoria nova
+    const v = el.value.replace(/\s+/g, ' ').trim(); const nv = norm(v);
+    const porNome = S.tree.filter(t => norm(t.nome) === nv);
+    const hit = S.tree.find(t => norm(t.path) === nv) || (porNome.length === 1 ? porNome[0] : null);
+    const antes = S.G[gk] || {};
+    if (!v) Object.assign(patch, { tree: '', prop: '', fonte: '', conf: '', motivo: '', semMatch: false });
+    else if (hit) Object.assign(patch, { tree: hit.id, prop: '', fonte: 'manual', conf: '', semMatch: false, misto: false });
+    else if (v.includes('>')) Object.assign(patch, { tree: '', prop: normPath(v), fonte: 'manual', conf: '', semMatch: false, misto: false });
+    else { toast('Escolha uma categoria da lista ou escreva o caminho completo separado por > para criar uma categoria nova.', 6000); renderGroups(); return; }
+    if (antes.ok && (patch.tree !== (antes.tree || '') || patch.prop !== (antes.prop || ''))) { patch.ok = false; patch.okPor = ''; } // categoria trocada precisa de nova aprovacao
+  }
   else if (f === 'ok') { patch.ok = el.checked; patch.okPor = el.checked ? (S.me || '') : ''; }
   else patch[f] = el.value;
   await setGroup(gk, patch); compute(); renderGroups(); renderCounts();
 });
 $('#grpTbl').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.mais) { const k = b.dataset.mais; if (S.grpMais.has(k)) S.grpMais.delete(k); else S.grpMais.add(k); renderGroups(); return; }
   if (b.dataset.split) await setGroup(b.dataset.split, { split: true });
   else if (b.dataset.unsplit) await setGroup(b.dataset.unsplit, { split: false });
   else if (b.dataset.claim) await setGroup(b.dataset.claim, { resp: S.me || 'local' });
@@ -1044,12 +1186,18 @@ $('#grpTbl').addEventListener('click', async e => {
   else return;
   compute(); renderGroups(); renderCounts();
 });
+$('#aprovarAlta').addEventListener('click', async () => {
+  const alvo = groupsList().filter(g => { const d = S.G[g.key]; return d && d.fonte === 'ia' && d.tree && d.conf === 'alta' && !d.ok; });
+  if (!alvo.length) return;
+  await writeMany('g', alvo.map(g => [g.key, { ok: true, okPor: S.me || '' }]));
+  compute(); renderGroups(); renderCounts(); toast(`${fmtN(alvo.length)} grupos aprovados. Os de confiança média e baixa continuam para revisar.`);
+});
 $('#claimFree').addEventListener('click', async () => {
   const free = groupsList().filter(g => !S.G[g.key]?.resp && !S.G[g.key]?.ok).slice(0, 20);
   if (!free.length) { toast('Nenhum grupo livre.'); return; }
   await writeMany('g', free.map(g => [g.key, { resp: S.me || 'local' }]));
   S.catFilter = 'meus'; $$('#catFilter .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === 'meus' ? 'true':'false'));
-  renderGroups(); renderCounts(); toast(`${free.length} grupos agora estao com voce.`);
+  renderGroups(); renderCounts(); toast(`${free.length} grupos agora estão com você.`);
 });
 $('#grpSearch').addEventListener('input', e => { S.grpSearch = e.target.value; renderGroups(); });
 $('#catFilter').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.catFilter = b.dataset.f; $$('#catFilter .chip').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true':'false')); renderGroups(); });
@@ -1074,6 +1222,7 @@ $('#exportTree').addEventListener('click', exportTree);
 // textos
 $('#txtFilter').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.txtFilter = b.dataset.f; S.txtPage = 0; $$('#txtFilter .chip').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true':'false')); renderTextos(); });
 ['#txtMine','#txtGroup'].forEach(s => $(s).addEventListener('change', () => { S.txtPage = 0; renderTextos(); }));
+['#genDesc','#genRegen','#txtLimit'].forEach(s => $(s).addEventListener('change', () => renderTextos()));
 $('#txtSearch').addEventListener('input', () => { S.txtPage = 0; renderTextos(); });
 $('#txtPager').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.txtPage += Number(b.dataset.pg); renderTextos(); });
 $('#txtTbl').addEventListener('change', async e => {
@@ -1095,15 +1244,16 @@ $('#txtTbl').addEventListener('click', async e => {
   else return;
   compute(); renderTextos(); renderCounts();
 });
-$('#approveVisible').addEventListener('click', async () => {
-  const rows = filteredTextRows().slice(S.txtPage * 40, S.txtPage * 40 + 40).filter(r => S.T[r.key]?.st !== 'aprovado' && currentName(r));
-  if (!rows.length) { toast('Nada para aprovar nesta pagina.'); return; }
-  await writeMany('t', rows.map(r => [r.key, approvePatch(r)])); compute(); renderTextos(); renderCounts(); toast(`${rows.length} itens aprovados.`);
-});
+$('#approveVisible').addEventListener('click', () => aprovarLote(filteredTextRows(), 'deste filtro'));
 $('#txtView').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.txtView = b.dataset.v; renderTextos(); });
 $('#tipoFilter').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.tipoFilter = b.dataset.f; S.tipoPage = 0; renderTextos(); });
 $('#tipoSearch').addEventListener('input', () => { S.tipoPage = 0; renderTextos(); });
 $('#tipoPager').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.tipoPage += Number(b.dataset.pg); renderTextos(); });
+$('#tipoTbl').addEventListener('click', e => {
+  const b = e.target.closest('[data-aptipo]'); if (!b) return;
+  const t = tipoList().find(x => x.rk === b.dataset.aptipo);
+  if (t) aprovarLote(t.rows, `do tipo "${t.voc?.tipo || t.raw}"`);
+});
 $('#tipoTbl').addEventListener('change', async e => {
   const el = e.target; const k = el.dataset.yk; if (!k) return;
   const tipo = el.value.replace(/\s+/g, ' ').trim();
@@ -1113,8 +1263,8 @@ $('#aiTipos').addEventListener('click', aiTipos);
 $('#savePadraoTxt').addEventListener('click', async () => {
   const txt = { padrao: $('#padraoNome').value.trim() || DEFAULT_TXT.padrao, regrasNome: $('#regrasNome').value.trim() || DEFAULT_TXT.regrasNome, regrasDesc: $('#regrasDesc').value.trim() || DEFAULT_TXT.regrasDesc };
   S.padroes = { ...(S.padroes || {}), txt };
-  if (!S.isAdmin) toast('So admin grava as regras do time. Elas valem nesta sessao; a IA no servidor usa as regras gravadas.');
-  else { const { error } = await sb.from('configuracoes').upsert({ chave: 'fornecedores_txt', valor: txt }); toast(error ? 'Nao foi possivel salvar as regras (' + error.message + ').' : 'Regras salvas para o time.'); }
+  if (!S.isAdmin) toast('Só admin grava as regras do time. Elas valem nesta sessão; a IA no servidor usa as regras gravadas.');
+  else { const { error } = await sb.from('configuracoes').upsert({ chave: 'fornecedores_txt', valor: txt }); toast(error ? 'Não foi possível salvar as regras (' + error.message + ').' : 'Regras salvas para o time.'); }
   renderTextos();
 });
 $('#resetPadraoTxt').addEventListener('click', () => { $('#padraoNome').value = DEFAULT_TXT.padrao; $('#regrasNome').value = DEFAULT_TXT.regrasNome; $('#regrasDesc').value = DEFAULT_TXT.regrasDesc; });
@@ -1131,7 +1281,7 @@ $('#caracIn').addEventListener('change', e => { const f = e.target.files[0]; if 
 /* ============ boot ============ */
 function bloquear(html){ $('#gate').innerHTML = html; $('#gate').hidden = false; $$('[data-pane]').forEach(p => p.hidden = true); $('#steps').hidden = true; }
 async function boot(){
-  if (typeof XLSX === 'undefined') { toast('Nao foi possivel carregar o leitor de planilhas. Recarregue a pagina.', 8000); return; }
+  if (typeof XLSX === 'undefined') { toast('Não foi possível carregar o leitor de planilhas. Recarregue a página.', 8000); return; }
   let st = 'arquivo'; try { st = localStorage.getItem('dps-step') || 'arquivo'; } catch {}
   go(st);
   renderProfSel(); renderSaveState();
@@ -1140,10 +1290,10 @@ async function boot(){
   S.me = session.user.id;
   const { data: perfil } = await sb.from('profiles').select('nome,email,role').eq('id', S.me).maybeSingle();
   const role = perfil && perfil.role;
-  if (!['admin', 'editor', 'comum'].includes(role)) { bloquear('<b>Seu cadastro ainda nao foi aprovado.</b> Peca a um admin do Agente Jet.'); return; }
+  if (!['admin', 'editor', 'comum'].includes(role)) { bloquear('<b>Seu cadastro ainda não foi aprovado.</b> Peça a um admin do Agente Jet.'); return; }
   S.names[S.me] = (perfil.nome || perfil.email || '');
   S.podeEditar = role === 'admin' || role === 'editor'; S.isAdmin = role === 'admin';
-  $('#quem').textContent = (perfil.nome || perfil.email || '') + (S.podeEditar ? '' : ' (so leitura)');
+  $('#quem').textContent = (perfil.nome || perfil.email || '') + (S.podeEditar ? '' : ' (só leitura)');
   await connect();
 }
 async function connect(){
@@ -1170,6 +1320,6 @@ async function connect(){
     if (!S.P) { const first = Object.keys(S.profiles)[0]; if (first) selectProfile(first); }
     else subscribeProfile();
     refreshAll();
-  } catch (e) { toast('Nao foi possivel ler o banco (' + (e.message || 'erro') + ').', 8000); }
+  } catch (e) { toast('Não foi possível ler o banco (' + (e.message || 'erro') + ').', 8000); }
 }
 boot();
