@@ -92,9 +92,11 @@ Modelos da IA em `configuracoes.fornecedores_ia` (dá para trocar sem mexer em c
 
 ---
 
-## Visual (jet-ui)
+## Visual
 
-O Agente usa a paleta do `jet-ui`, com tema claro e escuro automático (segue o sistema). `ui/jet-ui-tokens.css` e `ui/jet-ui-escopo.css` são gerados de `fornecedores/jet-ui.css` por `node scripts/gerar-jet-ui-escopo.mjs`; não edite à mão.
+A tela de Fornecedores usa **Material Design 3** (`ui/material.css`, fonte Roboto). As cores são o esquema padrão do Material gerado a partir do azul-marinho da Jet (#15375B) pela biblioteca oficial `@material/material-color-utilities`, com tema claro e escuro (automático ou pelo botão Tema).
+
+O Agente ainda usa a paleta do `jet-ui`: `ui/jet-ui-tokens.css` e `ui/jet-ui-escopo.css` são gerados de `fornecedores/jet-ui.css` por `node scripts/gerar-jet-ui-escopo.mjs`; não edite à mão. A ideia é passar o Agente para o `ui/material.css` também.
 
 ---
 

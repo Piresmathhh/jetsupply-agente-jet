@@ -6,28 +6,23 @@
 <title>De-Para Signus · Agente Jet</title>
 <style>[hidden]{display:none!important}
 /* selo de perfil reconhecido tem texto longo: quebra linha em tela estreita (a v4 estourava 400px aqui) */
-#profMatch .pill{white-space:normal;max-width:100%;border-radius:10px}
+#profMatch .pill{white-space:normal;max-width:100%}
 /* botao de volta ao Agente: link com cara de botao, bem visivel no canto esquerdo */
 a.voltar{text-decoration:none;margin-right:6px}
-a.voltar:hover{border-color:var(--ink)}
-@media (max-width:520px){.brand .brand-mark{display:none}}
 /* etapa 2: grupo sem campo preenchido fica so no cabecalho */
 .map-group.fechado > header{border-bottom:0}
 #ajustesBox > summary .note{font-weight:400;margin-left:6px}
-/* avisos no canto, sem cobrir o conteudo do meio da tela (body na frente: o jet-ui.css vem depois deste bloco) */
-body .toast{left:auto;right:20px;transform:none;max-width:min(420px,calc(100vw - 32px))}
-@media (max-width:520px){body .toast{right:16px;left:16px;max-width:none}}
 /* etapa concluida */
 .step.done .n{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
 .step.done .cnt{color:var(--ok)}
 /* o que falta */
-.faltas{display:grid;gap:0;padding:0}
+.panel.faltas{display:grid;gap:0;padding:0;overflow:hidden}
 .faltas > header{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .falta{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
 .falta .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid var(--line-strong);color:var(--muted)}
 .falta.ok .ic{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
 .falta.err .ic{background:var(--err-soft);border-color:var(--err);color:var(--err)}
-.falta b{font-weight:600}
+.falta b{font-weight:500}
 .falta .note{display:block}
 .faltas > footer{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--line);background:var(--raised)}
 /* proximo passo no fim de cada etapa */
@@ -36,15 +31,15 @@ body .toast{left:auto;right:20px;transform:none;max-width:min(420px,calc(100vw -
 .cat-in{width:100%;min-width:220px}
 #grpTbl tr.mais td{background:var(--raised)}
 #grpTbl .grp-ex{display:block;margin-top:2px}
-/* opcoes de origem com nomes mais longos */
-body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr) minmax(120px,.8fr) minmax(140px,1fr)}
-@media (max-width:860px){body .map-row{grid-template-columns:1fr 1fr}}
+
+/* caixinha da tabela com area de clique de 40px */
+.hit{display:inline-grid;place-items:center;min-width:40px;min-height:40px;margin:-11px;cursor:pointer}
 /* celular: as caixas da linha encolhem para caber no cartao em vez de serem cortadas */
 @media (max-width:860px){.map-row > *{min-width:0}.map-row select,.map-row input{width:100%;max-width:100%}}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
 <script src="ui/tema.js"></script>
-<link rel="stylesheet" href="fornecedores/jet-ui.css">
+<link rel="stylesheet" href="ui/material.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -52,25 +47,27 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
 
 <header class="top">
   <div class="top-in">
-    <div class="brand">
-      <a href="./" class="btn voltar" title="Voltar para o Agente Jet">&larr; Agente Jet</a>
-      <div class="brand-mark" aria-hidden="true"><span>fornecedor</span><span class="to">&rarr;</span><span class="dst">Signus</span></div>
-      <h1>De-Para Signus</h1>
-    </div>
+    <a href="./" class="btn ghost voltar" title="Voltar para o Agente Jet">&larr; Agente Jet</a>
+    <h1>De-Para Signus</h1>
     <div class="prof">
-      <label class="label" for="profSel">Perfil do fornecedor</label>
-      <select id="profSel"></select>
+      <select id="profSel" aria-label="Fornecedor"></select>
       <span id="newProfBox" class="inline-form" hidden>
-        <input id="newProfName" placeholder="Nome do fornecedor" style="width:180px">
+        <input id="newProfName" placeholder="Nome do fornecedor" aria-label="Nome do novo fornecedor" style="width:200px">
         <button id="newProfOk" class="sm primary">Criar</button>
         <button id="newProfCancel" class="sm ghost">Cancelar</button>
       </span>
-      <button id="newProfBtn" class="sm">Novo perfil</button>
-      <button id="saveProf" class="sm">Salvar</button>
-      <span id="saveState" class="save-state off">sem banco</span>
-      <span id="quem" class="note"></span>
-      <button class="sm ghost" data-tema-btn type="button">Tema: automático</button>
     </div>
+    <span id="saveState" class="save-state" data-estado="off" aria-live="polite"></span>
+    <details class="conta" id="conta">
+      <summary class="avatar" title="Sua conta e opções" aria-label="Sua conta e opções"><span id="quemIni">?</span></summary>
+      <div class="menu" role="menu">
+        <div class="menu-quem"><b id="quem"></b><span class="note" id="quemPapel"></span></div>
+        <button class="menu-item" data-tema-btn type="button" role="menuitem">Tema: automático</button>
+        <button class="menu-item" data-goto="bases" type="button" role="menuitem">Bases do Signus</button>
+        <a class="menu-item" href="https://claude.ai/code/artifact/ad94488c-f984-4774-b233-4f1639461391" target="_blank" rel="noopener" role="menuitem">Manual de uso</a>
+        <a class="menu-item" href="./" role="menuitem">Voltar ao Agente Jet</a>
+      </div>
+    </details>
   </div>
   <nav class="steps" role="tablist" id="steps">
     <button class="step" role="tab" data-step="arquivo" aria-selected="true"><span class="n">1</span>Arquivo <span class="cnt" id="cntArquivo"></span></button>
@@ -78,7 +75,6 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
     <button class="step" role="tab" data-step="categorias"><span class="n">3</span>Categorias <span class="cnt" id="cntCategorias"></span></button>
     <button class="step" role="tab" data-step="textos"><span class="n">4</span>Nomes e descrições <span class="cnt" id="cntTextos"></span></button>
     <button class="step" role="tab" data-step="revisar"><span class="n">5</span>Revisar e exportar <span class="cnt" id="cntRevisar"></span></button>
-    <button class="step sep" role="tab" data-step="bases"><span class="n">&#8801;</span>Bases Signus</button>
   </nav>
   <div class="aibar" id="aiBar" hidden>
     <span class="pill ai">IA</span><span id="aiMsg" class="note"></span>
@@ -95,7 +91,6 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
   <div class="section-head">
     <div class="stack" style="gap:4px">
       <h2>Planilha do fornecedor</h2>
-      <p class="muted">Suba o arquivo como a marca mandou (.xlsx, .xls ou .csv). O arquivo fica só no seu navegador. O que fica salvo é o perfil: de onde vem cada campo, as trocas de valores e as categorias daquele fornecedor.</p>
     </div>
   </div>
   <div id="sampleBanner" class="banner" hidden>
@@ -105,10 +100,10 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
     <section class="panel faltas" id="faltas" hidden aria-label="O que falta"></section>
     <label class="drop" id="drop" for="fileIn">
       <strong>Arraste a planilha aqui ou clique para escolher</strong>
-      <span class="muted">.xlsx, .xls, .csv</span>
+      <span class="muted">.xlsx, .xls ou .csv &middot; o arquivo não sai do seu computador</span>
       <input type="file" id="fileIn" accept=".xlsx,.xls,.csv,.xlsm" hidden>
     </label>
-    <div class="panel stack" id="filePanel" hidden>
+    <div class="stack" id="filePanel" hidden>
       <div class="row" style="justify-content:space-between">
         <div class="row">
           <span class="label">Arquivo</span><b id="fileName" class="mono"></b>
@@ -122,7 +117,6 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
       <div class="tiles" id="fileTiles"></div>
       <div id="profMatch"></div>
       <div class="tbl-wrap" style="max-height:52vh"><table id="rawTbl"></table></div>
-      <p class="note">Linhas com um único campo preenchido são tratadas como <b>seção</b> (ex.: "SEM FIO - SERRAS SABRE - 20V"). Elas não viram produto, mas viram contexto para agrupar e sugerir categoria.</p>
     </div>
   </div>
   <div class="proximo"><button class="primary" data-goto="colunas">Próximo: Colunas &rarr;</button></div>
@@ -133,7 +127,6 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
   <div class="section-head">
     <div class="stack" style="gap:4px">
       <h2>De onde vem cada campo</h2>
-      <p class="muted">Para cada campo do Signus, escolha de onde vem o valor. Passe o mouse na caixa de origem para ver o que cada opção faz.</p>
     </div>
     <div class="row">
       <button id="autoMap">Sugerir pelos nomes</button>
@@ -158,8 +151,7 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
           <input id="siglas" class="mono" style="flex:1;min-width:220px" placeholder="ex.: SDS, HSS, FLEXVOLT">
         </div>
         <div class="row" style="gap:10px">
-          <button id="savePadrao" class="sm" title="Grava os valores fixos deste perfil como padrão para novos perfis">Fixos como padrão Jet</button>
-          <span class="note">Só admin. Os valores fixos deste perfil viram o ponto de partida dos próximos perfis.</span>
+          <button id="savePadrao" class="sm" title="Só admin: os valores fixos deste perfil viram o ponto de partida dos próximos perfis">Fixos como padrão Jet</button>
         </div>
       </div>
     </details>
@@ -177,7 +169,6 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
   <div class="section-head">
     <div class="stack" style="gap:4px">
       <h2>Categorias</h2>
-      <p class="muted">Cada grupo de produtos recebe uma categoria do Signus: digite no campo para buscar. Se ela ainda não existe, escreva o caminho completo separado por &gt; (ex.: Ferramentas Elétricas &gt; Serras &gt; Serra Sabre). Ele vira <b>categoria nova</b>, para aprovar e cadastrar no Signus.</p>
     </div>
     <div class="row">
       <div class="chips" id="catView">
@@ -187,7 +178,7 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
     </div>
   </div>
   <div id="catGrupos" class="stack">
-    <div class="panel row" style="gap:10px">
+    <div class="row" style="gap:10px">
       <button id="aiCats" class="ai" hidden>Sugerir categorias com IA</button>
       <button id="aiCarac" class="ai" hidden>Extrair características com IA</button>
       <button id="aprovarAlta" class="sm" hidden></button>
@@ -210,7 +201,7 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
     <datalist id="treeList"></datalist>
   </div>
   <div id="catArvore" class="stack" hidden>
-    <div class="panel row" style="gap:10px">
+    <div class="row" style="gap:10px">
       <button id="aiConsol" class="ai" hidden>Juntar categorias parecidas com IA</button>
       <button id="relink" title="Liga os grupos às categorias novas que já foram cadastradas na base do Signus">Atualizar com as categorias do Signus</button>
       <button id="exportTree">Exportar categorias novas (.xlsx)</button>
@@ -227,7 +218,6 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
   <div class="section-head">
     <div class="stack" style="gap:4px">
       <h2>Nomes e descrições</h2>
-      <p class="muted">O nome sai no padrão Jet por regras e a IA só padroniza o tipo de produto, uma vez por tipo. Cada nome precisa de aprovação, um a um ou em lote (por tipo, grupo ou filtro). A descrição longa com IA é opcional.</p>
     </div>
   </div>
   <div class="stack">
@@ -240,17 +230,13 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
         <div class="row"><button id="savePadraoTxt" class="primary sm">Salvar regras para o time</button><button id="resetPadraoTxt" class="sm ghost">Voltar ao padrão</button><span class="note">Valem para todos os fornecedores.</span></div>
       </div>
     </details>
-    <div class="panel stack" style="gap:12px">
-      <div class="row" style="gap:10px">
-        <span class="pill info">sem IA</span>
-        <span class="note" style="flex:1;min-width:260px">As regras já montam o nome de todos os itens: marca, código, voltagem, medidas, "Sem Bateria e Sem Carregador", o que acompanha o kit e a embalagem. Só o <b>tipo</b> (ex.: "BR AR DIN" &rarr; "Broca para Metal") precisa de padronização.</span>
-      </div>
-      <div class="row" style="gap:10px">
-        <button id="aiTipos" class="ai" hidden>Padronizar tipos com IA</button>
-        <span class="note" id="tiposNote"></span>
-      </div>
+    <div class="row" style="gap:12px">
+      <button id="aiTipos" class="ai" hidden title="O nome já sai pelas regras; a IA só padroniza o tipo (ex.: BR AR DIN para Broca para Metal)">Padronizar tipos com IA</button>
+      <span class="note" id="tiposNote"></span>
+    </div>
+    <div>
       <details>
-        <summary class="note">Gerar nome e descrição longa item a item com IA (mais caro: 1 chamada a cada 12 itens)</summary>
+        <summary class="note">Nome e descrição longa item a item com IA (opcional, mais caro)</summary>
         <div class="row" style="gap:10px;margin-top:10px">
           <button id="aiTexts" class="ai" hidden>Gerar para os itens filtrados</button>
           <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="genDesc" checked> incluir descrição longa</label>
@@ -261,7 +247,7 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
     </div>
     <div class="chips" id="txtView">
       <button class="chip" data-v="itens" aria-pressed="true">Itens</button>
-      <button class="chip" data-v="tipos">Tipos (vocabulário)</button>
+      <button class="chip" data-v="tipos" title="O vocabulário de tipos vale para todos os fornecedores">Tipos (vocabulário)</button>
     </div>
     <div id="tiposPane" class="stack" hidden>
       <div class="row" style="justify-content:space-between">
@@ -272,7 +258,6 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
         </div>
         <input id="tipoSearch" placeholder="Buscar tipo" style="width:200px">
       </div>
-      <p class="note">O vocabulário de tipos vale para todos os fornecedores: "SERRA SABRE" padronizado aqui já vale para a próxima marca. Com o tipo certo, use <b>Aprovar</b> na linha para aprovar de uma vez os nomes que usam aquele tipo.</p>
       <div class="tbl-wrap" style="max-height:none"><table id="tipoTbl"></table></div>
       <div class="pager" id="tipoPager"></div>
     </div>
@@ -303,12 +288,11 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
   <div class="section-head">
     <div class="stack" style="gap:4px">
       <h2>Revisar e exportar</h2>
-      <p class="muted">O arquivo sai com a aba de migração no layout exato do Signus (50 colunas, mesma ordem e nomes), mais abas de apoio: Categoria Treeview, Características e Críticas.</p>
     </div>
     <div class="row">
       <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="useSug"> Usar nomes ainda não aprovados</label>
       <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="inclErr"> Incluir itens com erro</label>
-      <button id="exportBtn" class="primary">Exportar .xlsx</button>
+      <button id="exportBtn" class="primary" title="Aba de migração no layout do Signus (50 colunas), mais Categoria Treeview, Características e Críticas">Exportar .xlsx</button>
     </div>
   </div>
   <div class="stack">
@@ -336,19 +320,18 @@ body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr
   <div class="section-head">
     <div class="stack" style="gap:4px">
       <h2>Bases do Signus</h2>
-      <p class="muted">A árvore de categorias (Categoria Treeview) é a mesma base de categorias do Agente: categoria nova é cadastrada lá e depois ligada aqui com "Atualizar com as categorias do Signus". Os grupos de características vêm da exportação do Signus; ao subir uma exportação nova, ela substitui a base para todo o time (só admin).</p>
     </div>
   </div>
   <div class="two">
-    <div class="panel stack">
+    <div class="stack">
       <div class="row" style="justify-content:space-between"><h3>Categoria Treeview</h3><span id="treeInfo" class="pill"></span></div>
-      <p class="note">Vem da base de categorias do Agente (somente leitura aqui).</p>
+      <p class="note">Vem da base de categorias do Agente. Categoria nova é cadastrada lá.</p>
       <input type="file" id="treeIn" accept=".xls,.xlsx" hidden>
       <div class="tbl-wrap" style="max-height:50vh"><table id="treeTbl"></table></div>
     </div>
-    <div class="panel stack">
+    <div class="stack">
       <div class="row" style="justify-content:space-between"><h3>Grupos de características</h3><span id="caracInfo" class="pill"></span></div>
-      <label class="btn" for="caracIn" style="width:max-content">Substituir pela exportação do Signus (.xls)</label>
+      <label class="btn" for="caracIn" style="width:max-content" title="Só admin: substitui a base para todo o time">Substituir pela exportação do Signus (.xls)</label>
       <input type="file" id="caracIn" accept=".xls,.xlsx" hidden>
       <div class="tbl-wrap" style="max-height:50vh"><table id="caracTbl"></table></div>
     </div>

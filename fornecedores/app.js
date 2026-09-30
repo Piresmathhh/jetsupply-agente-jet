@@ -89,14 +89,17 @@ async function saveProfile(){
   const { error } = await sb.from('fornecedor_perfis').upsert({ id, nome, assinatura, config });
   if (error) toast('Não foi possível salvar o perfil (' + error.message + ').');
   else { S.dirty = false; S.salvos.add(id); }
-  S.saving = false; renderSaveState();
+  S.saving = false; renderSaveState(error ? 'erro' : undefined);
 }
-function renderSaveState(){
+// O perfil grava sozinho: o cabecalho so mostra algo quando vale a pena (salvando, pendente, erro, so leitura).
+let salvoTimer = null;
+function renderSaveState(estado){
   const el = $('#saveState');
-  if (!S.online) { el.textContent = 'sem banco'; el.className = 'save-state off'; return; }
-  if (!S.podeEditar) { el.textContent = 'só leitura'; el.className = 'save-state off'; return; }
-  if (S.saving) { el.textContent = 'salvando...'; el.className = 'save-state'; return; }
-  el.textContent = S.dirty ? 'alterações não salvas' : 'salvo'; el.className = 'save-state' + (S.dirty ? ' dirty' : '');
+  const st = estado || (!S.online ? 'off' : !S.podeEditar ? 'leitura' : S.saving ? 'salvando' : S.dirty ? 'pendente' : 'salvo');
+  el.dataset.estado = st;
+  el.textContent = { off: '', leitura: 'Só leitura', salvando: 'Salvando...', pendente: 'Alterações não salvas', erro: 'Não salvo', salvo: el.textContent === 'Salvando...' ? 'Salvo' : '' }[st] ?? '';
+  clearTimeout(salvoTimer);
+  if (st === 'salvo' && el.textContent) salvoTimer = setTimeout(() => { if (el.dataset.estado === 'salvo') el.textContent = ''; }, 2000);
 }
 function markDirty(){ S.dirty = true; renderSaveState(); scheduleSave(); }
 let saveTimer = null;
@@ -104,7 +107,8 @@ function scheduleSave(){ if (!S.online || !S.P) return; clearTimeout(saveTimer);
 function renderProfSel(){
   const sel = $('#profSel');
   const list = Object.values(S.profiles).sort((a,b)=>a.nome.localeCompare(b.nome));
-  sel.innerHTML = (list.length ? '' : '<option value="">(nenhum perfil)</option>') + list.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('');
+  sel.innerHTML = (list.length ? '' : '<option value="">Escolha o fornecedor</option>') + list.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')
+    + (!S.online || S.podeEditar ? '<option value="__novo">+ Novo fornecedor...</option>' : '');
   if (S.profId) sel.value = S.profId;
 }
 function selectProfile(id){
@@ -488,7 +492,7 @@ function renderArquivo(){
   for (let r = start; r < end; r++) {
     const row = S.grid[r] || []; const filled = row.slice(0,nc).filter(v=>!isEmpty(v)).length;
     const cls = r === S.headerRow ? 'hdr' : (r > S.headerRow && filled === 1 ? 'sec' : '');
-    h += `<tr class="${cls}"><td class="num">${r+1}</td>` + Array.from({length:nc}, (_,i)=>`<td><span class="clip">${esc(row[i])}</span></td>`).join('') + '</tr>';
+    h += `<tr class="${cls}"${cls === 'sec' ? ' title="Linha de seção: não vira produto, serve para agrupar e sugerir categoria"' : ''}><td class="num">${r+1}</td>` + Array.from({length:nc}, (_,i)=>`<td><span class="clip">${esc(row[i])}</span></td>`).join('') + '</tr>';
   }
   $('#rawTbl').innerHTML = h + '</tbody>';
 }
@@ -521,7 +525,7 @@ function renderColunas(){
   $('#ajustesResumo').textContent = [nF ? `${nF} ${nF === 1 ? 'filtro' : 'filtros'}` : 'sem filtros', nS ? `${nS} ${nS === 1 ? 'sigla' : 'siglas'}` : 'sem siglas extras'].join(' · ');
   const campos = GROUPS.flatMap(([, cols]) => cols);
   const nVazios = campos.filter(c => (S.P.map[c]?.m || 'vazio') === 'vazio').length;
-  $('#mapResumo').textContent = `${campos.length - nVazios} de ${campos.length} campos preenchidos` + (S.verVazios || !nVazios ? '' : `. Os ${nVazios} vazios estao escondidos.`);
+  $('#mapResumo').textContent = `${campos.length - nVazios} de ${campos.length} campos preenchidos` + (S.verVazios || !nVazios ? '' : `. Os ${nVazios} vazios estão escondidos.`);
   $('#toggleVazios').hidden = !nVazios;
   $('#toggleVazios').textContent = S.verVazios ? 'Esconder campos vazios' : `Mostrar campos vazios (${nVazios})`;
   const srcOpts = sel => '<option value="">(coluna)</option>' + S.headers.map(h => `<option ${h===sel?'selected':''}>${esc(h)}</option>`).join('');
@@ -539,7 +543,7 @@ function renderColunas(){
       const m = S.P.map[c] || {m:'vazio'}; const set = m.m !== 'vazio';
       const id = 'm' + COLS.indexOf(c);
       let mid = '', tr = '';
-      if (m.m === 'col') { mid = `<select class="mono" data-f="src" data-c="${esc(c)}" aria-label="Coluna de origem para ${esc(c)}">${srcOpts(m.src)}</select>`; tr = `<select data-f="t" data-c="${esc(c)}" aria-label="Transformacao">${trOpts(m.t)}</select>`; }
+      if (m.m === 'col') { mid = `<select class="mono" data-f="src" data-c="${esc(c)}" aria-label="Coluna de origem para ${esc(c)}">${srcOpts(m.src)}</select>`; tr = `<select data-f="t" data-c="${esc(c)}" aria-label="Transformação">${trOpts(m.t)}</select>`; }
       else if (m.m === 'fixo') mid = `<input class="mono" data-f="v" data-c="${esc(c)}" value="${esc(m.v)}" aria-label="Valor fixo para ${esc(c)}">`;
       else if (m.m === 'modelo') { mid = `<input class="mono" data-f="v" data-c="${esc(c)}" value="${esc(m.v)}" placeholder="{COLUNA} texto {OUTRA}" aria-label="Modelo para ${esc(c)}">`; tr = `<select data-f="t" data-c="${esc(c)}">${trOpts(m.t)}</select>`; }
       else if (m.m === 'derivado') { mid = `<select data-f="src" data-c="${esc(c)}">${derOpts(m.src)}</select>`; tr = `<select data-f="t" data-c="${esc(c)}">${trOpts(m.t)}</select>`; }
@@ -577,7 +581,7 @@ function renderFilters(){
     <button class="sm ghost" data-fdel="${i}" aria-label="Remover regra">Remover</button></div>`).join('') || '<p class="note">Nenhuma regra. Ex.: excluir quando OBSERVAÇÕES GERAIS contém "SUBSTITUIDO", ou quando STATUS igual a "NP".</p>';
   const ex = S.out ? S.out.filter(r=>r.excl).length : 0;
   const dp = S.out ? S.out.filter(r=>r.dup).length : 0;
-  $('#filterNote').textContent = S.out ? `${fmtN(ex - dp)} de ${fmtN(S.items.length)} linhas excluídas pelas regras. ${dp ? fmtN(dp) + ' repetições da mesma ref. também ficam de fora (vale a última ocorrência, que costuma estar na seção de categoria e não em Lançamentos).' : ''}` : '';
+  $('#filterNote').textContent = S.out ? `${fmtN(ex - dp)} de ${fmtN(S.items.length)} linhas excluídas pelas regras` + (dp ? `; ${fmtN(dp)} refs repetidas ficam de fora (vale a última ocorrência).` : '.') : '';
 }
 
 /* ============ render: categorias ============ */
@@ -635,9 +639,9 @@ function renderGroups(){
     const aberto = S.grpMais.has(g.key);
     h += `<tr>
       <td style="min-width:220px;max-width:340px"><b>${esc(isSplit ? g.key.split(' :: ')[1] : g.key)}</b> <span class="note" style="display:inline">${fmtN(g.n)} ${g.n === 1 ? 'item' : 'itens'}</span>${g.ctx && g.ctx !== g.key ? `<div class="note">${esc(isSplit ? baseKey : g.ctx)}</div>` : ''}<span class="note clamp2 grp-ex" title="${esc(g.ex.join(' ; '))}">ex.: ${esc(g.ex.slice(0,2).join(' ; '))}</span></td>
-      <td><input class="cat-in" list="treeList" data-gk="${esc(g.key)}" data-gf="cat" value="${esc(valor)}" placeholder="Digite para buscar a categoria" aria-label="Categoria do grupo ${esc(g.key)}"><div style="margin-top:4px">${catStatus(d)}</div></td>
+      <td><input class="cat-in" list="treeList" data-gk="${esc(g.key)}" data-gf="cat" value="${esc(valor)}" placeholder="Buscar, ou escrever Nível 1 > Nível 2 para criar" aria-label="Categoria do grupo ${esc(g.key)}"><div style="margin-top:4px">${catStatus(d)}</div></td>
       <td>${d.resp ? whoHtml(d.resp) + (d.resp === S.me ? ` <button class="sm ghost" data-release="${esc(g.key)}">Soltar</button>` : '') : `<button class="sm" data-claim="${esc(g.key)}">Assumir</button>`}</td>
-      <td><input type="checkbox" data-gk="${esc(g.key)}" data-gf="ok" ${d.ok?'checked':''} aria-label="Grupo aprovado" ${!(d.tree||d.prop)?'disabled title="Escolha a categoria antes de aprovar"':''}>${d.ok && d.okPor ? `<div class="note">${whoHtml(d.okPor)}</div>` : ''}</td>
+      <td><label class="hit"><input type="checkbox" data-gk="${esc(g.key)}" data-gf="ok" ${d.ok?'checked':''} aria-label="Grupo aprovado" ${!(d.tree||d.prop)?'disabled title="Escolha a categoria antes de aprovar"':''}></label>${d.ok && d.okPor ? `<div class="note">${whoHtml(d.okPor)}</div>` : ''}</td>
       <td><button class="sm ghost" data-mais="${esc(g.key)}" aria-expanded="${aberto}">${aberto ? 'Menos' : 'Mais'}</button></td>
     </tr>`;
     if (aberto) {
@@ -779,7 +783,7 @@ function renderTextos(){
   const tv = tipoList();
   const nSem = tv.filter(x => !x.voc?.tipo).length;
   $('#aiTipos').textContent = 'Padronizar tipos com IA' + (nSem ? ` (${fmtN(nSem)} tipos, ${chamadas(Math.ceil(nSem / 50))})` : '');
-  $('#tiposNote').textContent = S.out ? `${fmtN(tv.length)} tipos diferentes nesta planilha, ${fmtN(nSem)} sem padrão${nSem ? ` (cerca de ${Math.ceil(nSem / 50)} chamadas de IA)` : ''}.` : '';
+  $('#tiposNote').textContent = S.out ? `${fmtN(tv.length)} tipos nesta planilha${nSem ? `, ${fmtN(nSem)} sem padrão` : ', todos padronizados'}.` : '';
   if (S.txtView === 'tipos') { renderTipos(tv); refreshAIButtons(); return; }
   const tbl = $('#txtTbl');
   if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#txtPager').innerHTML=''; return; }
@@ -1086,21 +1090,27 @@ async function handleFile(f){
 $('#sheetSel').addEventListener('change', e => { loadSheet(e.target.value, true); if (S.P) { S.P.sheet = S.sheetName; markDirty(); } });
 $('#hdrRow').addEventListener('change', e => { const v = Math.max(1, parseInt(e.target.value)||1) - 1; S.headerRow = v; parseItems(); if (S.P) { S.P.headerRow = v; markDirty(); } refreshAll(); });
 $('#keySel').addEventListener('change', e => { S.keyCol = Number(e.target.value); if (S.P) { S.P.chave = S.headers[S.keyCol]; markDirty(); } refreshAll(); });
-$('#profSel').addEventListener('change', e => selectProfile(e.target.value));
-$('#newProfBtn').addEventListener('click', () => { $('#newProfBox').hidden = false; $('#newProfBtn').hidden = true; $('#newProfName').focus(); });
-$('#newProfCancel').addEventListener('click', () => { $('#newProfBox').hidden = true; $('#newProfBtn').hidden = false; });
+function novoPerfil(abrir){ $('#newProfBox').hidden = !abrir; $('#profSel').hidden = abrir; if (abrir) $('#newProfName').focus(); else renderProfSel(); }
+$('#profSel').addEventListener('change', e => { if (e.target.value === '__novo') novoPerfil(true); else selectProfile(e.target.value); });
+$('#newProfCancel').addEventListener('click', () => novoPerfil(false));
+$('#newProfName').addEventListener('keydown', e => { if (e.key === 'Escape') novoPerfil(false); });
 function createProfile(){
   const nome = $('#newProfName').value.trim(); if (!nome) { $('#newProfName').focus(); return; }
   const p = blankProfile(nome); if (S.profiles[p.id]) p.id += '-' + Date.now().toString(36);
   p.sheet = S.sheetName; p.headerRow = S.headerRow; p.chave = S.headers[S.keyCol] || '';
   S.profiles[p.id] = p; S.profId = p.id; S.P = p; subscribeProfile();
   if (S.headers.length) autoMap(false);
-  $('#newProfBox').hidden = true; $('#newProfBtn').hidden = false; $('#newProfName').value = '';
+  $('#newProfName').value = ''; novoPerfil(false);
   renderProfSel(); markDirty(); saveProfile(); go('colunas'); toast('Perfil criado com sugestões pelos nomes das colunas. Revise.');
 }
 $('#newProfOk').addEventListener('click', createProfile);
 $('#newProfName').addEventListener('keydown', e => { if (e.key === 'Enter') createProfile(); });
-$('#saveProf').addEventListener('click', () => { clearTimeout(saveTimer); saveProfile(); });
+// menu da conta: fecha ao clicar fora ou ao escolher um item (o de tema fica aberto para ver a troca)
+document.addEventListener('click', e => {
+  const m = $('#conta'); if (!m.open) return;
+  if (!m.contains(e.target) || (e.target.closest('.menu-item') && !e.target.closest('[data-tema-btn]'))) m.open = false;
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#conta').open = false; });
 $('#autoMap').addEventListener('click', () => { const n = autoMap(true); markDirty(); refreshAll(); toast(n ? `${n} campos vazios preenchidos pelos nomes das colunas.` : 'Nenhum campo vazio com correspondência pelo nome.'); });
 $('#aiMap').addEventListener('click', aiSuggestMapping);
 $('#aiCats').addEventListener('click', aiSuggestCats);
@@ -1293,7 +1303,10 @@ async function boot(){
   if (!['admin', 'editor', 'comum'].includes(role)) { bloquear('<b>Seu cadastro ainda não foi aprovado.</b> Peça a um admin do Agente Jet.'); return; }
   S.names[S.me] = (perfil.nome || perfil.email || '');
   S.podeEditar = role === 'admin' || role === 'editor'; S.isAdmin = role === 'admin';
-  $('#quem').textContent = (perfil.nome || perfil.email || '') + (S.podeEditar ? '' : ' (só leitura)');
+  const nomeQuem = perfil.nome || perfil.email || '';
+  $('#quem').textContent = nomeQuem; $('#quemIni').textContent = initials(nomeQuem);
+  $('#quemPapel').textContent = { admin: 'Admin', editor: 'Editor', comum: 'Só leitura' }[role] + (perfil.email && perfil.email !== nomeQuem ? ' · ' + perfil.email : '');
+  $('.avatar').title = nomeQuem;
   await connect();
 }
 async function connect(){
