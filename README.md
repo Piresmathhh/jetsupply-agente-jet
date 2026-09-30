@@ -94,15 +94,18 @@ Modelos da IA em `configuracoes.fornecedores_ia` (dá para trocar sem mexer em c
 
 ## Visual
 
-A tela de Fornecedores usa **Material Design 3** (`ui/material.css`, fonte Roboto). As cores são o esquema padrão do Material gerado a partir do azul-marinho da Jet (#15375B) pela biblioteca oficial `@material/material-color-utilities`, com tema claro e escuro (automático ou pelo botão Tema).
+O Agente e a tela de Fornecedores usam **Material Design 3** (fonte Roboto), com tema claro e escuro (automático ou pelo menu da conta). As cores são o esquema padrão do Material gerado a partir do azul-marinho da Jet (#15375B) pela biblioteca oficial `@material/material-color-utilities`.
 
-O Agente ainda usa a paleta do `jet-ui`: `ui/jet-ui-tokens.css` e `ui/jet-ui-escopo.css` são gerados de `fornecedores/jet-ui.css` por `node scripts/gerar-jet-ui-escopo.mjs`; não edite à mão. A ideia é passar o Agente para o `ui/material.css` também.
-
+| Arquivo | Uso |
+|---|---|
+| `ui/material-tokens.css` | Cores e fontes (claro/escuro). Os nomes antigos (`--ink`, `--accent`, `--ok`...) apontam para os papéis do Material. |
+| `ui/material-conta.css` | Avatar e menu da conta, nas duas telas. |
+| `ui/material.css` | Componentes com estilo global (botões, campos, tabelas), só em Fornecedores. O Agente tem classes próprias no `<style>` do `index.html`. |
 ---
 
 ## Testes
 
-`npm test` roda o motor (incluindo o golden da amostra Mega Nexus, anonimizada), as tarefas de IA e a checagem do CSS gerado. O CI roda os testes e a checagem de sintaxe do `index.html` em todo PR.
+`npm test` roda o motor (incluindo o golden da amostra Mega Nexus, anonimizada), as tarefas de IA, o botão de tema e as cores do Material (toda cor tem versão escura). O CI roda os testes e a checagem de sintaxe do `index.html` em todo PR.
 
 ---
 
