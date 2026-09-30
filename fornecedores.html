@@ -30,7 +30,14 @@ a.voltar{text-decoration:none;margin-right:6px}
 /* categorias: campo com busca e linha de detalhes */
 .cat-in{width:100%;min-width:220px}
 #grpTbl tr.mais td{background:var(--raised)}
-#grpTbl .grp-ex{display:block;margin-top:2px}
+/* categorias: nome do grupo em uma linha, um exemplo em uma linha (o resto no Mais e na dica) */
+#grpTbl .grp-cel{min-width:220px;max-width:380px}
+#grpTbl .grp-nome{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+#grpTbl .grp-ex{display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
+#grpTbl .cat-st{margin-top:4px}
+#grpTbl td{vertical-align:middle}
+/* revisar: cada critica em uma linha (a coluna ficava espremida no fim da tabela e quebrava palavra por palavra) */
+#revTbl .crit span{white-space:nowrap}
 
 /* caixinha da tabela com area de clique de 40px */
 .hit{display:inline-grid;place-items:center;min-width:40px;min-height:40px;margin:-11px;cursor:pointer}
@@ -90,35 +97,41 @@ a.voltar{text-decoration:none;margin-right:6px}
 
 <!-- 1 ARQUIVO -->
 <section data-pane="arquivo">
-  <div class="section-head">
-    <div class="stack" style="gap:4px">
+  <div class="step-head">
+    <div class="step-tit">
       <h2>Planilha do fornecedor</h2>
+      <p class="step-sub" id="arqSub">Suba a planilha que o fornecedor mandou.</p>
+    </div>
+    <div class="step-acoes">
+      <label class="btn" for="fileIn" id="trocarArq" hidden>Trocar arquivo</label>
+      <details class="opcoes" id="arqOpcoes" hidden>
+        <summary class="btn" aria-label="Mais opções">Mais opções</summary>
+        <div class="menu" role="menu">
+          <div class="menu-form">
+            <label><span class="label">Aba</span><select id="sheetSel"></select></label>
+            <label><span class="label">Linha do cabeçalho</span><input id="hdrRow" type="number" min="1"></label>
+            <label><span class="label">Coluna chave (ref. do fornecedor)</span><select id="keySel"></select></label>
+          </div>
+        </div>
+      </details>
     </div>
   </div>
   <div id="sampleBanner" class="banner" hidden>
     <span><b>Exemplo carregado:</b> amostra de 101 linhas da planilha Mega Nexus (Stanley Black &amp; Decker). Suba o arquivo completo para processar tudo.</span>
   </div>
-  <div class="stack" style="margin-top:14px">
+  <div class="stack">
     <section class="panel faltas" id="faltas" hidden aria-label="O que falta"></section>
     <label class="drop" id="drop" for="fileIn">
       <strong>Arraste a planilha aqui ou clique para escolher</strong>
       <span class="muted">.xlsx, .xls ou .csv &middot; o arquivo não sai do seu computador</span>
       <input type="file" id="fileIn" accept=".xlsx,.xls,.csv,.xlsm" hidden>
     </label>
-    <div class="stack" id="filePanel" hidden>
-      <div class="row" style="justify-content:space-between">
-        <div class="row">
-          <span class="label">Arquivo</span><b id="fileName" class="mono"></b>
-        </div>
-        <div class="row">
-          <label class="label" for="sheetSel">Aba</label><select id="sheetSel"></select>
-          <label class="label" for="hdrRow">Linha do cabeçalho</label><input id="hdrRow" type="number" min="1" style="width:70px">
-          <label class="label" for="keySel">Coluna chave (ref. do fornecedor)</label><select id="keySel"></select>
-        </div>
-      </div>
-      <div class="tiles" id="fileTiles"></div>
-      <div id="profMatch"></div>
-      <div class="tbl-wrap" style="max-height:52vh"><table id="rawTbl"></table></div>
+    <div id="filePanel" hidden>
+      <span id="fileName" hidden></span><div id="fileTiles" hidden></div><div id="profMatch" hidden></div>
+      <details class="dobra">
+        <summary>Ver a planilha como foi lida</summary>
+        <div class="tbl-wrap" style="max-height:52vh;margin-top:12px"><table id="rawTbl"></table></div>
+      </details>
     </div>
   </div>
   <div class="proximo"><button class="primary" data-goto="colunas">Próximo: Colunas &rarr;</button></div>
@@ -126,19 +139,27 @@ a.voltar{text-decoration:none;margin-right:6px}
 
 <!-- 2 COLUNAS -->
 <section data-pane="colunas" hidden>
-  <div class="section-head">
-    <div class="stack" style="gap:4px">
+  <div class="step-head">
+    <div class="step-tit">
       <h2>De onde vem cada campo</h2>
+      <p class="step-sub"><span id="mapResumo"></span> <button id="toggleVazios" class="link" type="button"></button></p>
     </div>
-    <div class="row">
-      <button id="autoMap">Sugerir pelos nomes</button>
-      <button id="aiMap" class="ai" hidden>Sugerir com IA</button>
+    <div class="step-acoes">
+      <details class="opcoes">
+        <summary class="btn" aria-label="Mais opções">Mais opções</summary>
+        <div class="menu" role="menu">
+          <button id="autoMap" class="menu-item" type="button">Sugerir pelos nomes das colunas</button>
+          <button id="aiMap" class="menu-item" type="button" hidden>Sugerir com IA</button>
+          <button class="menu-item" type="button" data-abrir="ajustesBox">Filtros de exclusão e siglas</button>
+        </div>
+      </details>
     </div>
   </div>
   <div class="stack">
     <div id="mapSemArquivo" class="banner" hidden><span>Carregue a planilha na etapa 1 para escolher as colunas do fornecedor.</span><button class="sm" data-goto="arquivo">Ir para Arquivo</button></div>
+    <div id="mapGrid" class="map-grid"></div>
     <details class="panel" id="ajustesBox">
-      <summary>Ajustes do perfil <span class="note" id="ajustesResumo"></span></summary>
+      <summary>Filtros de exclusão e siglas <span class="note" id="ajustesResumo"></span></summary>
       <div class="stack" style="gap:14px;margin-top:12px">
         <div class="stack" style="gap:10px">
           <div class="row" style="justify-content:space-between">
@@ -157,58 +178,58 @@ a.voltar{text-decoration:none;margin-right:6px}
         </div>
       </div>
     </details>
-    <div class="row" style="justify-content:space-between">
-      <span class="note" id="mapResumo"></span>
-      <button id="toggleVazios" class="sm ghost" type="button"></button>
-    </div>
-    <div id="mapGrid" class="map-grid"></div>
   </div>
   <div class="proximo"><button class="primary" data-goto="categorias">Próximo: Categorias &rarr;</button></div>
 </section>
 
 <!-- 3 CATEGORIAS -->
 <section data-pane="categorias" hidden>
-  <div class="section-head">
-    <div class="stack" style="gap:4px">
-      <h2>Categorias</h2>
+  <div class="step-head">
+    <div class="step-tit">
+      <h2 id="catTitulo">Categorias</h2>
+      <p class="step-sub" id="catSub"></p>
     </div>
-    <div class="row">
-      <div class="chips" id="catView">
-        <button class="chip" data-v="grupos" aria-pressed="true">Grupos</button>
-        <button class="chip" data-v="arvore">Categorias novas</button>
-      </div>
+    <div class="step-acoes">
+      <button id="aprovarAlta" hidden></button>
+      <button id="aiCats" class="primary" hidden>Sugerir categorias com IA</button>
+      <details class="opcoes">
+        <summary class="btn" aria-label="Mais opções">Mais opções</summary>
+        <div class="menu" role="menu">
+          <button class="menu-item" type="button" data-catview="arvore" id="verNovas">Categorias novas para aprovar</button>
+          <button id="aiCarac" class="menu-item" type="button" hidden>Extrair características com IA</button>
+          <button id="claimFree" class="menu-item" type="button">Assumir 20 grupos livres</button>
+          <div class="menu-form"><label><span class="label">Agrupar produtos por</span><select id="groupBy"></select></label></div>
+        </div>
+      </details>
     </div>
   </div>
   <div id="catGrupos" class="stack">
-    <div class="row" style="gap:10px">
-      <button id="aiCats" class="ai" hidden>Sugerir categorias com IA</button>
-      <button id="aiCarac" class="ai" hidden>Extrair características com IA</button>
-      <button id="aprovarAlta" class="sm" hidden></button>
-      <button id="claimFree" class="sm">Assumir 20 grupos livres</button>
-      <span class="row" style="gap:6px;margin-left:auto"><label class="label" for="groupBy">Agrupar por</label><select id="groupBy"></select></span>
-    </div>
-    <div class="row" style="justify-content:space-between">
+    <div class="toolbar">
       <div class="chips" id="catFilter">
-        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
-        <button class="chip" data-f="meus">Meus</button>
-        <button class="chip" data-f="livres">Sem responsável</button>
+        <button class="chip" data-f="pend" aria-pressed="true">Para fazer</button>
         <button class="chip" data-f="sem">Sem categoria</button>
-        <button class="chip" data-f="pend">Não aprovados</button>
+        <button class="chip" data-f="ok">Aprovados</button>
+        <button class="chip" data-f="todos">Todos</button>
+        <button class="chip" data-f="meus" hidden>Meus</button>
       </div>
-      <input id="grpSearch" placeholder="Buscar grupo ou exemplo" style="width:220px">
+      <input id="grpSearch" type="search" placeholder="Buscar grupo ou produto" aria-label="Buscar grupo ou produto">
     </div>
-    <div id="treeWarn"></div>
+    <div id="treeWarn" hidden></div>
     <div class="tbl-wrap"><table id="grpTbl"></table></div>
+    <div class="pager" id="grpPager"></div>
     <datalist id="catProdList"></datalist>
     <datalist id="treeList"></datalist>
   </div>
   <div id="catArvore" class="stack" hidden>
-    <div class="row" style="gap:10px">
-      <button id="aiConsol" class="ai" hidden>Juntar categorias parecidas com IA</button>
-      <button id="relink" title="Liga os grupos às categorias novas que já foram cadastradas na base do Signus">Atualizar com as categorias do Signus</button>
-      <button id="exportTree">Exportar categorias novas (.xlsx)</button>
-      <span class="note" id="propNote" style="margin-left:auto"></span>
+    <div class="toolbar">
+      <button class="sm ghost" data-catview="grupos">&larr; Voltar aos grupos</button>
+      <span class="row" style="gap:8px">
+        <button id="aiConsol" class="sm ai" hidden>Juntar parecidas com IA</button>
+        <button id="relink" class="sm" title="Liga os grupos às categorias novas que já foram cadastradas na base do Signus">Atualizar com o Signus</button>
+        <button id="exportTree" class="sm">Exportar (.xlsx)</button>
+      </span>
     </div>
+    <span class="note" id="propNote" hidden></span>
     <div id="consolBox"></div>
     <div id="propTree" class="ptree"></div>
   </div>
@@ -217,12 +238,66 @@ a.voltar{text-decoration:none;margin-right:6px}
 
 <!-- 4 TEXTOS -->
 <section data-pane="textos" hidden>
-  <div class="section-head">
-    <div class="stack" style="gap:4px">
-      <h2>Nomes e descrições</h2>
+  <div class="step-head">
+    <div class="step-tit">
+      <h2 id="txtTitulo">Nomes e descrições</h2>
+      <p class="step-sub" id="txtSub"></p>
+    </div>
+    <div class="step-acoes">
+      <button id="aiTipos" class="primary" hidden title="O nome já sai pelas regras; a IA só padroniza o tipo (ex.: BR AR DIN para Broca para Metal)">Padronizar tipos com IA</button>
+      <details class="opcoes">
+        <summary class="btn" aria-label="Mais opções">Mais opções</summary>
+        <div class="menu" role="menu">
+          <button class="menu-item" type="button" data-txtview="tipos">Vocabulário de tipos</button>
+          <button class="menu-item" type="button" data-abrir="iaItens">Gerar nome e descrição com IA, item a item</button>
+          <button class="menu-item" type="button" data-abrir="padraoBox">Padrão de nome e regras</button>
+          <label class="menu-item"><input type="checkbox" id="txtMine"> Só os meus grupos</label>
+        </div>
+      </details>
     </div>
   </div>
   <div class="stack">
+    <div id="tiposPane" class="stack" hidden>
+      <div class="toolbar">
+        <span class="row" style="gap:8px">
+          <button class="sm ghost" data-txtview="itens">&larr; Voltar aos itens</button>
+          <div class="chips" id="tipoFilter">
+            <button class="chip" data-f="sem">Sem padrão</button>
+            <button class="chip" data-f="com">Padronizados</button>
+            <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+          </div>
+        </span>
+        <input id="tipoSearch" type="search" placeholder="Buscar tipo" aria-label="Buscar tipo">
+      </div>
+      <div class="tbl-wrap" style="max-height:none"><table id="tipoTbl"></table></div>
+      <div class="pager" id="tipoPager"></div>
+    </div>
+    <div id="itensPane" class="stack">
+      <div class="toolbar">
+        <div class="chips" id="txtFilter">
+          <button class="chip" data-f="sug" aria-pressed="true">Para aprovar</button>
+          <button class="chip" data-f="tipo">Tipo sem padrão</button>
+          <button class="chip" data-f="ok">Aprovados</button>
+          <button class="chip" data-f="todos">Todos</button>
+        </div>
+        <span class="row" style="gap:8px">
+          <select id="txtGroup" aria-label="Grupo" style="max-width:220px"></select>
+          <input id="txtSearch" type="search" placeholder="Buscar nome ou código" aria-label="Buscar nome ou código">
+          <button id="approveVisible" class="primary"></button>
+        </span>
+      </div>
+      <div class="tbl-wrap" style="max-height:none"><table id="txtTbl"></table></div>
+      <div class="pager" id="txtPager"></div>
+    </div>
+    <details class="panel" id="iaItens">
+      <summary>Nome e descrição com IA, item a item <span class="note">opcional, mais caro</span></summary>
+      <div class="row" style="gap:10px;margin-top:12px">
+        <button id="aiTexts" class="ai" hidden>Gerar para os itens filtrados</button>
+        <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="genDesc" checked> incluir descrição longa</label>
+        <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="genRegen"> refazer os já sugeridos</label>
+        <span class="row" style="gap:6px;margin-left:auto"><label class="label" for="txtLimit">Limite por rodada</label><select id="txtLimit"><option>40</option><option selected>100</option><option>300</option><option>1000</option></select></span>
+      </div>
+    </details>
     <details class="panel" id="padraoBox">
       <summary>Padrão de nome e regras <span class="note" id="padraoResumo"></span></summary>
       <div class="stack" style="margin-top:12px">
@@ -232,85 +307,40 @@ a.voltar{text-decoration:none;margin-right:6px}
         <div class="row"><button id="savePadraoTxt" class="primary sm">Salvar regras para o time</button><button id="resetPadraoTxt" class="sm ghost">Voltar ao padrão</button><span class="note">Valem para todos os fornecedores.</span></div>
       </div>
     </details>
-    <div class="row" style="gap:12px">
-      <button id="aiTipos" class="ai" hidden title="O nome já sai pelas regras; a IA só padroniza o tipo (ex.: BR AR DIN para Broca para Metal)">Padronizar tipos com IA</button>
-      <span class="note" id="tiposNote"></span>
-    </div>
-    <div>
-      <details>
-        <summary class="note">Nome e descrição longa item a item com IA (opcional, mais caro)</summary>
-        <div class="row" style="gap:10px;margin-top:10px">
-          <button id="aiTexts" class="ai" hidden>Gerar para os itens filtrados</button>
-          <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="genDesc" checked> incluir descrição longa</label>
-          <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="genRegen"> refazer os já sugeridos</label>
-          <span class="row" style="gap:6px;margin-left:auto"><label class="label" for="txtLimit">Limite por rodada</label><select id="txtLimit"><option>40</option><option selected>100</option><option>300</option><option>1000</option></select></span>
-        </div>
-      </details>
-    </div>
-    <div class="chips" id="txtView">
-      <button class="chip" data-v="itens" aria-pressed="true">Itens</button>
-      <button class="chip" data-v="tipos" title="O vocabulário de tipos vale para todos os fornecedores">Tipos (vocabulário)</button>
-    </div>
-    <div id="tiposPane" class="stack" hidden>
-      <div class="row" style="justify-content:space-between">
-        <div class="chips" id="tipoFilter">
-          <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
-          <button class="chip" data-f="sem">Sem padrão</button>
-          <button class="chip" data-f="com">Padronizados</button>
-        </div>
-        <input id="tipoSearch" placeholder="Buscar tipo" style="width:200px">
-      </div>
-      <div class="tbl-wrap" style="max-height:none"><table id="tipoTbl"></table></div>
-      <div class="pager" id="tipoPager"></div>
-    </div>
-    <div id="itensPane" class="stack">
-    <div class="row" style="justify-content:space-between">
-      <div class="chips" id="txtFilter">
-        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
-        <button class="chip" data-f="sug">Aguardando aprovação</button>
-        <button class="chip" data-f="tipo">Tipo sem padrão</button>
-        <button class="chip" data-f="ok">Aprovados</button>
-      </div>
-      <div class="row">
-        <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="txtMine"> só meus grupos</label>
-        <select id="txtGroup" style="max-width:240px"></select>
-        <input id="txtSearch" placeholder="Buscar nome ou código" style="width:190px">
-        <button id="approveVisible" class="sm primary"></button>
-      </div>
-    </div>
-    <div class="tbl-wrap" style="max-height:none"><table id="txtTbl"></table></div>
-    <div class="pager" id="txtPager"></div>
-    </div>
+    <span id="tiposNote" hidden></span>
   </div>
   <div class="proximo"><button class="primary" data-goto="revisar">Próximo: Revisar e exportar &rarr;</button></div>
 </section>
 
 <!-- 5 REVISAR -->
 <section data-pane="revisar" hidden>
-  <div class="section-head">
-    <div class="stack" style="gap:4px">
+  <div class="step-head">
+    <div class="step-tit">
       <h2>Revisar e exportar</h2>
+      <p class="step-sub" id="revSub"></p>
     </div>
-    <div class="row">
-      <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="useSug"> Usar nomes ainda não aprovados</label>
-      <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="inclErr"> Incluir itens com erro</label>
+    <div class="step-acoes">
       <button id="exportBtn" class="primary" title="Aba de migração no layout do Signus (50 colunas), mais Categoria Treeview, Características e Críticas">Exportar .xlsx</button>
+      <details class="opcoes">
+        <summary class="btn" aria-label="Mais opções">Mais opções</summary>
+        <div class="menu" role="menu">
+          <label class="menu-item"><input type="checkbox" id="useSug"> Exportar nomes ainda não aprovados</label>
+          <label class="menu-item"><input type="checkbox" id="inclErr"> Incluir itens com erro</label>
+          <div class="menu-form"><label><span class="label">Colunas da tabela</span><select id="revCols"><option value="ess">Essenciais</option><option value="map">Todas mapeadas</option></select></label></div>
+        </div>
+      </details>
     </div>
   </div>
   <div class="stack">
-    <div class="tiles" id="revTiles"></div>
-    <div class="row" style="justify-content:space-between">
+    <div id="revTiles" hidden></div>
+    <div class="toolbar">
       <div class="chips" id="revFilter">
-        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
         <button class="chip" data-f="err">Com erro</button>
         <button class="chip" data-f="warn">Com aviso</button>
         <button class="chip" data-f="ok">Prontos</button>
+        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
       </div>
-      <div class="row">
-        <label class="label" for="revCols">Colunas</label>
-        <select id="revCols"><option value="ess">Essenciais</option><option value="map">Todas mapeadas</option></select>
-        <input id="revSearch" placeholder="Buscar nome ou código" style="width:200px">
-      </div>
+      <input id="revSearch" type="search" placeholder="Buscar nome ou código" aria-label="Buscar nome ou código">
     </div>
     <div class="tbl-wrap"><table id="revTbl"></table></div>
     <div class="pager" id="revPager"></div>

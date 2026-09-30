@@ -56,13 +56,13 @@ const S = {
   dirty: false, saving: false,
   out: null, // computed rows
   caracVals: {}, // itemIndex -> {CARACT_ID: valor}
-  catFilter: 'todos', revFilter: 'todos', revPage: 0,
+  catFilter: 'pend', revFilter: 'todos', revPage: 0, grpPage: 0,
   openVmap: null,
   verVazios: false, gruposAbertos: new Set(), manterVisiveis: new Set(), // etapa 2: campos vazios ficam escondidos
   grpMais: new Set(), // etapa 3: grupos com a linha de detalhes aberta
   aiCtl: null,
   G: {}, T: {}, Y: {}, prop: {}, txtView: 'itens', tipoFilter: 'todos', tipoPage: 0, me: null, names: {}, subs: [],
-  catView: 'grupos', grpSearch: '', txtFilter: 'todos', txtPage: 0, deferRender: false,
+  catView: 'grupos', grpSearch: '', txtFilter: 'sug', txtPage: 0, deferRender: false,
   txtCfg: null, consol: null,
 };
 
@@ -467,7 +467,7 @@ async function aiTexts(){
 }
 function refreshAIButtons(){
   const on = aiAvailable();
-  $('#aiMap').hidden = !on; $('#aiMap').title = '1 chamada de IA'; $('#aiConsol').title = '1 chamada de IA'; $('#aiCats').hidden = !on; $('#aiTexts').hidden = !on; $('#aiConsol').hidden = !on; $('#aiTipos').hidden = !on;
+  $('#aiMap').hidden = !on; $('#aiMap').title = '1 chamada de IA'; $('#aiConsol').title = '1 chamada de IA'; $('#aiCats').hidden = !on; $('#aiTexts').hidden = !on; $('#aiConsol').hidden = !on; $('#aiTipos').hidden = !on || S.nTiposSem === 0;
   $('#aiCarac').hidden = !on || !Object.values(S.G).some(g => g.gc);
 }
 
@@ -475,8 +475,13 @@ function refreshAIButtons(){
 function renderArquivo(){
   $('#sampleBanner').hidden = !S.isSample;
   renderFaltas();
-  const has = S.grid.length > 0; $('#filePanel').hidden = !has; if (!has) return;
+  const has = S.grid.length > 0; $('#filePanel').hidden = !has;
+  $('#drop').hidden = has; $('#trocarArq').hidden = !has; $('#arqOpcoes').hidden = !has;
+  if (!has) { $('#arqSub').textContent = 'Suba a planilha que o fornecedor mandou.'; return; }
   $('#fileName').textContent = S.fileName;
+  const exN = S.out ? S.out.filter(r => r.excl).length : 0;
+  const perfilTxt = S.match ? `perfil <b>${esc(S.match.p.nome)}</b> reconhecido pelo cabeçalho` : S.P ? `perfil <b>${esc(S.P.nome)}</b>` : '<span style="color:var(--warn)">nenhum perfil para este cabeçalho: crie um em "+ Novo fornecedor"</span>';
+  $('#arqSub').innerHTML = `<b>${esc(S.fileName)}</b> &middot; ${fmtN(S.items.length)} produtos${exN ? ` (${fmtN(exN)} excluídos pelos filtros)` : ''} &middot; ${perfilTxt}`;
   $('#sheetSel').innerHTML = S.wb.SheetNames.map(s => `<option ${s===S.sheetName?'selected':''}>${esc(s)}</option>`).join('');
   $('#hdrRow').value = S.headerRow + 1;
   $('#keySel').innerHTML = S.headers.map((h,i) => `<option value="${i}" ${i===S.keyCol?'selected':''}>${esc(h)}</option>`).join('');
@@ -539,6 +544,7 @@ function renderColunas(){
     const ocultos = cols.length - visiveis.length;
     const btnGrupo = S.verVazios ? '' : ocultos ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Mostrar ${ocultos} ${ocultos === 1 ? 'vazio' : 'vazios'}</button>` : S.gruposAbertos.has(gname) ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Esconder vazios</button>` : '';
     html += `<div class="map-group${visiveis.length ? '' : ' fechado'}"><header><h3>${esc(acento(gname))}</h3><span class="row" style="gap:8px">${btnGrupo}<span class="pill ${setN?'info':''}">${setN} de ${cols.length}</span></span></header>`;
+    if (visiveis.length) html += `<div class="map-head" aria-hidden="true"><span>Campo no Signus</span><span>Origem</span><span>Coluna da planilha do fornecedor</span><span>Tratamento</span><span>Como fica no Signus</span></div>`;
     for (const c of visiveis) {
       const m = S.P.map[c] || {m:'vazio'}; const set = m.m !== 'vazio';
       const id = 'm' + COLS.indexOf(c);
@@ -591,6 +597,7 @@ function filteredGroups(){
   if (f === 'livres') gl = gl.filter(g => !S.G[g.key]?.resp);
   if (f === 'sem') gl = gl.filter(g => !S.G[g.key]?.tree && !S.G[g.key]?.prop);
   if (f === 'pend') gl = gl.filter(g => !S.G[g.key]?.ok);
+  if (f === 'ok') gl = gl.filter(g => S.G[g.key]?.ok);
   const q = norm(S.grpSearch);
   if (q) gl = gl.filter(g => norm(g.key).includes(q) || norm(g.ex.join(' ')).includes(q) || norm(S.G[g.key]?.prop).includes(q));
   return gl;
@@ -610,15 +617,14 @@ function catStatus(d){
 }
 function renderGroups(){
   $('#catGrupos').hidden = S.catView !== 'grupos'; $('#catArvore').hidden = S.catView !== 'arvore';
-  $$('#catView .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === S.catView ? 'true' : 'false'));
-  if (S.catView === 'arvore') { renderArvore(); return; }
+  $('#catTitulo').textContent = S.catView === 'arvore' ? 'Categorias novas' : 'Categorias';
+  const nNovas = proposals().length;
+  $('#verNovas').textContent = 'Categorias novas para aprovar' + (nNovas ? ` (${fmtN(nNovas)})` : '');
+  if (S.catView === 'arvore') { $('#aiCats').hidden = true; $('#aprovarAlta').hidden = true; renderArvore(); return; }
   const tbl = $('#grpTbl');
   $('#groupBy').innerHTML = `<option value="__secao">Seção da planilha</option>` + S.headers.map(h => `<option ${S.P?.grupoPor===h?'selected':''}>${esc(h)}</option>`).join('');
   if (S.P) $('#groupBy').value = S.P.grupoPor || '__secao';
-  const roots = [...new Set(S.tree.map(t=>t.path.split(' > ')[0]))];
-  const nonElec = S.out && groupsList().some(g => S.G[g.key]?.prop);
-  $('#treeWarn').innerHTML = S.tree.length && roots.length < 3 && S.out ? `<div class="banner"><span>A árvore do Signus carregada tem ${S.tree.length} categorias em <b>${esc(roots.join(', '))}</b>. O que não couber nela vira categoria nova${nonElec ? ' (veja em Categorias novas)' : ''}.</span></div>` : '';
-  if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#aprovarAlta').hidden = true; return; }
+  if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#aprovarAlta').hidden = true; $('#catSub').textContent = ''; $('#grpPager').innerHTML = ''; return; }
   treeDatalist();
   const cg = caracGroups();
   const x = situacao();
@@ -627,37 +633,45 @@ function renderGroups(){
   const nCarac = S.out.filter(r => !r.excl && r.g && r.g.gc && cg[r.g.gc] && !S.caracVals[r.ix]).length;
   $('#aiCarac').textContent = 'Extrair características com IA' + (nCarac ? ` (${fmtN(nCarac)} itens, ${chamadas(Math.ceil(nCarac / 30))})` : '');
   $('#aprovarAlta').hidden = !x.alta || !S.podeEditar;
-  $('#aprovarAlta').textContent = `Aprovar os de confiança alta (${fmtN(x.alta || 0)})`;
+  $('#aprovarAlta').textContent = `Aprovar ${fmtN(x.alta || 0)} de confiança alta`;
+  const todos = groupsList();
+  const nOk = todos.filter(g => S.G[g.key]?.ok).length, nSem = x.semCat || 0;
+  $('#catSub').innerHTML = `<b>${fmtN(nOk)} de ${fmtN(todos.length)}</b> grupos aprovados` + (nSem ? ` &middot; ${fmtN(nSem)} sem categoria` : '') + (todos.length - nOk - nSem > 0 ? ` &middot; ${fmtN(todos.length - nOk - nSem)} com categoria para aprovar` : '');
+  // chip "Meus" so aparece quando alguem assumiu grupos
+  $('#catFilter [data-f="meus"]').hidden = !todos.some(g => S.G[g.key]?.resp === S.me) && S.catFilter !== 'meus';
   const gl = filteredGroups();
-  resolveNames(gl.map(g => S.G[g.key]?.resp).filter(Boolean));
-  let h = '<thead><tr><th>Grupo</th><th style="min-width:300px">Categoria</th><th>Responsável</th><th>Aprovado</th><th></th></tr></thead><tbody>';
-  for (const g of gl.slice(0, 300)) {
+  const PG = 50; const pages = Math.max(1, Math.ceil(gl.length / PG)); if (S.grpPage >= pages) S.grpPage = 0;
+  const pagina = gl.slice(S.grpPage * PG, S.grpPage * PG + PG);
+  resolveNames(pagina.map(g => S.G[g.key]?.resp).filter(Boolean));
+  let h = '<thead><tr><th>Grupo</th><th style="min-width:320px">Categoria</th><th>Aprovado</th><th></th></tr></thead><tbody>';
+  for (const g of pagina) {
     const d = S.G[g.key] || {};
     const isSplit = g.key.includes(' :: ');
     const baseKey = isSplit ? g.key.split(' :: ')[0] : g.key;
     const valor = d.tree && treeById(d.tree) ? treeById(d.tree).path : (d.prop || '');
     const aberto = S.grpMais.has(g.key);
     h += `<tr>
-      <td style="min-width:220px;max-width:340px"><b>${esc(isSplit ? g.key.split(' :: ')[1] : g.key)}</b> <span class="note" style="display:inline">${fmtN(g.n)} ${g.n === 1 ? 'item' : 'itens'}</span>${g.ctx && g.ctx !== g.key ? `<div class="note">${esc(isSplit ? baseKey : g.ctx)}</div>` : ''}<span class="note clamp2 grp-ex" title="${esc(g.ex.join(' ; '))}">ex.: ${esc(g.ex.slice(0,2).join(' ; '))}</span></td>
-      <td><input class="cat-in" list="treeList" data-gk="${esc(g.key)}" data-gf="cat" value="${esc(valor)}" placeholder="Buscar, ou escrever Nível 1 > Nível 2 para criar" aria-label="Categoria do grupo ${esc(g.key)}"><div style="margin-top:4px">${catStatus(d)}</div></td>
-      <td>${d.resp ? whoHtml(d.resp) + (d.resp === S.me ? ` <button class="sm ghost" data-release="${esc(g.key)}">Soltar</button>` : '') : `<button class="sm" data-claim="${esc(g.key)}">Assumir</button>`}</td>
+      <td class="grp-cel"><div class="grp-nome"><b>${esc(isSplit ? g.key.split(' :: ')[1] : g.key)}</b> <span class="note">${fmtN(g.n)} ${g.n === 1 ? 'item' : 'itens'}</span>${d.resp ? ' ' + whoHtml(d.resp) : ''}</div><span class="note grp-ex" title="${esc((g.ctx && g.ctx !== g.key ? (isSplit ? baseKey : g.ctx) + '\n' : '') + g.ex.join('\n'))}">${esc(g.ex[0] || '')}</span></td>
+      <td><input class="cat-in" list="treeList" data-gk="${esc(g.key)}" data-gf="cat" value="${esc(valor)}" placeholder="Buscar categoria, ou Nível 1 > Nível 2 para criar" aria-label="Categoria do grupo ${esc(g.key)}">${catStatus(d) ? `<div class="cat-st">${catStatus(d)}</div>` : ''}</td>
       <td><label class="hit"><input type="checkbox" data-gk="${esc(g.key)}" data-gf="ok" ${d.ok?'checked':''} aria-label="Grupo aprovado" ${!(d.tree||d.prop)?'disabled title="Escolha a categoria antes de aprovar"':''}></label>${d.ok && d.okPor ? `<div class="note">${whoHtml(d.okPor)}</div>` : ''}</td>
       <td><button class="sm ghost" data-mais="${esc(g.key)}" aria-expanded="${aberto}">${aberto ? 'Menos' : 'Mais'}</button></td>
     </tr>`;
     if (aberto) {
       const nC = g.rows.filter(r => S.caracVals[r.ix]).length;
       const split = S.P.grupoPor === '__secao' ? (isSplit ? `<button class="sm ghost" data-unsplit="${esc(baseKey)}">Juntar de novo</button>` : (g.n > 1 ? `<button class="sm ghost" data-split="${esc(g.key)}" title="Classificar cada item deste grupo separadamente">Item a item</button>` : '')) : '';
-      h += `<tr class="mais"><td colspan="5"><div class="row" style="gap:16px;align-items:flex-end">
+      const resp = d.resp ? (d.resp === S.me ? `<button class="sm" data-release="${esc(g.key)}">Soltar este grupo</button>` : `<span class="note">Com ${whoHtml(d.resp)}</span>`) : `<button class="sm" data-claim="${esc(g.key)}">Assumir este grupo</button>`;
+      h += `<tr class="mais"><td colspan="4"><div class="row" style="gap:16px;align-items:flex-end">
+        ${g.ctx && g.ctx !== g.key ? `<span class="note" style="flex-basis:100%">Seção: ${esc(isSplit ? baseKey : g.ctx)} &middot; ex.: ${esc(g.ex.slice(0, 3).join(' ; '))}</span>` : `<span class="note" style="flex-basis:100%">ex.: ${esc(g.ex.slice(0, 3).join(' ; '))}</span>`}
         <label class="stack" style="gap:4px"><span class="label">Categoria de produto</span><input data-gk="${esc(g.key)}" data-gf="catProd" value="${esc(d.catProd||'')}" list="catProdList" style="width:200px"></label>
         <label class="stack" style="gap:4px"><span class="label">Grupo de características</span><select data-gk="${esc(g.key)}" data-gf="gc" style="max-width:240px"><option value="">(nenhum)</option>${Object.values(cg).map(c=>`<option value="${esc(c.codigo)}" ${c.codigo===d.gc?'selected':''}>${esc(c.nome)}</option>`).join('')}</select></label>
-        ${nC ? `<span class="note">${nC} itens com características</span>` : ''}${split}
+        ${nC ? `<span class="note">${nC} itens com características</span>` : ''}${split}${resp}
         ${d.motivo ? `<span class="note" style="flex-basis:100%">Motivo da IA: ${esc(d.motivo)}</span>` : ''}
       </div></td></tr>`;
     }
   }
-  if (gl.length > 300) h += `<tr><td colspan="5" class="note">Mostrando 300 de ${gl.length} grupos. Use os filtros ou a busca.</td></tr>`;
-  if (!gl.length) h += `<tr><td colspan="5" class="note">Nenhum grupo neste filtro.</td></tr>`;
+  if (!gl.length) h += `<tr><td colspan="4" class="note">${S.catFilter === 'pend' ? 'Nada para fazer aqui: todos os grupos estão aprovados.' : 'Nenhum grupo neste filtro.'}</td></tr>`;
   tbl.innerHTML = h + '</tbody>';
+  $('#grpPager').innerHTML = pages > 1 ? `<span class="muted">${fmtN(gl.length)} grupos</span><button class="sm" data-pg="-1" ${S.grpPage===0?'disabled':''}>Anterior</button><span class="mono">${S.grpPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.grpPage>=pages-1?'disabled':''}>Próxima</button>` : '';
   const cps = [...new Set(Object.values(S.G).map(x => x.catProd).filter(Boolean))];
   $('#catProdList').innerHTML = cps.map(c => `<option value="${esc(c)}">`).join('');
   refreshAIButtons();
@@ -778,22 +792,28 @@ function renderTextos(){
     $('#padraoNome').value = cfg.padrao; $('#regrasNome').value = cfg.regrasNome; $('#regrasDesc').value = cfg.regrasDesc;
   }
   $('#padraoResumo').textContent = ' ' + cfg.padrao;
-  $$('#txtView .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === S.txtView ? 'true' : 'false'));
   $('#tiposPane').hidden = S.txtView !== 'tipos'; $('#itensPane').hidden = S.txtView !== 'itens';
+  $('#txtTitulo').textContent = S.txtView === 'tipos' ? 'Vocabulário de tipos' : 'Nomes e descrições';
   const tv = tipoList();
-  const nSem = tv.filter(x => !x.voc?.tipo).length;
+  const nSem = tv.filter(x => !x.voc?.tipo).length; S.nTiposSem = S.out ? nSem : undefined;
   $('#aiTipos').textContent = 'Padronizar tipos com IA' + (nSem ? ` (${fmtN(nSem)} tipos, ${chamadas(Math.ceil(nSem / 50))})` : '');
   $('#tiposNote').textContent = S.out ? `${fmtN(tv.length)} tipos nesta planilha${nSem ? `, ${fmtN(nSem)} sem padrão` : ', todos padronizados'}.` : '';
-  if (S.txtView === 'tipos') { renderTipos(tv); refreshAIButtons(); return; }
+  if (S.txtView === 'tipos') {
+    $('#txtSub').innerHTML = S.out ? `<b>${fmtN(tv.length - nSem)} de ${fmtN(tv.length)}</b> tipos desta planilha padronizados &middot; o vocabulário vale para todos os fornecedores` : '';
+    renderTipos(tv); refreshAIButtons(); return;
+  }
   const tbl = $('#txtTbl');
-  if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#txtPager').innerHTML=''; return; }
+  if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#txtPager').innerHTML=''; $('#txtSub').textContent = ''; return; }
+  const todosTx = S.out.filter(r => !r.excl && r.key);
+  const nAprov = todosTx.filter(r => S.T[r.key]?.st === 'aprovado').length;
+  $('#txtSub').innerHTML = `<b>${fmtN(nAprov)} de ${fmtN(todosTx.length)}</b> nomes aprovados` + (nSem ? ` &middot; ${fmtN(nSem)} tipos sem padrão (padronize primeiro: os nomes se montam sozinhos)` : '');
   const gsel = $('#txtGroup'); const cur = gsel.value;
   const gl = groupsList();
   gsel.innerHTML = `<option value="">Todos os grupos (${gl.length})</option>` + gl.map(g => `<option value="${esc(g.key)}" ${g.key===cur?'selected':''}>${esc(g.key.slice(0,60))} (${g.n})</option>`).join('');
   const rows = filteredTextRows();
   const nLote = rows.filter(aprovavel).length;
-  $('#approveVisible').textContent = nLote ? `Aprovar ${fmtN(nLote)} do filtro` : 'Aprovar o filtro';
-  $('#approveVisible').disabled = !nLote;
+  $('#approveVisible').textContent = nLote ? `Aprovar ${fmtN(nLote)}` : 'Aprovar';
+  $('#approveVisible').hidden = !nLote;
   $('#approveVisible').title = 'Aprova de uma vez os nomes do filtro atual. Itens com tipo sem padrão ou dúvida da IA ficam para revisar um a um.';
   const desc = $('#genDesc').checked, lim = Number($('#txtLimit').value);
   const nIA = Math.min(lim, rows.filter(r => r.key && ($('#genRegen').checked || !(S.T[r.key] && S.T[r.key].nome)) && S.T[r.key]?.st !== 'aprovado').length);
@@ -801,7 +821,9 @@ function renderTextos(){
   const PG = 40; const pages = Math.max(1, Math.ceil(rows.length / PG)); if (S.txtPage >= pages) S.txtPage = 0;
   const slice = rows.slice(S.txtPage * PG, S.txtPage * PG + PG);
   resolveNames(slice.map(r => S.T[r.key]?.por).filter(Boolean));
-  let h = '<thead><tr><th>Ref.</th><th>Nome original</th><th style="min-width:360px">Nome padronizado</th><th style="min-width:300px">Descrição longa</th><th>Status</th></tr></thead><tbody>';
+  // descricao longa so aparece quando alguma foi gerada (a maioria dos lotes sai so com o nome)
+  const comDesc = todosTx.some(r => S.T[r.key]?.desc);
+  let h = `<thead><tr><th>Ref.</th><th>Nome original</th><th style="min-width:360px">Nome padronizado</th>${comDesc ? '<th style="min-width:300px">Descrição longa</th>' : ''}<th></th></tr></thead><tbody>`;
   for (const r of slice) {
     const t = S.T[r.key] || {};
     const ok = t.st === 'aprovado';
@@ -811,16 +833,14 @@ function renderTextos(){
       <td class="mono">${esc(r.key)}<div class="note">${esc(r.cat ? r.cat.nome : (r.g && r.g.prop ? r.g.prop.split(' > ').pop() : ''))}</div></td>
       <td><div class="txt-orig">${esc(origName)}</div></td>
       <td><textarea class="txt-name" rows="2" data-tk="${esc(r.key)}" data-tf="nome" aria-label="Nome padronizado de ${esc(r.key)}">${esc(nm)}</textarea>
-        <div class="note" style="margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill ${cls}">${esc(src)}</span>${nm.length} caracteres${t.duvida ? ' &middot; <span style="color:var(--warn)">' + esc(t.duvida) + '</span>' : ''}${!ok && r.item._rule?.tipoFonte === 'regra' && !t.nome ? ` &middot; tipo: <span class="mono">${esc(r.item._rule.raw)}</span>` : ''}</div></td>
-      <td><textarea class="txt-desc" data-tk="${esc(r.key)}" data-tf="desc" rows="3" placeholder="(sem descrição)" aria-label="Descrição de ${esc(r.key)}">${esc(t.desc||'')}</textarea></td>
+        <div class="note" style="margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill ${cls}">${esc(src)}</span>${nm.length > 100 ? `${nm.length} caracteres` : ''}${t.duvida ? ' &middot; <span style="color:var(--warn)">' + esc(t.duvida) + '</span>' : ''}${!ok && r.item._rule?.tipoFonte === 'regra' && !t.nome ? ` &middot; tipo: <span class="mono">${esc(r.item._rule.raw)}</span>` : ''}</div></td>
+      ${comDesc ? `<td><textarea class="txt-desc" data-tk="${esc(r.key)}" data-tf="desc" rows="3" placeholder="(sem descrição)" aria-label="Descrição de ${esc(r.key)}">${esc(t.desc||'')}</textarea></td>` : ''}
       <td style="min-width:120px">${ok ? `<span class="pill ok">aprovado</span><div style="margin-top:4px">${whoHtml(t.por)}</div><button class="sm ghost" data-unok="${esc(r.key)}">Reabrir</button>` : `<button class="sm primary" data-ok="${esc(r.key)}">Aprovar</button>`}</td>
     </tr>`;
   }
-  if (!slice.length) h += '<tr><td colspan="5" class="note">Nenhum item neste filtro.</td></tr>';
+  if (!slice.length) h += `<tr><td colspan="5" class="note">${S.txtFilter === 'sug' ? 'Nada para aprovar aqui.' : 'Nenhum item neste filtro.'}</td></tr>`;
   tbl.innerHTML = h + '</tbody>';
-  const all = S.out.filter(r => !r.excl && r.key);
-  const nOk = all.filter(r => S.T[r.key]?.st === 'aprovado').length;
-  $('#txtPager').innerHTML = `<span class="muted">${fmtN(rows.length)} itens no filtro &middot; ${fmtN(nOk)} aprovados de ${fmtN(all.length)}</span><button class="sm" data-pg="-1" ${S.txtPage===0?'disabled':''}>Anterior</button><span class="mono">${S.txtPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.txtPage>=pages-1?'disabled':''}>Próxima</button>`;
+  $('#txtPager').innerHTML = `<span class="muted">${fmtN(rows.length)} itens</span><button class="sm" data-pg="-1" ${S.txtPage===0?'disabled':''}>Anterior</button><span class="mono">${S.txtPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.txtPage>=pages-1?'disabled':''}>Próxima</button>`;
   refreshAIButtons();
 }
 function tipoList(){
@@ -876,16 +896,25 @@ async function aiTipos(){
 }
 
 /* ============ render: revisar ============ */
+// criticas do item: no maximo 2 linhas na tabela, o resto na dica
+function critCel(r){
+  const todas = [...r.errs.map(e => ['e', acento(e)]), ...r.warns.map(w => ['w', acento(w)])];
+  if (!todas.length) return '';
+  const mais = todas.length - 2;
+  return `<div class="crit" title="${esc(todas.map(x => x[1]).join('\n'))}">${todas.slice(0, 2).map(([c, t]) => `<span class="${c}">${esc(t)}</span>`).join('')}${mais > 0 ? `<span class="note">+${mais}</span>` : ''}</div>`;
+}
 const ESS = ['Nome','Código de barras','Classificação fiscal - NCM','Marca','Origem do produto','Unidade de medida','Peso (extendido)','Altura','Largura','Profundidade'];
 function renderRevisar(){
   const tbl = $('#revTbl');
-  if (!S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#revTiles').innerHTML=''; $('#revPager').innerHTML=''; return; }
+  if (!S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#revSub').textContent=''; $('#revPager').innerHTML=''; return; }
   const live = S.out.filter(r => !r.excl);
   const nErr = live.filter(r => r.errs.length).length, nWarn = live.filter(r => !r.errs.length && r.warns.length).length;
   const nOk = live.length - nErr - nWarn, nCat = live.filter(r => r.cat).length, nTx = live.filter(r => S.T[r.key]?.st === 'aprovado').length;
-  $('#revTiles').innerHTML = [
-    ['Itens', live.length, ''], ['Prontos', nOk, 'ok'], ['Com aviso', nWarn, 'warn'], ['Com erro', nErr, 'err'], ['Com categoria', nCat, ''], ['Nome aprovado', nTx, ''], ['Excluídos', S.out.length - live.length, ''],
-  ].map(([l,v,c]) => `<div class="tile ${c}"><span class="label">${l}</span><b>${fmtN(v)}</b></div>`).join('');
+  const nExc = S.out.length - live.length;
+  const sai = live.length - ($('#inclErr').checked ? 0 : nErr);
+  $('#revSub').innerHTML = `<b>${fmtN(sai)}</b> produtos vão para o arquivo` + (nErr && !$('#inclErr').checked ? ` &middot; <span style="color:var(--err)">${fmtN(nErr)} com erro ficam de fora</span>` : '') + ` &middot; ${fmtN(nCat)} com categoria &middot; ${fmtN(nTx)} com nome aprovado` + (nExc ? ` &middot; ${fmtN(nExc)} excluídos pelos filtros` : '');
+  const qt = { err: nErr, warn: nWarn, ok: nOk, todos: live.length };
+  $$('#revFilter .chip').forEach(c => { c.textContent = ({ err: 'Com erro', warn: 'Com aviso', ok: 'Prontos', todos: 'Todos' })[c.dataset.f] + ' ' + fmtN(qt[c.dataset.f]); });
   let rows = live;
   if (S.revFilter === 'err') rows = rows.filter(r => r.errs.length);
   if (S.revFilter === 'warn') rows = rows.filter(r => !r.errs.length && r.warns.length);
@@ -901,7 +930,7 @@ function renderRevisar(){
       const v = r.o[c]; const num = typeof v === 'number';
       return `<td class="${num?'num':''}"><span class="clip" title="${esc(v)}">${esc(v)}</span></td>`;
     }).join('') + `<td>${r.cat ? `<span class="clip" title="${esc(r.cat.path)}">${esc(r.cat.nome)} <span class="muted mono">${esc(r.cat.id)}</span></span>` : r.g && r.g.prop ? `<span class="clip note" title="${esc(r.g.prop)}">proposta: ${esc(r.g.prop.split(' > ').pop())}</span>` : '<span class="muted">-</span>'}</td>
-    <td><div class="crit">${r.errs.map(e=>`<span class="e">${esc(acento(e))}</span>`).join('')}${r.warns.map(w=>`<span class="w">${esc(acento(w))}</span>`).join('')}</div></td></tr>`;
+    <td>${critCel(r)}</td></tr>`;
   }
   tbl.innerHTML = h + '</tbody>';
   $('#revPager').innerHTML = `<span class="muted">${fmtN(rows.length)} itens</span><button class="sm" data-pg="-1" ${S.revPage===0?'disabled':''}>Anterior</button><span class="mono">${S.revPage+1} / ${pages}</span><button class="sm" data-pg="1" ${S.revPage>=pages-1?'disabled':''}>Próxima</button>`;
@@ -1037,7 +1066,7 @@ function renderFaltas(){
   if (!S.P || !S.out || !S.items.length) { box.hidden = true; return; }
   const x = situacao();
   const ir = (step, filtro, rot = 'Resolver') => `<button class="sm" data-goto="${step}" ${filtro ? `data-filtro="${filtro}"` : ''}>${rot}</button>`;
-  let h = `<header><div><h3>O que falta</h3><span class="note">${fmtN(x.itens.length)} produtos de <b>${esc(S.fileName)}</b> &middot; perfil <b>${esc(S.P.nome)}</b></span></div>${Object.values(x.pronto).every(Boolean) ? '<span class="pill ok">tudo pronto para exportar</span>' : ''}</header>`;
+  let h = `<header><div><h3>O que falta</h3></div>${Object.values(x.pronto).every(Boolean) ? '<span class="pill ok">tudo pronto para exportar</span>' : ''}</header>`;
   h += x.pronto.colunas
     ? linhaFalta('ok', 'Colunas configuradas', `${x.campos} campos do Signus preenchidos por este perfil.`, ir('colunas', '', 'Ver'))
     : linhaFalta('', !x.nomeOk ? 'Escolha de onde vem o Nome' : `${x.semColuna.length} ${x.semColuna.length === 1 ? 'campo aponta' : 'campos apontam'} para colunas que não existem nesta planilha`, !x.nomeOk ? '' : esc(x.semColuna.slice(0, 4).join(', ')) + (x.semColuna.length > 4 ? '...' : ''), ir('colunas'));
@@ -1071,7 +1100,6 @@ function go(step){
   S.step = step;
   $$('.step').forEach(b => b.setAttribute('aria-selected', b.dataset.step === step ? 'true' : 'false'));
   $$('[data-pane]').forEach(p => p.hidden = p.dataset.pane !== step);
-  try { localStorage.setItem('dps-step', step); } catch {}
   refreshAll();
 }
 
@@ -1105,12 +1133,20 @@ function createProfile(){
 }
 $('#newProfOk').addEventListener('click', createProfile);
 $('#newProfName').addEventListener('keydown', e => { if (e.key === 'Enter') createProfile(); });
-// menu da conta: fecha ao clicar fora ou ao escolher um item (o de tema fica aberto para ver a troca)
+// menus (conta e "Mais opcoes"): fecham ao clicar fora ou ao escolher uma acao; tema, caixas de marcar e campos deixam aberto
 document.addEventListener('click', e => {
-  const m = $('#conta'); if (!m.open) return;
-  if (!m.contains(e.target) || (e.target.closest('.menu-item') && !e.target.closest('[data-tema-btn]'))) m.open = false;
+  for (const m of $$('details.conta[open], details.opcoes[open]')) {
+    const acao = e.target.closest('button.menu-item') && !e.target.closest('[data-tema-btn]');
+    if (!m.contains(e.target) || acao) m.open = false;
+  }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#conta').open = false; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('details.conta[open], details.opcoes[open]').forEach(m => m.open = false); });
+// item de menu que abre um bloco recolhido da etapa e rola ate ele
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-abrir]'); if (!b) return;
+  const alvo = document.getElementById(b.dataset.abrir); if (!alvo) return;
+  alvo.open = true; alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 $('#autoMap').addEventListener('click', () => { const n = autoMap(true); markDirty(); refreshAll(); toast(n ? `${n} campos vazios preenchidos pelos nomes das colunas.` : 'Nenhum campo vazio com correspondência pelo nome.'); });
 $('#aiMap').addEventListener('click', aiSuggestMapping);
 $('#aiCats').addEventListener('click', aiSuggestCats);
@@ -1158,7 +1194,7 @@ const marcarChips = (sel, v, campo = 'f') => $$(sel + ' .chip').forEach(x => x.s
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-goto]'); if (!b) return;
   const f = b.dataset.filtro || '';
-  if (f.startsWith('cat:')) { S.catView = 'grupos'; S.catFilter = f.slice(4); marcarChips('#catFilter', S.catFilter); }
+  if (f.startsWith('cat:')) { S.catView = 'grupos'; S.catFilter = f.slice(4); S.grpPage = 0; marcarChips('#catFilter', S.catFilter); }
   if (f === 'txt:tipos') { S.txtView = 'tipos'; S.tipoFilter = 'sem'; S.tipoPage = 0; }
   else if (f.startsWith('txt:')) { S.txtView = 'itens'; S.txtFilter = f.slice(4); S.txtPage = 0; marcarChips('#txtFilter', S.txtFilter); }
   if (f.startsWith('rev:')) { S.revFilter = f.slice(4); S.revPage = 0; marcarChips('#revFilter', S.revFilter); }
@@ -1166,7 +1202,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if (e.target.closest('#faltaExport')) exportFile(); });
 $('#groupBy').addEventListener('change', e => { if (!S.P) return; S.P.grupoPor = e.target.value; markDirty(); refreshAll(); });
-$('#catView').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.catView = b.dataset.v; renderGroups(); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-catview]'); if (!b) return; S.catView = b.dataset.catview; renderGroups(); window.scrollTo(0, 0); });
 $('#grpTbl').addEventListener('change', async e => {
   const el = e.target; const gk = el.dataset.gk; if (!gk) return;
   const f = el.dataset.gf; const patch = {};
@@ -1206,11 +1242,12 @@ $('#claimFree').addEventListener('click', async () => {
   const free = groupsList().filter(g => !S.G[g.key]?.resp && !S.G[g.key]?.ok).slice(0, 20);
   if (!free.length) { toast('Nenhum grupo livre.'); return; }
   await writeMany('g', free.map(g => [g.key, { resp: S.me || 'local' }]));
-  S.catFilter = 'meus'; $$('#catFilter .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === 'meus' ? 'true':'false'));
+  S.catView = 'grupos'; S.catFilter = 'meus'; S.grpPage = 0; $$('#catFilter .chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === 'meus' ? 'true':'false'));
   renderGroups(); renderCounts(); toast(`${free.length} grupos agora estão com você.`);
 });
-$('#grpSearch').addEventListener('input', e => { S.grpSearch = e.target.value; renderGroups(); });
-$('#catFilter').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.catFilter = b.dataset.f; $$('#catFilter .chip').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true':'false')); renderGroups(); });
+$('#grpSearch').addEventListener('input', e => { S.grpSearch = e.target.value; S.grpPage = 0; renderGroups(); });
+$('#grpPager').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.grpPage += Number(b.dataset.pg); renderGroups(); $('#catGrupos').scrollIntoView({ block: 'start' }); });
+$('#catFilter').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.catFilter = b.dataset.f; S.grpPage = 0; $$('#catFilter .chip').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true':'false')); renderGroups(); });
 $('#catArvore').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.ren) { S.renaming = b.dataset.ren; renderArvore(); $('#renInput')?.focus(); }
@@ -1255,7 +1292,7 @@ $('#txtTbl').addEventListener('click', async e => {
   compute(); renderTextos(); renderCounts();
 });
 $('#approveVisible').addEventListener('click', () => aprovarLote(filteredTextRows(), 'deste filtro'));
-$('#txtView').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.txtView = b.dataset.v; renderTextos(); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-txtview]'); if (!b) return; S.txtView = b.dataset.txtview; renderTextos(); window.scrollTo(0, 0); });
 $('#tipoFilter').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.tipoFilter = b.dataset.f; S.tipoPage = 0; renderTextos(); });
 $('#tipoSearch').addEventListener('input', () => { S.tipoPage = 0; renderTextos(); });
 $('#tipoPager').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.tipoPage += Number(b.dataset.pg); renderTextos(); });
@@ -1279,6 +1316,7 @@ $('#savePadraoTxt').addEventListener('click', async () => {
 });
 $('#resetPadraoTxt').addEventListener('click', () => { $('#padraoNome').value = DEFAULT_TXT.padrao; $('#regrasNome').value = DEFAULT_TXT.regrasNome; $('#regrasDesc').value = DEFAULT_TXT.regrasDesc; });
 $('#useSug').addEventListener('change', e => { S.opts.useSug = e.target.checked; compute(); renderRevisar(); renderCounts(); });
+$('#inclErr').addEventListener('change', () => { renderRevisar(); renderFaltas(); });
 $('#revFilter').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.revFilter = b.dataset.f; S.revPage = 0; $$('#revFilter .chip').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true':'false')); renderRevisar(); });
 $('#revCols').addEventListener('change', renderRevisar);
 $('#revSearch').addEventListener('input', () => { S.revPage = 0; renderRevisar(); });
@@ -1292,8 +1330,9 @@ $('#caracIn').addEventListener('change', e => { const f = e.target.files[0]; if 
 function bloquear(html){ $('#gate').innerHTML = html; $('#gate').hidden = false; $$('[data-pane]').forEach(p => p.hidden = true); $('#steps').hidden = true; }
 async function boot(){
   if (typeof XLSX === 'undefined') { toast('Não foi possível carregar o leitor de planilhas. Recarregue a página.', 8000); return; }
-  let st = 'arquivo'; try { st = localStorage.getItem('dps-step') || 'arquivo'; } catch {}
-  go(st);
+  // sempre comeca em Arquivo: a planilha nao fica guardada no navegador, entao as outras etapas abririam vazias
+  try { localStorage.removeItem('dps-step'); } catch {}
+  go('arquivo');
   renderProfSel(); renderSaveState();
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { bloquear('<b>Entre no Agente Jet para usar esta tela.</b> <a href="./">Ir para o login</a>'); return; }
