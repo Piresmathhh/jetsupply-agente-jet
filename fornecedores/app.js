@@ -492,7 +492,7 @@ function renderArquivo(){
   for (let r = start; r < end; r++) {
     const row = S.grid[r] || []; const filled = row.slice(0,nc).filter(v=>!isEmpty(v)).length;
     const cls = r === S.headerRow ? 'hdr' : (r > S.headerRow && filled === 1 ? 'sec' : '');
-    h += `<tr class="${cls}"><td class="num">${r+1}</td>` + Array.from({length:nc}, (_,i)=>`<td><span class="clip">${esc(row[i])}</span></td>`).join('') + '</tr>';
+    h += `<tr class="${cls}"${cls === 'sec' ? ' title="Linha de seção: não vira produto, serve para agrupar e sugerir categoria"' : ''}><td class="num">${r+1}</td>` + Array.from({length:nc}, (_,i)=>`<td><span class="clip">${esc(row[i])}</span></td>`).join('') + '</tr>';
   }
   $('#rawTbl').innerHTML = h + '</tbody>';
 }
@@ -581,7 +581,7 @@ function renderFilters(){
     <button class="sm ghost" data-fdel="${i}" aria-label="Remover regra">Remover</button></div>`).join('') || '<p class="note">Nenhuma regra. Ex.: excluir quando OBSERVAÇÕES GERAIS contém "SUBSTITUIDO", ou quando STATUS igual a "NP".</p>';
   const ex = S.out ? S.out.filter(r=>r.excl).length : 0;
   const dp = S.out ? S.out.filter(r=>r.dup).length : 0;
-  $('#filterNote').textContent = S.out ? `${fmtN(ex - dp)} de ${fmtN(S.items.length)} linhas excluídas pelas regras. ${dp ? fmtN(dp) + ' repetições da mesma ref. também ficam de fora (vale a última ocorrência, que costuma estar na seção de categoria e não em Lançamentos).' : ''}` : '';
+  $('#filterNote').textContent = S.out ? `${fmtN(ex - dp)} de ${fmtN(S.items.length)} linhas excluídas pelas regras` + (dp ? `; ${fmtN(dp)} refs repetidas ficam de fora (vale a última ocorrência).` : '.') : '';
 }
 
 /* ============ render: categorias ============ */
@@ -639,9 +639,9 @@ function renderGroups(){
     const aberto = S.grpMais.has(g.key);
     h += `<tr>
       <td style="min-width:220px;max-width:340px"><b>${esc(isSplit ? g.key.split(' :: ')[1] : g.key)}</b> <span class="note" style="display:inline">${fmtN(g.n)} ${g.n === 1 ? 'item' : 'itens'}</span>${g.ctx && g.ctx !== g.key ? `<div class="note">${esc(isSplit ? baseKey : g.ctx)}</div>` : ''}<span class="note clamp2 grp-ex" title="${esc(g.ex.join(' ; '))}">ex.: ${esc(g.ex.slice(0,2).join(' ; '))}</span></td>
-      <td><input class="cat-in" list="treeList" data-gk="${esc(g.key)}" data-gf="cat" value="${esc(valor)}" placeholder="Digite para buscar a categoria" aria-label="Categoria do grupo ${esc(g.key)}"><div style="margin-top:4px">${catStatus(d)}</div></td>
+      <td><input class="cat-in" list="treeList" data-gk="${esc(g.key)}" data-gf="cat" value="${esc(valor)}" placeholder="Buscar, ou escrever Nível 1 > Nível 2 para criar" aria-label="Categoria do grupo ${esc(g.key)}"><div style="margin-top:4px">${catStatus(d)}</div></td>
       <td>${d.resp ? whoHtml(d.resp) + (d.resp === S.me ? ` <button class="sm ghost" data-release="${esc(g.key)}">Soltar</button>` : '') : `<button class="sm" data-claim="${esc(g.key)}">Assumir</button>`}</td>
-      <td><input type="checkbox" data-gk="${esc(g.key)}" data-gf="ok" ${d.ok?'checked':''} aria-label="Grupo aprovado" ${!(d.tree||d.prop)?'disabled title="Escolha a categoria antes de aprovar"':''}>${d.ok && d.okPor ? `<div class="note">${whoHtml(d.okPor)}</div>` : ''}</td>
+      <td><label class="hit"><input type="checkbox" data-gk="${esc(g.key)}" data-gf="ok" ${d.ok?'checked':''} aria-label="Grupo aprovado" ${!(d.tree||d.prop)?'disabled title="Escolha a categoria antes de aprovar"':''}></label>${d.ok && d.okPor ? `<div class="note">${whoHtml(d.okPor)}</div>` : ''}</td>
       <td><button class="sm ghost" data-mais="${esc(g.key)}" aria-expanded="${aberto}">${aberto ? 'Menos' : 'Mais'}</button></td>
     </tr>`;
     if (aberto) {
@@ -783,7 +783,7 @@ function renderTextos(){
   const tv = tipoList();
   const nSem = tv.filter(x => !x.voc?.tipo).length;
   $('#aiTipos').textContent = 'Padronizar tipos com IA' + (nSem ? ` (${fmtN(nSem)} tipos, ${chamadas(Math.ceil(nSem / 50))})` : '');
-  $('#tiposNote').textContent = S.out ? `${fmtN(tv.length)} tipos diferentes nesta planilha, ${fmtN(nSem)} sem padrão${nSem ? ` (cerca de ${Math.ceil(nSem / 50)} chamadas de IA)` : ''}.` : '';
+  $('#tiposNote').textContent = S.out ? `${fmtN(tv.length)} tipos nesta planilha${nSem ? `, ${fmtN(nSem)} sem padrão` : ', todos padronizados'}.` : '';
   if (S.txtView === 'tipos') { renderTipos(tv); refreshAIButtons(); return; }
   const tbl = $('#txtTbl');
   if (!S.P || !S.out) { tbl.innerHTML = '<tbody><tr><td class="muted">Carregue uma planilha e escolha um perfil.</td></tr></tbody>'; $('#txtPager').innerHTML=''; return; }

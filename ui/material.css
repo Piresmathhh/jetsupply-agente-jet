@@ -249,4 +249,11 @@ details summary{cursor:pointer;font-weight:500}
 .txt-desc{min-height:90px;font-size:13px}
 .txtrow td{padding-block:12px}
 tr.approved td{background:color-mix(in srgb,var(--md-success-container) 35%,transparent)}
+/* textos curtos quebram sem deixar palavra sozinha na ultima linha */
+p,.note,.muted,.banner,.falta b{text-wrap:pretty}
+/* toque: controles com pelo menos 40px de altura */
+@media (pointer:coarse){
+  button.sm,.btn.sm,.chip{min-height:40px}
+  input[type=checkbox]{width:22px;height:22px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
