@@ -89,14 +89,17 @@ async function saveProfile(){
   const { error } = await sb.from('fornecedor_perfis').upsert({ id, nome, assinatura, config });
   if (error) toast('Não foi possível salvar o perfil (' + error.message + ').');
   else { S.dirty = false; S.salvos.add(id); }
-  S.saving = false; renderSaveState();
+  S.saving = false; renderSaveState(error ? 'erro' : undefined);
 }
-function renderSaveState(){
+// O perfil grava sozinho: o cabecalho so mostra algo quando vale a pena (salvando, pendente, erro, so leitura).
+let salvoTimer = null;
+function renderSaveState(estado){
   const el = $('#saveState');
-  if (!S.online) { el.textContent = 'sem banco'; el.className = 'save-state off'; return; }
-  if (!S.podeEditar) { el.textContent = 'só leitura'; el.className = 'save-state off'; return; }
-  if (S.saving) { el.textContent = 'salvando...'; el.className = 'save-state'; return; }
-  el.textContent = S.dirty ? 'alterações não salvas' : 'salvo'; el.className = 'save-state' + (S.dirty ? ' dirty' : '');
+  const st = estado || (!S.online ? 'off' : !S.podeEditar ? 'leitura' : S.saving ? 'salvando' : S.dirty ? 'pendente' : 'salvo');
+  el.dataset.estado = st;
+  el.textContent = { off: '', leitura: 'Só leitura', salvando: 'Salvando...', pendente: 'Alterações não salvas', erro: 'Não salvo', salvo: el.textContent === 'Salvando...' ? 'Salvo' : '' }[st] ?? '';
+  clearTimeout(salvoTimer);
+  if (st === 'salvo' && el.textContent) salvoTimer = setTimeout(() => { if (el.dataset.estado === 'salvo') el.textContent = ''; }, 2000);
 }
 function markDirty(){ S.dirty = true; renderSaveState(); scheduleSave(); }
 let saveTimer = null;
@@ -104,7 +107,8 @@ function scheduleSave(){ if (!S.online || !S.P) return; clearTimeout(saveTimer);
 function renderProfSel(){
   const sel = $('#profSel');
   const list = Object.values(S.profiles).sort((a,b)=>a.nome.localeCompare(b.nome));
-  sel.innerHTML = (list.length ? '' : '<option value="">(nenhum perfil)</option>') + list.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('');
+  sel.innerHTML = (list.length ? '' : '<option value="">Escolha o fornecedor</option>') + list.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')
+    + (!S.online || S.podeEditar ? '<option value="__novo">+ Novo fornecedor...</option>' : '');
   if (S.profId) sel.value = S.profId;
 }
 function selectProfile(id){
@@ -1086,21 +1090,27 @@ async function handleFile(f){
 $('#sheetSel').addEventListener('change', e => { loadSheet(e.target.value, true); if (S.P) { S.P.sheet = S.sheetName; markDirty(); } });
 $('#hdrRow').addEventListener('change', e => { const v = Math.max(1, parseInt(e.target.value)||1) - 1; S.headerRow = v; parseItems(); if (S.P) { S.P.headerRow = v; markDirty(); } refreshAll(); });
 $('#keySel').addEventListener('change', e => { S.keyCol = Number(e.target.value); if (S.P) { S.P.chave = S.headers[S.keyCol]; markDirty(); } refreshAll(); });
-$('#profSel').addEventListener('change', e => selectProfile(e.target.value));
-$('#newProfBtn').addEventListener('click', () => { $('#newProfBox').hidden = false; $('#newProfBtn').hidden = true; $('#newProfName').focus(); });
-$('#newProfCancel').addEventListener('click', () => { $('#newProfBox').hidden = true; $('#newProfBtn').hidden = false; });
+function novoPerfil(abrir){ $('#newProfBox').hidden = !abrir; $('#profSel').hidden = abrir; if (abrir) $('#newProfName').focus(); else renderProfSel(); }
+$('#profSel').addEventListener('change', e => { if (e.target.value === '__novo') novoPerfil(true); else selectProfile(e.target.value); });
+$('#newProfCancel').addEventListener('click', () => novoPerfil(false));
+$('#newProfName').addEventListener('keydown', e => { if (e.key === 'Escape') novoPerfil(false); });
 function createProfile(){
   const nome = $('#newProfName').value.trim(); if (!nome) { $('#newProfName').focus(); return; }
   const p = blankProfile(nome); if (S.profiles[p.id]) p.id += '-' + Date.now().toString(36);
   p.sheet = S.sheetName; p.headerRow = S.headerRow; p.chave = S.headers[S.keyCol] || '';
   S.profiles[p.id] = p; S.profId = p.id; S.P = p; subscribeProfile();
   if (S.headers.length) autoMap(false);
-  $('#newProfBox').hidden = true; $('#newProfBtn').hidden = false; $('#newProfName').value = '';
+  $('#newProfName').value = ''; novoPerfil(false);
   renderProfSel(); markDirty(); saveProfile(); go('colunas'); toast('Perfil criado com sugestões pelos nomes das colunas. Revise.');
 }
 $('#newProfOk').addEventListener('click', createProfile);
 $('#newProfName').addEventListener('keydown', e => { if (e.key === 'Enter') createProfile(); });
-$('#saveProf').addEventListener('click', () => { clearTimeout(saveTimer); saveProfile(); });
+// menu da conta: fecha ao clicar fora ou ao escolher um item (o de tema fica aberto para ver a troca)
+document.addEventListener('click', e => {
+  const m = $('#conta'); if (!m.open) return;
+  if (!m.contains(e.target) || (e.target.closest('.menu-item') && !e.target.closest('[data-tema-btn]'))) m.open = false;
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#conta').open = false; });
 $('#autoMap').addEventListener('click', () => { const n = autoMap(true); markDirty(); refreshAll(); toast(n ? `${n} campos vazios preenchidos pelos nomes das colunas.` : 'Nenhum campo vazio com correspondência pelo nome.'); });
 $('#aiMap').addEventListener('click', aiSuggestMapping);
 $('#aiCats').addEventListener('click', aiSuggestCats);
@@ -1293,7 +1303,10 @@ async function boot(){
   if (!['admin', 'editor', 'comum'].includes(role)) { bloquear('<b>Seu cadastro ainda não foi aprovado.</b> Peça a um admin do Agente Jet.'); return; }
   S.names[S.me] = (perfil.nome || perfil.email || '');
   S.podeEditar = role === 'admin' || role === 'editor'; S.isAdmin = role === 'admin';
-  $('#quem').textContent = (perfil.nome || perfil.email || '') + (S.podeEditar ? '' : ' (só leitura)');
+  const nomeQuem = perfil.nome || perfil.email || '';
+  $('#quem').textContent = nomeQuem; $('#quemIni').textContent = initials(nomeQuem);
+  $('#quemPapel').textContent = { admin: 'Admin', editor: 'Editor', comum: 'Só leitura' }[role] + (perfil.email && perfil.email !== nomeQuem ? ' · ' + perfil.email : '');
+  $('.avatar').title = nomeQuem;
   await connect();
 }
 async function connect(){

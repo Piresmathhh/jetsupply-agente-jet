@@ -9,7 +9,6 @@
 #profMatch .pill{white-space:normal;max-width:100%}
 /* botao de volta ao Agente: link com cara de botao, bem visivel no canto esquerdo */
 a.voltar{text-decoration:none;margin-right:6px}
-@media (max-width:520px){.brand .brand-mark{display:none}}
 /* etapa 2: grupo sem campo preenchido fica so no cabecalho */
 .map-group.fechado > header{border-bottom:0}
 #ajustesBox > summary .note{font-weight:400;margin-left:6px}
@@ -46,25 +45,26 @@ a.voltar{text-decoration:none;margin-right:6px}
 
 <header class="top">
   <div class="top-in">
-    <div class="brand">
-      <a href="./" class="btn voltar" title="Voltar para o Agente Jet">&larr; Agente Jet</a>
-      <div class="brand-mark" aria-hidden="true"><span>fornecedor</span><span class="to">&rarr;</span><span class="dst">Signus</span></div>
-      <h1>De-Para Signus</h1>
-    </div>
+    <a href="./" class="btn ghost voltar" title="Voltar para o Agente Jet">&larr; Agente Jet</a>
+    <h1>De-Para Signus</h1>
     <div class="prof">
-      <label class="label" for="profSel">Perfil do fornecedor</label>
-      <select id="profSel"></select>
+      <select id="profSel" aria-label="Fornecedor"></select>
       <span id="newProfBox" class="inline-form" hidden>
-        <input id="newProfName" placeholder="Nome do fornecedor" style="width:180px">
+        <input id="newProfName" placeholder="Nome do fornecedor" aria-label="Nome do novo fornecedor" style="width:200px">
         <button id="newProfOk" class="sm primary">Criar</button>
         <button id="newProfCancel" class="sm ghost">Cancelar</button>
       </span>
-      <button id="newProfBtn" class="sm">Novo perfil</button>
-      <button id="saveProf" class="sm">Salvar</button>
-      <span id="saveState" class="save-state off">sem banco</span>
-      <span id="quem" class="note"></span>
-      <button class="sm ghost" data-tema-btn type="button">Tema: automático</button>
     </div>
+    <span id="saveState" class="save-state" data-estado="off" aria-live="polite"></span>
+    <details class="conta" id="conta">
+      <summary class="avatar" title="Sua conta e opções" aria-label="Sua conta e opções"><span id="quemIni">?</span></summary>
+      <div class="menu" role="menu">
+        <div class="menu-quem"><b id="quem"></b><span class="note" id="quemPapel"></span></div>
+        <button class="menu-item" data-tema-btn type="button" role="menuitem">Tema: automático</button>
+        <button class="menu-item" data-goto="bases" type="button" role="menuitem">Bases do Signus</button>
+        <a class="menu-item" href="./" role="menuitem">Voltar ao Agente Jet</a>
+      </div>
+    </details>
   </div>
   <nav class="steps" role="tablist" id="steps">
     <button class="step" role="tab" data-step="arquivo" aria-selected="true"><span class="n">1</span>Arquivo <span class="cnt" id="cntArquivo"></span></button>
@@ -72,7 +72,6 @@ a.voltar{text-decoration:none;margin-right:6px}
     <button class="step" role="tab" data-step="categorias"><span class="n">3</span>Categorias <span class="cnt" id="cntCategorias"></span></button>
     <button class="step" role="tab" data-step="textos"><span class="n">4</span>Nomes e descrições <span class="cnt" id="cntTextos"></span></button>
     <button class="step" role="tab" data-step="revisar"><span class="n">5</span>Revisar e exportar <span class="cnt" id="cntRevisar"></span></button>
-    <button class="step sep" role="tab" data-step="bases"><span class="n">&#8801;</span>Bases Signus</button>
   </nav>
   <div class="aibar" id="aiBar" hidden>
     <span class="pill ai">IA</span><span id="aiMsg" class="note"></span>
