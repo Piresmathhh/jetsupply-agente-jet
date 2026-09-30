@@ -51,6 +51,7 @@ const S = {
   caracVals: {}, // itemIndex -> {CARACT_ID: valor}
   catFilter: 'todos', revFilter: 'todos', revPage: 0,
   openVmap: null,
+  verVazios: false, gruposAbertos: new Set(), manterVisiveis: new Set(), // etapa 2: campos vazios ficam escondidos
   aiCtl: null,
   G: {}, T: {}, Y: {}, prop: {}, txtView: 'itens', tipoFilter: 'todos', tipoPage: 0, me: null, names: {}, subs: [],
   catView: 'grupos', grpSearch: '', txtFilter: 'todos', txtPage: 0, deferRender: false,
@@ -108,6 +109,7 @@ function selectProfile(id){
     else if (S.grid.length && S.P.headerRow !== null && S.P.headerRow !== S.headerRow) { S.headerRow = S.P.headerRow; parseItems(); }
     if (S.P.chave) S.keyCol = S.headers.findIndex(h => h === S.P.chave);
   }
+  S.gruposAbertos.clear(); S.manterVisiveis.clear();
   S.dirty = false; renderProfSel(); renderSaveState(); refreshAll();
 }
 
@@ -498,19 +500,33 @@ function distinctFor(c){
   }
   return [...seen.entries()].sort((a,b)=>b[1]-a[1]);
 }
+const MODOS = [['vazio','Vazio','o campo sai em branco'],['col','Coluna','copia uma coluna da planilha'],['fixo','Fixo','mesmo valor para todos os itens'],['modelo','Modelo','junta colunas e texto, ex.: {MARCA} {ITEM}'],['derivado','Derivado','reaproveita outro campo do Signus ja montado']];
+const MODOS_AJUDA = MODOS.map(([, l, d]) => l + ': ' + d).join('\n');
 function renderColunas(){
   const grid = $('#mapGrid');
-  if (!S.P) { grid.innerHTML = '<div class="panel muted">Crie ou escolha um perfil de fornecedor para mapear as colunas.</div>'; $('#filters').innerHTML=''; return; }
+  $('#mapSemArquivo').hidden = !S.P || S.headers.length > 0;
+  if (!S.P) { grid.innerHTML = '<div class="panel muted">Crie ou escolha um perfil de fornecedor para mapear as colunas.</div>'; $('#filters').innerHTML=''; $('#mapResumo').textContent = ''; $('#toggleVazios').hidden = true; $('#ajustesResumo').textContent = ''; return; }
   $('#siglas').value = S.P.siglas || '';
   renderFilters();
+  const nF = (S.P.filtros || []).length, nS = String(S.P.siglas || '').split(/[\s,;]+/).filter(Boolean).length;
+  $('#ajustesResumo').textContent = [nF ? `${nF} ${nF === 1 ? 'filtro' : 'filtros'}` : 'sem filtros', nS ? `${nS} ${nS === 1 ? 'sigla' : 'siglas'}` : 'sem siglas extras'].join(' · ');
+  const campos = GROUPS.flatMap(([, cols]) => cols);
+  const nVazios = campos.filter(c => (S.P.map[c]?.m || 'vazio') === 'vazio').length;
+  $('#mapResumo').textContent = `${campos.length - nVazios} de ${campos.length} campos preenchidos` + (S.verVazios || !nVazios ? '' : `. Os ${nVazios} vazios estao escondidos.`);
+  $('#toggleVazios').hidden = !nVazios;
+  $('#toggleVazios').textContent = S.verVazios ? 'Esconder campos vazios' : `Mostrar campos vazios (${nVazios})`;
   const srcOpts = sel => '<option value="">(coluna)</option>' + S.headers.map(h => `<option ${h===sel?'selected':''}>${esc(h)}</option>`).join('');
   const derOpts = sel => '<option value="">(campo Signus)</option>' + COLS.filter(c=>!OUT_ONLY.has(c)).map(h => `<option ${h===sel?'selected':''}>${esc(h)}</option>`).join('');
   const trOpts = sel => TRANSFORMS.map(([k,l]) => `<option value="${k}" ${k===(sel||'texto')?'selected':''}>${l}</option>`).join('');
   let html = '';
   for (const [gname, cols] of GROUPS) {
-    const setN = cols.filter(c => S.P.map[c]?.m !== 'vazio').length;
-    html += `<div class="map-group"><header><h3>${gname}</h3><span class="pill ${setN?'info':''}">${setN} de ${cols.length}</span></header>`;
-    for (const c of cols) {
+    const setN = cols.filter(c => (S.P.map[c]?.m || 'vazio') !== 'vazio').length;
+    const aberto = S.verVazios || S.gruposAbertos.has(gname);
+    const visiveis = aberto ? cols : cols.filter(c => (S.P.map[c]?.m || 'vazio') !== 'vazio' || S.manterVisiveis.has(c));
+    const ocultos = cols.length - visiveis.length;
+    const btnGrupo = S.verVazios ? '' : ocultos ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Mostrar ${ocultos} ${ocultos === 1 ? 'vazio' : 'vazios'}</button>` : S.gruposAbertos.has(gname) ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Esconder vazios</button>` : '';
+    html += `<div class="map-group${visiveis.length ? '' : ' fechado'}"><header><h3>${gname}</h3><span class="row" style="gap:8px">${btnGrupo}<span class="pill ${setN?'info':''}">${setN} de ${cols.length}</span></span></header>`;
+    for (const c of visiveis) {
       const m = S.P.map[c] || {m:'vazio'}; const set = m.m !== 'vazio';
       const id = 'm' + COLS.indexOf(c);
       let mid = '', tr = '';
@@ -523,8 +539,8 @@ function renderColunas(){
       const note = c === 'Nome' ? '<small>os nomes aprovados na etapa 4 substituem este valor</small>' : c === 'Descrição do produto e-commerce' ? '<small>preenchida pelas descricoes aprovadas na etapa 4</small>' : (HINTS[c] ? `<small>${esc(HINTS[c])}</small>` : '');
       html += `<div class="map-row ${set?'set':''}">
         <div class="tgt"><span class="dot"></span>${esc(c)} ${m.ia?'<span class="pill ai">IA</span>':''}${note}</div>
-        <select id="${id}" data-f="m" data-c="${esc(c)}" aria-label="Origem do campo ${esc(c)}">
-          ${[['vazio','Vazio'],['col','Coluna'],['fixo','Fixo'],['modelo','Modelo'],['derivado','Derivado']].map(([k,l])=>`<option value="${k}" ${m.m===k?'selected':''}>${l}</option>`).join('')}
+        <select id="${id}" data-f="m" data-c="${esc(c)}" aria-label="Origem do campo ${esc(c)}" title="${esc(MODOS_AJUDA)}">
+          ${MODOS.map(([k,l,d])=>`<option value="${k}" title="${esc(d)}" ${m.m===k?'selected':''}>${l}</option>`).join('')}
         </select>
         <div>${mid}</div>
         <div>${tr}</div>
@@ -995,6 +1011,7 @@ $('#mapGrid').addEventListener('change', e => {
   const m = S.P.map[c] ||= { m:'vazio' }; delete m.ia;
   if (el.dataset.f === 'm') {
     const nm = el.value; const old = m;
+    if (nm === 'vazio') S.manterVisiveis.add(c); // nao some da tela no mesmo instante em que a pessoa escolhe Vazio
     S.P.map[c] = nm === 'col' ? { m:'col', src: old.m==='col'?old.src:'', t: old.t||'texto' } : nm === 'fixo' ? { m:'fixo', v:'' } : nm === 'modelo' ? { m:'modelo', v:'', t:'texto' } : nm === 'derivado' ? { m:'derivado', src:'', t:'texto' } : { m:'vazio' };
   } else m[el.dataset.f] = el.value;
   markDirty(); compute(); renderColunas(); renderCounts();
@@ -1003,7 +1020,10 @@ $('#mapGrid').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.vmap) { S.openVmap = S.openVmap === b.dataset.vmap ? null : b.dataset.vmap; renderColunas(); }
   if (b.hasAttribute('data-vmapclose')) { S.openVmap = null; renderColunas(); }
+  if (b.dataset.mgrp) { const g = b.dataset.mgrp; if (S.gruposAbertos.has(g)) S.gruposAbertos.delete(g); else S.gruposAbertos.add(g); renderColunas(); }
 });
+$('#toggleVazios').addEventListener('click', () => { S.verVazios = !S.verVazios; S.gruposAbertos.clear(); S.manterVisiveis.clear(); renderColunas(); });
+$('#mapSemArquivo').addEventListener('click', e => { if (e.target.closest('[data-goto]')) go('arquivo'); });
 $('#groupBy').addEventListener('change', e => { if (!S.P) return; S.P.grupoPor = e.target.value; markDirty(); refreshAll(); });
 $('#catView').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.catView = b.dataset.v; renderGroups(); });
 $('#grpTbl').addEventListener('change', async e => {
