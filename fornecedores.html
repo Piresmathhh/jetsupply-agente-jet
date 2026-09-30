@@ -6,28 +6,24 @@
 <title>De-Para Signus · Agente Jet</title>
 <style>[hidden]{display:none!important}
 /* selo de perfil reconhecido tem texto longo: quebra linha em tela estreita (a v4 estourava 400px aqui) */
-#profMatch .pill{white-space:normal;max-width:100%;border-radius:10px}
+#profMatch .pill{white-space:normal;max-width:100%}
 /* botao de volta ao Agente: link com cara de botao, bem visivel no canto esquerdo */
 a.voltar{text-decoration:none;margin-right:6px}
-a.voltar:hover{border-color:var(--ink)}
 @media (max-width:520px){.brand .brand-mark{display:none}}
 /* etapa 2: grupo sem campo preenchido fica so no cabecalho */
 .map-group.fechado > header{border-bottom:0}
 #ajustesBox > summary .note{font-weight:400;margin-left:6px}
-/* avisos no canto, sem cobrir o conteudo do meio da tela (body na frente: o jet-ui.css vem depois deste bloco) */
-body .toast{left:auto;right:20px;transform:none;max-width:min(420px,calc(100vw - 32px))}
-@media (max-width:520px){body .toast{right:16px;left:16px;max-width:none}}
 /* etapa concluida */
 .step.done .n{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
 .step.done .cnt{color:var(--ok)}
 /* o que falta */
-.faltas{display:grid;gap:0;padding:0}
+.panel.faltas{display:grid;gap:0;padding:0;overflow:hidden}
 .faltas > header{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .falta{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
 .falta .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid var(--line-strong);color:var(--muted)}
 .falta.ok .ic{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
 .falta.err .ic{background:var(--err-soft);border-color:var(--err);color:var(--err)}
-.falta b{font-weight:600}
+.falta b{font-weight:500}
 .falta .note{display:block}
 .faltas > footer{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--line);background:var(--raised)}
 /* proximo passo no fim de cada etapa */
@@ -36,15 +32,13 @@ body .toast{left:auto;right:20px;transform:none;max-width:min(420px,calc(100vw -
 .cat-in{width:100%;min-width:220px}
 #grpTbl tr.mais td{background:var(--raised)}
 #grpTbl .grp-ex{display:block;margin-top:2px}
-/* opcoes de origem com nomes mais longos */
-body .map-row{grid-template-columns:minmax(180px,1.1fr) 136px minmax(160px,1.3fr) minmax(120px,.8fr) minmax(140px,1fr)}
-@media (max-width:860px){body .map-row{grid-template-columns:1fr 1fr}}
+
 /* celular: as caixas da linha encolhem para caber no cartao em vez de serem cortadas */
 @media (max-width:860px){.map-row > *{min-width:0}.map-row select,.map-row input{width:100%;max-width:100%}}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
 <script src="ui/tema.js"></script>
-<link rel="stylesheet" href="fornecedores/jet-ui.css">
+<link rel="stylesheet" href="ui/material.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>

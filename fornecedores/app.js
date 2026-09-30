@@ -521,7 +521,7 @@ function renderColunas(){
   $('#ajustesResumo').textContent = [nF ? `${nF} ${nF === 1 ? 'filtro' : 'filtros'}` : 'sem filtros', nS ? `${nS} ${nS === 1 ? 'sigla' : 'siglas'}` : 'sem siglas extras'].join(' · ');
   const campos = GROUPS.flatMap(([, cols]) => cols);
   const nVazios = campos.filter(c => (S.P.map[c]?.m || 'vazio') === 'vazio').length;
-  $('#mapResumo').textContent = `${campos.length - nVazios} de ${campos.length} campos preenchidos` + (S.verVazios || !nVazios ? '' : `. Os ${nVazios} vazios estao escondidos.`);
+  $('#mapResumo').textContent = `${campos.length - nVazios} de ${campos.length} campos preenchidos` + (S.verVazios || !nVazios ? '' : `. Os ${nVazios} vazios estão escondidos.`);
   $('#toggleVazios').hidden = !nVazios;
   $('#toggleVazios').textContent = S.verVazios ? 'Esconder campos vazios' : `Mostrar campos vazios (${nVazios})`;
   const srcOpts = sel => '<option value="">(coluna)</option>' + S.headers.map(h => `<option ${h===sel?'selected':''}>${esc(h)}</option>`).join('');
@@ -539,7 +539,7 @@ function renderColunas(){
       const m = S.P.map[c] || {m:'vazio'}; const set = m.m !== 'vazio';
       const id = 'm' + COLS.indexOf(c);
       let mid = '', tr = '';
-      if (m.m === 'col') { mid = `<select class="mono" data-f="src" data-c="${esc(c)}" aria-label="Coluna de origem para ${esc(c)}">${srcOpts(m.src)}</select>`; tr = `<select data-f="t" data-c="${esc(c)}" aria-label="Transformacao">${trOpts(m.t)}</select>`; }
+      if (m.m === 'col') { mid = `<select class="mono" data-f="src" data-c="${esc(c)}" aria-label="Coluna de origem para ${esc(c)}">${srcOpts(m.src)}</select>`; tr = `<select data-f="t" data-c="${esc(c)}" aria-label="Transformação">${trOpts(m.t)}</select>`; }
       else if (m.m === 'fixo') mid = `<input class="mono" data-f="v" data-c="${esc(c)}" value="${esc(m.v)}" aria-label="Valor fixo para ${esc(c)}">`;
       else if (m.m === 'modelo') { mid = `<input class="mono" data-f="v" data-c="${esc(c)}" value="${esc(m.v)}" placeholder="{COLUNA} texto {OUTRA}" aria-label="Modelo para ${esc(c)}">`; tr = `<select data-f="t" data-c="${esc(c)}">${trOpts(m.t)}</select>`; }
       else if (m.m === 'derivado') { mid = `<select data-f="src" data-c="${esc(c)}">${derOpts(m.src)}</select>`; tr = `<select data-f="t" data-c="${esc(c)}">${trOpts(m.t)}</select>`; }
