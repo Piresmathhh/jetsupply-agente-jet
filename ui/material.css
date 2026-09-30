@@ -120,8 +120,9 @@ td .clip{max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowr
 .map-grid{display:grid;gap:16px}
 .map-group{background:var(--md-surface-container-lowest);border:1px solid var(--md-outline-variant);border-radius:12px;overflow:hidden}
 .map-group > header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--md-outline-variant)}
-.map-row{display:grid;grid-template-columns:minmax(180px,1.1fr) 160px minmax(160px,1.3fr) minmax(120px,.8fr) minmax(140px,1fr);gap:8px;padding:8px 16px;align-items:center;border-bottom:1px solid var(--md-outline-variant)}
+.map-row,.map-head{display:grid;grid-template-columns:minmax(180px,1.1fr) 160px minmax(160px,1.3fr) minmax(120px,.8fr) minmax(140px,1fr);gap:8px;padding:8px 16px;align-items:center;border-bottom:1px solid var(--md-outline-variant)}
 .map-row:last-child{border-bottom:0}
+.map-head{padding-block:6px;background:var(--md-surface-container-low);font-size:12px;line-height:16px;font-weight:500;color:var(--md-on-surface-variant)}
 .map-row .tgt{font-weight:500;font-size:14px}
 .map-row .tgt small{display:block;font-weight:400;color:var(--md-on-surface-variant);font-size:12px}
 .map-row .prev{font-family:var(--md-mono);font-size:12px;color:var(--md-on-surface-variant);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -135,6 +136,7 @@ td .clip{max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowr
 @media (max-width:860px){
   .map-row{grid-template-columns:1fr 1fr}
   .map-row .tgt{grid-column:1/-1}
+  .map-head{display:none!important}
 }
 
 /* numeros de resumo */

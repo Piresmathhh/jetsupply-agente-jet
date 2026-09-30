@@ -539,6 +539,7 @@ function renderColunas(){
     const ocultos = cols.length - visiveis.length;
     const btnGrupo = S.verVazios ? '' : ocultos ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Mostrar ${ocultos} ${ocultos === 1 ? 'vazio' : 'vazios'}</button>` : S.gruposAbertos.has(gname) ? `<button class="sm ghost" data-mgrp="${esc(gname)}">Esconder vazios</button>` : '';
     html += `<div class="map-group${visiveis.length ? '' : ' fechado'}"><header><h3>${esc(acento(gname))}</h3><span class="row" style="gap:8px">${btnGrupo}<span class="pill ${setN?'info':''}">${setN} de ${cols.length}</span></span></header>`;
+    if (visiveis.length) html += `<div class="map-head" aria-hidden="true"><span>Campo no Signus</span><span>Origem</span><span>Coluna da planilha do fornecedor</span><span>Tratamento</span><span>Como fica no Signus</span></div>`;
     for (const c of visiveis) {
       const m = S.P.map[c] || {m:'vazio'}; const set = m.m !== 'vazio';
       const id = 'm' + COLS.indexOf(c);
@@ -1071,7 +1072,6 @@ function go(step){
   S.step = step;
   $$('.step').forEach(b => b.setAttribute('aria-selected', b.dataset.step === step ? 'true' : 'false'));
   $$('[data-pane]').forEach(p => p.hidden = p.dataset.pane !== step);
-  try { localStorage.setItem('dps-step', step); } catch {}
   refreshAll();
 }
 
@@ -1292,8 +1292,9 @@ $('#caracIn').addEventListener('change', e => { const f = e.target.files[0]; if 
 function bloquear(html){ $('#gate').innerHTML = html; $('#gate').hidden = false; $$('[data-pane]').forEach(p => p.hidden = true); $('#steps').hidden = true; }
 async function boot(){
   if (typeof XLSX === 'undefined') { toast('Não foi possível carregar o leitor de planilhas. Recarregue a página.', 8000); return; }
-  let st = 'arquivo'; try { st = localStorage.getItem('dps-step') || 'arquivo'; } catch {}
-  go(st);
+  // sempre comeca em Arquivo: a planilha nao fica guardada no navegador, entao as outras etapas abririam vazias
+  try { localStorage.removeItem('dps-step'); } catch {}
+  go('arquivo');
   renderProfSel(); renderSaveState();
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { bloquear('<b>Entre no Agente Jet para usar esta tela.</b> <a href="./">Ir para o login</a>'); return; }
