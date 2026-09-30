@@ -1,0 +1,15 @@
+/* material-conta.css: avatar com as iniciais e menu da conta, usado pelo Agente e por Fornecedores.
+   O avatar fica na barra marinho (chrome) e usa o laranja da marca.
+   Marcacao: <details class="conta"><summary class="avatar">..</summary><div class="menu">.menu-quem + .menu-item</div></details> */
+.conta{position:relative}
+.conta > summary{list-style:none}
+.conta > summary::-webkit-details-marker{display:none}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--md-brand);color:#fff;display:grid;place-items:center;font-weight:500;font-size:14px;cursor:pointer;user-select:none;transition:box-shadow .15s}
+.avatar:hover,.conta[open] > .avatar{box-shadow:0 0 0 3px color-mix(in srgb,var(--md-on-chrome) 22%,transparent)}
+.avatar:focus-visible{outline:2px solid var(--md-on-chrome);outline-offset:2px}
+.menu{position:absolute;right:0;top:46px;min-width:240px;background:var(--md-surface-container-lowest);border:1px solid var(--md-outline-variant);border-radius:10px;box-shadow:var(--md-elev-3);padding:6px;z-index:30;display:flex;flex-direction:column;color:var(--md-on-surface)}
+.menu-quem{padding:8px 10px 10px;display:flex;flex-direction:column;border-bottom:1px solid var(--md-outline-variant);margin:0 -6px 6px;padding-inline:16px}
+.menu-quem b{font-weight:500}
+.menu .menu-item{all:unset;box-sizing:border-box;display:flex;align-items:center;height:40px;padding:0 10px;border-radius:6px;font:400 14px/20px var(--md-font);color:var(--md-on-surface);cursor:pointer;width:100%}
+.menu .menu-item:hover{background:var(--md-surface-container-low)}
+.menu .menu-item:focus-visible{outline:2px solid var(--md-primary);outline-offset:-2px}

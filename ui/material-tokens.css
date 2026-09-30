@@ -1,0 +1,77 @@
+/*
+ * material-tokens.css: so as cores e fontes do Agente Jet (sem estilizar nenhum elemento), nos papeis do Material Design 3.
+ * Usado pelo Agente (index.html, que tem classes proprias) e pela tela de Fornecedores (junto com material.css).
+ *
+ * Cores: identidade da Jet em cima da estrutura do Material. Superficies neutras (cinza puro, sem tom),
+ * cor principal = azul-marinho da Jet (#15375B), laranja do logo (#EA5618) como detalhe, e "chrome"
+ * (barra superior e menu lateral) em marinho nos dois temas. Tema escuro automatico (prefers-color-scheme)
+ * e forcado por [data-theme="light"|"dark"] (ui/tema.js).
+ *
+ * As variaveis antigas (--ink, --muted, --line, --accent, --ok, --warn, --err...) apontam para os papeis
+ * do Material, porque o JavaScript das telas usa algumas delas direto no HTML.
+ */
+:root{
+  --md-primary:#15375b; --md-on-primary:#ffffff; --md-primary-container:#dce6f2; --md-on-primary-container:#15375b;
+  --md-secondary:#4b5563; --md-on-secondary:#ffffff; --md-secondary-container:#e8ecf1; --md-on-secondary-container:#1f2937;
+  --md-tertiary:#c2410c; --md-tertiary-container:#fde6dc; --md-on-tertiary-container:#7c2d12;
+  --md-error:#b42318; --md-on-error:#ffffff; --md-error-container:#fde4e1; --md-on-error-container:#7a1a12;
+  --md-success:#067647; --md-success-container:#dcf5e7; --md-on-success-container:#05472c;
+  --md-warning:#b54708; --md-warning-container:#fdeccf; --md-on-warning-container:#6a2c06;
+  --md-surface:#f5f6f8; --md-surface-container-lowest:#ffffff; --md-surface-container-low:#f0f2f5; --md-surface-container:#eaedf1;
+  --md-surface-container-high:#e3e7ec; --md-surface-container-highest:#dce1e7;
+  --md-on-surface:#161b22; --md-on-surface-variant:#4a5361; --md-outline:#8a929e; --md-outline-variant:#d8dde3;
+  --md-inverse-surface:#1f2630; --md-inverse-on-surface:#eef1f5; --md-inverse-primary:#9fc1ea;
+  --md-chrome:#15375b; --md-chrome-line:#2a4b70; --md-on-chrome:#ffffff; --md-on-chrome-variant:#b9c9dc;
+  --md-brand:#ea5618;
+  --md-elev-1:0 1px 2px rgba(16,24,40,.08),0 1px 3px rgba(16,24,40,.06);
+  --md-elev-3:0 4px 6px -2px rgba(16,24,40,.06),0 12px 16px -4px rgba(16,24,40,.12);
+  --md-font:"Roboto",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --md-mono:"Roboto Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --md-primary:#8fb6e6; --md-on-primary:#0b2239; --md-primary-container:#1f4166; --md-on-primary-container:#d8e6f6;
+  --md-secondary:#b4bdc9; --md-on-secondary:#1c232c; --md-secondary-container:#2a313b; --md-on-secondary-container:#dde3ea;
+  --md-tertiary:#fb9a6c; --md-tertiary-container:#5a2410; --md-on-tertiary-container:#fde6dc;
+  --md-error:#f97066; --md-on-error:#55160c; --md-error-container:#55160c; --md-on-error-container:#fde4e1;
+  --md-success:#47cd89; --md-success-container:#053321; --md-on-success-container:#dcf5e7;
+  --md-warning:#fdb022; --md-warning-container:#4e1d09; --md-on-warning-container:#fdeccf;
+  --md-surface:#111418; --md-surface-container-lowest:#0b0d10; --md-surface-container-low:#171b20; --md-surface-container:#1c2127;
+  --md-surface-container-high:#252b32; --md-surface-container-highest:#2f363e;
+  --md-on-surface:#e6e9ed; --md-on-surface-variant:#aab3bf; --md-outline:#77808c; --md-outline-variant:#333a43;
+  --md-inverse-surface:#e6e9ed; --md-inverse-on-surface:#1f2630; --md-inverse-primary:#15375b;
+  --md-chrome:#0c1f33; --md-chrome-line:#1c3550; --md-on-chrome:#ffffff; --md-on-chrome-variant:#9fb2c8;
+  --md-brand:#f06a30;
+  --md-elev-1:0 1px 2px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3);
+  --md-elev-3:0 4px 6px -2px rgba(0,0,0,.3),0 12px 16px -4px rgba(0,0,0,.5);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --md-primary:#8fb6e6; --md-on-primary:#0b2239; --md-primary-container:#1f4166; --md-on-primary-container:#d8e6f6;
+  --md-secondary:#b4bdc9; --md-on-secondary:#1c232c; --md-secondary-container:#2a313b; --md-on-secondary-container:#dde3ea;
+  --md-tertiary:#fb9a6c; --md-tertiary-container:#5a2410; --md-on-tertiary-container:#fde6dc;
+  --md-error:#f97066; --md-on-error:#55160c; --md-error-container:#55160c; --md-on-error-container:#fde4e1;
+  --md-success:#47cd89; --md-success-container:#053321; --md-on-success-container:#dcf5e7;
+  --md-warning:#fdb022; --md-warning-container:#4e1d09; --md-on-warning-container:#fdeccf;
+  --md-surface:#111418; --md-surface-container-lowest:#0b0d10; --md-surface-container-low:#171b20; --md-surface-container:#1c2127;
+  --md-surface-container-high:#252b32; --md-surface-container-highest:#2f363e;
+  --md-on-surface:#e6e9ed; --md-on-surface-variant:#aab3bf; --md-outline:#77808c; --md-outline-variant:#333a43;
+  --md-inverse-surface:#e6e9ed; --md-inverse-on-surface:#1f2630; --md-inverse-primary:#15375b;
+  --md-chrome:#0c1f33; --md-chrome-line:#1c3550; --md-on-chrome:#ffffff; --md-on-chrome-variant:#9fb2c8;
+  --md-brand:#f06a30;
+  --md-elev-1:0 1px 2px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3);
+  --md-elev-3:0 4px 6px -2px rgba(0,0,0,.3),0 12px 16px -4px rgba(0,0,0,.5);
+}
+/* nomes antigos -> papeis do Material (usados pelo JavaScript e pelos estilos das paginas) */
+:root{
+  --bg:var(--md-surface); --surface:var(--md-surface-container-low); --raised:var(--md-surface-container-lowest);
+  --ink:var(--md-on-surface); --muted:var(--md-on-surface-variant); --faint:var(--md-outline);
+  --line:var(--md-outline-variant); --line-strong:var(--md-outline);
+  --accent:var(--md-primary); --accent-hover:var(--md-primary); --accent-ink:var(--md-on-primary); --accent-soft:var(--md-primary-container);
+  --signal:var(--md-primary); --signal-soft:var(--md-secondary-container); --signal-ink:var(--md-on-secondary-container);
+  --ok:var(--md-success); --ok-soft:var(--md-success-container); --warn:var(--md-warning); --warn-soft:var(--md-warning-container);
+  --err:var(--md-error); --err-soft:var(--md-error-container);
+  --shadow:var(--md-elev-1);
+  --f-display:var(--md-font); --f-body:var(--md-font); --f-mono:var(--md-mono);
+  --md-radius:8px;
+}
