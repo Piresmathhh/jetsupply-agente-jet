@@ -7,7 +7,7 @@ Abra `tray.html` pelo mesmo servidor do Agente Jet. O link **Tray** no menu leva
 1. Carregue Consulta Produtos, Consulta Características e TreeView Shopping de Preços (`.xls` ou `.xlsx`, cabeçalho na primeira linha).
 2. Defina preço e estoque padrão ou envie uma tabela `SKU`, `Preço`, `Estoque`. A opção de piloto aplica R$ 999 e uma unidade por SKU; vem desmarcada.
 3. Informe a URL pública do servidor ou R2. Envie um TXT com um nome de imagem por linha, um JSON de nomes/objetos `{name}`, ou selecione arquivos locais para ler apenas seus nomes. Não há envio de fotos.
-4. Revise o título de cada grupo. Opcionalmente informe JSON de títulos por referência de grupo.
+4. O título do grupo recebe a faixa real das variações e a marca ao final, como no padrão Zydon, removendo o SKU e avisos de substituição. Modelo e dados técnicos são preservados. Opcionalmente informe JSON de títulos aprovados por referência de grupo.
 5. Valide e baixe o ZIP contendo até três XLSX, instruções e relatório JSON.
 
 Importe na sequência produtos → variações → características. Cadastre previamente as características e vincule-as à categoria. Nenhum produto é ativado automaticamente. Configuração para itens já existentes ausentes do lote: **Nenhuma ação**.

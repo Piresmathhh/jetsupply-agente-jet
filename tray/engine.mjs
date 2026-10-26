@@ -1,4 +1,5 @@
 // Motor puro: não consulta contas, não publica produtos e não utiliza IA.
+import {groupTitle} from './names.mjs';
 export const PRODUCT_FIELDS = ['Referência (código fornecedor)','Nome do produto','Exibir na loja','Exibir produto ativo','Nome da categoria - nível 1','Nome da categoria - nível 2','Nome da categoria - nível 3','HTML da descrição completa','Marca','Modelo','NCM do produto','Tempo de garantia','Peso do produto (gramas)','Altura (cm)','Largura (cm)','Comprimento (cm)','Preço de venda em reais','Estoque do produto','Endereço da imagem principal do produto',...Array.from({length:6},(_,i)=>`Endereço da imagem do produto ${i+2}`)];
 export const VARIATION_FIELDS = ['Código de referência do produto','Referência da Variação','Código EAN/GTIN/UPC','Tipo da variação 1 (exemplo: Cor)','Nome da variação 1 (exemplo: Branco)','Peso da variação (gramas)','Altura (cm)','Largura (cm)','Comprimento (cm)','Preço de venda em reais','Estoque da variação','Endereço da imagem principal da variação',...Array.from({length:6},(_,i)=>`Endereço da imagem da variação ${i+2}`)];
 export const id = x => x == null ? '' : String(x).trim();
@@ -99,9 +100,8 @@ export function convert({products,characteristics,tree}, options={}) {
     if(items.length>1&&varying.length!==1)throw Error(`Grupo ${group}: detectados ${varying.length} eixos variáveis (${varying.join(', ')}). Este perfil exige exatamente um eixo; não cria combinações por suposição.`);
     const axis=varying[0];
     if(axis&&new Set(items.map(x=>x.a.get(axis))).size!==items.length)throw Error(`Grupo ${group}: duas referências têm o mesmo valor de ${axis}.`);
-    const title=id(options.titles?.[group]||first.p.Nome);
+    const title=id(options.titles?.[group]||groupTitle({name:first.p.Nome,brand:first.p.Marca,sku:first.sku,axisValue:axis?first.a.get(axis):'',axisValues:axis?items.map(x=>x.a.get(axis)):[],model:first.p['Linha de produto']}));
     if(!title||title.length>200)throw Error(`Grupo ${group}: título ausente ou maior que 200 caracteres.`);
-    if(!options.titles?.[group]&&items.length>1)warnings.push(`Grupo ${group}: título do primeiro SKU preservado; revise para representar todas as variações.`);
     const cat=[...first.cat];while(cat.length<3)cat.push(null);
     const description=`<p>${esc(title)}</p><ul>${Object.entries(fixed).map(([k,v])=>`<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>`;
     parentRows.push([group,title,'Não','Não',...cat,description,id(first.p.Marca),id(first.p['Linha de produto']),id(first.p['Categoria fiscal']),`${number(first.p['Garantia (em dias)'],'Garantia',{integer:true})} dias`,first.weight,...first.dims,Math.min(...items.map(x=>x.price)),items.reduce((n,x)=>n+x.stock,0),...first.photos]);
