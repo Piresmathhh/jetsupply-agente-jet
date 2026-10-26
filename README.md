@@ -6,6 +6,10 @@ Ferramenta de curadoria e importação de produtos do ERP Signus para a platafor
 
 ---
 
+## Perfil Tray (Top Click)
+
+O item **Tray** no menu abre `tray.html`: recebe as três exportações do Signus, valida agrupamentos e gera produtos, variações e características para a Tray em um ZIP. Preço e estoque são explícitos; o lote sai oculto e inativo. Não usa IA nem altera a conversão Zydon. Veja o [guia do perfil Tray](tray/README.md) para os modelos já validados e os limites atuais.
+
 ## Como usar
 
 1. Acesse o link do agente
