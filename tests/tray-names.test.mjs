@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {groupTitle} from '../tray/names.mjs';
+const base={name:'MINI DISJUNTOR 1P MONOPOLAR 6A CURVA B 440VCA/250VCC - MDWH - 11422529 - WEG',brand:'WEG',sku:'11422529',axisValue:'6A',axisValues:['100A','6A','10A','125A','80A'],model:'WEG - MDWH'};
+test('nome Tray: faixa numérica real, modelo e marca no final, sem SKU',()=>assert.equal(groupTitle(base),'Mini Disjuntor 1P Monopolar 6A a 125A Curva B 440VCA/250VCC - MDWH - WEG'));
+test('nome Tray: representante intermediário também recebe extremos corretos',()=>assert.equal(groupTitle({...base,name:base.name.replace('6A','100A'),axisValue:'100A'}),groupTitle(base)));
+test('nome Tray: faixa reflete apenas o lote, sem inventar 125A',()=>assert.ok(groupTitle({...base,axisValues:['6A','100A']}).includes('6A a 100A')));
+test('nome Tray: marca no início é movida e não duplicada',()=>assert.equal(groupTitle({...base,name:base.name.replace('MINI DISJUNTOR','WEG MINI DISJUNTOR').replace(' - WEG','')}),groupTitle(base)));
+test('nome Tray: item único não vira faixa e aviso de substituição é removido',()=>{const name=groupTitle({...base,name:base.name+' ( Substituído por : 99999 )',axisValues:['6A']});assert.ok(name.includes('6A Curva'));assert.ok(!name.includes(' a '));assert.ok(!name.includes('99999'));assert.ok(name.endsWith(' - WEG'));});
+test('nome Tray: eixo não numérico lista opções sem inventar faixa',()=>assert.equal(groupTitle({name:'CAMISETA AZUL - ACME',brand:'ACME',axisValue:'AZUL',axisValues:['AZUL','VERDE']}),'Camiseta Azul, Verde - ACME'));
