@@ -16,9 +16,13 @@ test('Tray: referência comercial do pai liga produtos, variações e caracterí
   assert.equal(r.requirements[0].groupId,'1');assert.equal(r.requirements[0].reference,'001');
   assert.equal(r.products.rows[0][1],'Disjuntor agrupado');
 });
-test('Tray: bloqueia pai ausente para não inventar referência comercial',()=>{
+test('Tray: pai ausente fica pendente sem inventar referência comercial',()=>{
   const s=source();s.characteristics.forEach(row=>row.PROD_COD_AGRUPAMENTO='999');
-  assert.throws(()=>convert(s,options),/produto pai ausente/);
+  const r=convert(s,options);assert.equal(r.products.rows.length,0);assert.equal(r.variations.rows.length,0);assert.equal(r.properties.rows.length,0);assert.equal(r.skippedGroups[0].groupId,'999');assert.deepEqual(r.skippedGroups[0].skus,['001','002']);assert.equal(r.summary.skippedSkus,2);
+});
+test('Tray: grupo sem pai não impede exportação dos outros grupos',()=>{
+  const s=source(),extra=structuredClone(s);extra.products.forEach((p,i)=>{p.ID=String(i+10);p['Código']='X'+i;p.Peso=null;});extra.characteristics.forEach(c=>{c.PROD_ID=String(Number(c.PROD_ID)+9);c.PROD_SKU='X'+(Number(c.PROD_ID)-10);c.PROD_COD_AGRUPAMENTO='999';});s.products.push(...extra.products);s.characteristics.push(...extra.characteristics);
+  const r=convert(s,options);assert.equal(r.products.rows.length,1);assert.equal(r.variations.rows.length,2);assert.ok(r.variations.rows.every(v=>v[0]==='001'));assert.equal(r.properties.rows.length,1);assert.equal(r.summary.sourceProducts,4);assert.equal(r.summary.exportedSkus,2);assert.equal(r.summary.skippedSkus,2);assert.equal(r.summary.skippedGroups,1);assert.ok(r.warnings.some(w=>w.includes('999')&&w.includes('X0')));
 });
 test('Tray: ignora intervalo BIFF inflado sem perder zeros ou registros reais',()=>{
   const sheet={'!ref':'A1:IU65535',A1:{v:'SKU'},A2:{v:'001'},B2:{v:0},Z65535:{v:''}};
