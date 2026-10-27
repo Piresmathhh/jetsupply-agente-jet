@@ -59,3 +59,10 @@ test('Tray: EAN válido é preservado e repetição vira aviso sem bloquear lote
   const s=source();s.products.forEach(p=>p['Código barras']='7891327113183');const r=convert(s,options);
   assert.equal(r.variations.rows[0][2],'7891327113183');assert.equal(r.variations.rows[1][2],'');assert.ok(r.warnings.some(w=>w.includes('duplicado')));
 });
+test('Tray: fonte com apenas eixo variável não gera linhas vazias de características',()=>{
+  const s=source();s.characteristics=s.characteristics.filter(c=>c.CARACT_NOME==='Corrente Nominal');const r=convert(s,options);
+  assert.equal(r.products.rows.length,1);assert.equal(r.variations.rows.length,2);assert.equal(r.properties.rows.length,0);assert.equal(r.models.property,null);
+});
+test('Tray: marca não é repetida no campo modelo e hífen técnico é preservado',()=>{
+  for(const [input,expected] of [['WEG - MDWS','MDWS'],['WEG - MDW-63','MDW-63'],['MDWH','MDWH']]){const s=source();s.products.forEach(p=>p['Linha de produto']=input);const r=convert(s,options);assert.equal(r.products.rows[0][8],'WEG');assert.equal(r.products.rows[0][9],expected);}
+});
