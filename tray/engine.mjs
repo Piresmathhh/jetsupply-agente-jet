@@ -114,8 +114,9 @@ export function convert({products,characteristics,tree}, options={}) {
     const title=id(options.titles?.[reference]||options.titles?.[group]||groupTitle({name:first.p.Nome,brand:first.p.Marca,sku:first.sku,axisValue:axis?first.a.get(axis):'',axisValues:axis?items.map(x=>x.a.get(axis)):[],model:first.p['Linha de produto']}));
     if(!title||title.length>200)throw Error(`Grupo ${group}: título ausente ou maior que 200 caracteres.`);
     const cat=[...first.cat];while(cat.length<3)cat.push(null);
+    const model=id(first.p['Linha de produto']).split(/\s+-\s+/).filter(part=>part.toLowerCase()!==id(first.p.Marca).toLowerCase()).join(' - ');
     const description=`<p>${esc(title)}</p><ul>${Object.entries(fixed).map(([k,v])=>`<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>`;
-    parentRows.push([reference,title,'Não','Não',...cat,description,id(first.p.Marca),id(first.p['Linha de produto']),id(first.p['Categoria fiscal']),`${number(first.p['Garantia (em dias)'],'Garantia',{integer:true})} dias`,first.weight,...first.dims,Math.min(...items.map(x=>x.price)),items.reduce((n,x)=>n+x.stock,0),...first.photos]);
+    parentRows.push([reference,title,'Não','Não',...cat,description,id(first.p.Marca),model,id(first.p['Categoria fiscal']),`${number(first.p['Garantia (em dias)'],'Garantia',{integer:true})} dias`,first.weight,...first.dims,Math.min(...items.map(x=>x.price)),items.reduce((n,x)=>n+x.stock,0),...first.photos]);
     if(axis){items.sort((a,b)=>a.a.get(axis).localeCompare(b.a.get(axis),'pt-BR',{numeric:true}));for(const x of items)variationRows.push([reference,x.sku,x.ean,axis,x.a.get(axis),x.weight,...x.dims,x.price,x.stock,...x.photos]);}
     else warnings.push(`Grupo ${group}: produto simples; referência comercial mantida no relatório como SKU ${first.sku}.`);
     Object.keys(fixed).forEach(k=>allFixed.add(k));fixedRows.push({reference,fixed});
