@@ -1,4 +1,5 @@
 import {convert,imageNames,id,occupiedRange} from './engine.mjs?v=20261026-3';
+import {lookupImageNames} from './images.mjs?v=20261027-1';
 const $=id=>document.getElementById(id),steps=['files','settings','review'];
 const sources={},overrides={};let output=null,currentStep='files',busy=false;
 const say=(message='',error=false)=>{$('status').textContent=message;$('status').dataset.error=String(error);};
@@ -88,10 +89,24 @@ async function prepare(){
   busy=true;$('generate').disabled=true;invalidate();say('Preparando revisão…');
   try{
     for(const name of ['price','stock','image-base'])if(!$(name).checkValidity()){$(name).reportValidity();throw Error('Revise o campo indicado.');}
-    let images=[],commercialBySku={};
-    if(!$('no-images').checked){const inv=$('inventory').files[0];if(inv){const text=await inv.text();images=inv.name.toLowerCase().endsWith('.json')?imageNames(JSON.parse(text)):text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);}images.push(...[...$('photos').files].map(f=>f.name));if(!images.length)throw Error('Carregue a lista de imagens ou selecione “Sem imagens neste lote”.');}
+    let images=[],commercialBySku={},imageSource='Sem imagens neste lote';
+    if(!$('no-images').checked){
+      const inv=$('inventory').files[0],local=[...$('photos').files];
+      if(inv||local.length){
+        if(inv){const text=await inv.text();images=inv.name.toLowerCase().endsWith('.json')?imageNames(JSON.parse(text)):text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);}
+        images.push(...local.map(f=>f.name));imageSource='Lista manual de nomes';
+        if(!images.length)throw Error('A lista de imagens está vazia. Remova a seleção para usar a consulta automática.');
+      }else{
+        say('Localizando imagens pelos SKUs do lote…');
+        images=await lookupImageNames(sources.products.data.map(row=>id(row['Código'])));
+        imageSource='Consulta automática de nomes do Agente Jet';
+        if(!images.length)throw Error('Nenhuma imagem localizada para este lote. Confira os códigos ou informe uma lista em “Opções de imagens”. Para prosseguir sem fotos, marque “Sem imagens neste lote”.');
+      }
+    }
     if($('commercial').files[0]){const knownSkus=new Set(sources.products.data.map(row=>id(row['Código'])));for(const row of await readSheet($('commercial').files[0],['SKU','Preço','Estoque'])){const sku=id(row.SKU);if(!sku||commercialBySku[sku])throw Error(`Preço/estoque: SKU vazio ou duplicado (${sku}).`);if(!knownSkus.has(sku))throw Error(`Preço/estoque: SKU ${sku} não pertence ao lote. Preserve os códigos do modelo, inclusive zeros à esquerda.`);commercialBySku[sku]={price:row['Preço'],stock:row.Estoque};}}
     output=convert(Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.data])),{price:$('price').value,stock:$('stock').value,commercialBySku,images,imageBase:$('image-base').value,titles:overrides});
+    output.imageSource={lookup:imageSource,base:$('image-base').value,names:images.length};
+    $('image-summary').textContent=$('no-images').checked?'Sem imagens neste lote':`${images.length} nomes localizados · links de fotos do servidor. Confira os avisos de SKUs sem imagem.`;
     if($('pilot').checked)output.warnings.unshift('VALORES DE TESTE: substitua preço e estoque antes de comercializar.');renderReview();say();busy=false;showStep('review');
   }catch(error){output=null;say(error.message,true);}finally{busy=false;$('generate').disabled=false;}
 }

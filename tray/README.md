@@ -6,7 +6,7 @@ Abra `tray.html` pelo mesmo servidor do Agente Jet. O link **Tray** no menu leva
 
 1. Carregue Consulta Produtos, Consulta Características e TreeView Shopping de Preços (`.xls` ou `.xlsx`, cabeçalho na primeira linha).
 2. Defina preço e estoque padrão ou envie uma tabela `SKU`, `Preço`, `Estoque`. A opção de piloto aplica R$ 999 e uma unidade por SKU; vem desmarcada.
-3. Informe a URL pública do servidor ou R2. Envie um TXT com um nome de imagem por linha, um JSON de nomes/objetos `{name}`, ou selecione arquivos locais para ler apenas seus nomes. Não há envio de fotos.
+3. As imagens são localizadas automaticamente por SKU pelo mesmo serviço de nomes usado no agente. Os links finais usam por padrão `http://wmr8group.dalla.srv.br:8081//fotos_web/`. A consulta de nomes lê o catálogo Cloudflare existente; não enumera o servidor nem comprova que cada foto esteja acessível nele. Em Opções de imagens, um TXT/JSON ou nomes de fotos locais substituem a consulta para casos especiais. Fotos novas exclusivas do servidor exigem atualização do cadastro de nomes ou inventário manual. Não há envio de fotos.
 4. O título do grupo recebe a faixa real das variações e a marca ao final, como no padrão Zydon, removendo o SKU e avisos de substituição. Modelo e dados técnicos são preservados. Opcionalmente informe JSON de títulos aprovados por referência de grupo.
 5. Valide e baixe o ZIP contendo até três XLSX, instruções e relatório JSON.
 
