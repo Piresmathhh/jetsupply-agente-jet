@@ -90,7 +90,9 @@ export function convert({products,characteristics,tree}, options={}) {
   const parentRows=[],variationRows=[],fixedRows=[],allFixed=new Set(),requirements=[];
   for(const [group,items] of groups){
     if(items.length>100)throw Error(`Grupo ${group}: excede 100 variações por produto.`);
-    const first=items.find(x=>x.pid===group)||items[0];
+    const first=items.find(x=>x.pid===group);
+    if(!first)throw Error(`Grupo ${group}: produto pai ausente no lote. Inclua o produto cujo ID é igual ao código de agrupamento.`);
+    const reference=first.sku;
     for(const key of ['cat','brand','model','ncm']){
       const values=items.map(x=>JSON.stringify(key==='cat'?x.cat:key==='brand'?x.p.Marca:key==='model'?x.p['Linha de produto']:x.p['Categoria fiscal']));
       if(new Set(values).size!==1)throw Error(`Grupo ${group}: ${key} diverge entre SKUs. Revise o agrupamento.`);
@@ -100,19 +102,19 @@ export function convert({products,characteristics,tree}, options={}) {
     if(items.length>1&&varying.length!==1)throw Error(`Grupo ${group}: detectados ${varying.length} eixos variáveis (${varying.join(', ')}). Este perfil exige exatamente um eixo; não cria combinações por suposição.`);
     const axis=varying[0];
     if(axis&&new Set(items.map(x=>x.a.get(axis))).size!==items.length)throw Error(`Grupo ${group}: duas referências têm o mesmo valor de ${axis}.`);
-    const title=id(options.titles?.[group]||groupTitle({name:first.p.Nome,brand:first.p.Marca,sku:first.sku,axisValue:axis?first.a.get(axis):'',axisValues:axis?items.map(x=>x.a.get(axis)):[],model:first.p['Linha de produto']}));
+    const title=id(options.titles?.[reference]||options.titles?.[group]||groupTitle({name:first.p.Nome,brand:first.p.Marca,sku:first.sku,axisValue:axis?first.a.get(axis):'',axisValues:axis?items.map(x=>x.a.get(axis)):[],model:first.p['Linha de produto']}));
     if(!title||title.length>200)throw Error(`Grupo ${group}: título ausente ou maior que 200 caracteres.`);
     const cat=[...first.cat];while(cat.length<3)cat.push(null);
     const description=`<p>${esc(title)}</p><ul>${Object.entries(fixed).map(([k,v])=>`<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>`;
-    parentRows.push([group,title,'Não','Não',...cat,description,id(first.p.Marca),id(first.p['Linha de produto']),id(first.p['Categoria fiscal']),`${number(first.p['Garantia (em dias)'],'Garantia',{integer:true})} dias`,first.weight,...first.dims,Math.min(...items.map(x=>x.price)),items.reduce((n,x)=>n+x.stock,0),...first.photos]);
-    if(axis){items.sort((a,b)=>a.a.get(axis).localeCompare(b.a.get(axis),'pt-BR',{numeric:true}));for(const x of items)variationRows.push([group,x.sku,x.ean,axis,x.a.get(axis),x.weight,...x.dims,x.price,x.stock,...x.photos]);}
+    parentRows.push([reference,title,'Não','Não',...cat,description,id(first.p.Marca),id(first.p['Linha de produto']),id(first.p['Categoria fiscal']),`${number(first.p['Garantia (em dias)'],'Garantia',{integer:true})} dias`,first.weight,...first.dims,Math.min(...items.map(x=>x.price)),items.reduce((n,x)=>n+x.stock,0),...first.photos]);
+    if(axis){items.sort((a,b)=>a.a.get(axis).localeCompare(b.a.get(axis),'pt-BR',{numeric:true}));for(const x of items)variationRows.push([reference,x.sku,x.ean,axis,x.a.get(axis),x.weight,...x.dims,x.price,x.stock,...x.photos]);}
     else warnings.push(`Grupo ${group}: produto simples; referência comercial mantida no relatório como SKU ${first.sku}.`);
-    Object.keys(fixed).forEach(k=>allFixed.add(k));fixedRows.push({group,fixed});
-    requirements.push({reference:group,category:first.cat.join(' > '),attributes:fixed,variationAxis:axis||null,skus:items.map(x=>x.sku)});
+    Object.keys(fixed).forEach(k=>allFixed.add(k));fixedRows.push({reference,fixed});
+    requirements.push({reference,groupId:group,parentId:first.pid,category:first.cat.join(' > '),attributes:fixed,variationAxis:axis||null,skus:items.map(x=>x.sku)});
   }
   const fixedKeys=[...allFixed].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   // Preserva o modelo técnico já validado para o piloto.
   const pilotKeys=['Número de polos','Curva de Disparo','Tensão de Emprego','Frequência'];
   const order=fixedKeys.length===4&&pilotKeys.every(k=>allFixed.has(k))?pilotKeys:fixedKeys;
-  return {products:{headers:PRODUCT_FIELDS,rows:parentRows},variations:{headers:VARIATION_FIELDS,rows:variationRows},properties:{headers:['Referência produto',...order],rows:fixedRows.map(x=>[x.group,...order.map(k=>x.fixed[k]??null)])},warnings,requirements,summary:{sourceProducts:products.length,parents:parentRows.length,variations:variationRows.length,photos:variationRows.reduce((n,r)=>n+r.slice(11).filter(Boolean).length,0)},models:{product:133271,variation:24682,property:order.join('|')===pilotKeys.join('|')?14874:null}};
+  return {products:{headers:PRODUCT_FIELDS,rows:parentRows},variations:{headers:VARIATION_FIELDS,rows:variationRows},properties:{headers:['Referência produto',...order],rows:fixedRows.map(x=>[x.reference,...order.map(k=>x.fixed[k]??null)])},warnings,requirements,summary:{sourceProducts:products.length,parents:parentRows.length,variations:variationRows.length,photos:variationRows.reduce((n,r)=>n+r.slice(11).filter(Boolean).length,0)},models:{product:133271,variation:24682,property:order.join('|')===pilotKeys.join('|')?14874:null}};
 }

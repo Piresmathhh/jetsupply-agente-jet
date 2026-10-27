@@ -14,7 +14,7 @@ Importe na sequência produtos → variações → características. Cadastre pr
 
 ## Contrato validado no piloto real
 
-- Produto por referência do grupo Signus; variação por SKU. IDs Signus não são IDs Tray.
+- Produto pela referência comercial do pai encontrado por ID igual ao agrupamento Signus; variação por SKU. O pai deve estar no lote. O agrupamento fica no relatório e não é a referência exibida. No piloto: 54423 → 11422529. IDs Signus não são IDs Tray.
 - Modelos existentes: produtos **133271** (25 colunas), variações **24682** (18 colunas), características **14874** (5 colunas).
 - O modelo técnico 14874 vale somente para Número de polos, Curva de Disparo, Tensão de Emprego e Frequência, na ordem exportada. Outros atributos exigem criar um modelo correspondente; os outros dois modelos mantêm a ordem.
 - Apenas atributos com valores diferentes no grupo viram eixo. Atributos comuns viram ficha técnica.
