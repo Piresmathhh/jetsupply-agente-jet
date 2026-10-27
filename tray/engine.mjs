@@ -68,12 +68,15 @@ export function convert({products,characteristics,tree}, options={}) {
     meta.set(pid,r);
   }
   for(const p of products){
-    const pid=id(p.ID),sku=id(p['Código']),ean=id(p['Código barras']),m=meta.get(pid);
+    const pid=id(p.ID),sku=id(p['Código']),m=meta.get(pid);
+    let ean=id(p['Código barras']);
     if(!pid||!sku||seen.has(sku))throw Error(`SKU vazio ou duplicado: ${sku}`);seen.add(sku);
     if(!m)throw Error(`SKU ${sku}: sem características vinculadas ao ID ${pid}.`);
     if(id(m.PROD_SKU)!==sku)throw Error(`SKU ${sku}: diverge do arquivo de características.`);
-    if(ean&&(!validEAN(ean)||eanSeen.has(ean)))throw Error(`SKU ${sku}: EAN inválido ou duplicado (${ean}).`);
-    if(ean)eanSeen.add(ean);else warnings.push(`SKU ${sku}: EAN ausente.`);
+    if(ean&&(!validEAN(ean)||eanSeen.has(ean))){
+      warnings.push(`SKU ${sku}: EAN ${validEAN(ean)?'duplicado':'fora do padrão'} (${ean}); exportado em branco. Corrija o código de barras antes de integrar canais que exigem GTIN.`);
+      ean='';
+    }else if(ean)eanSeen.add(ean);else warnings.push(`SKU ${sku}: EAN ausente.`);
     const group=id(m.PROD_COD_AGRUPAMENTO);
     if(!group||group==='0')throw Error(`SKU ${sku}: grupo ausente. Defina o agrupamento no Signus.`);
     const cat=cats.get(id(m.CATEGORIA_TREEVIEW_ID));

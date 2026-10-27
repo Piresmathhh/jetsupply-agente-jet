@@ -1,4 +1,4 @@
-import {convert,imageNames,id,occupiedRange} from './engine.mjs?v=20261026-3';
+import {convert,imageNames,id,occupiedRange} from './engine.mjs?v=20261027-2';
 import {lookupImageNames} from './images.mjs?v=20261027-1';
 const $=id=>document.getElementById(id),steps=['files','settings','review'];
 const sources={},overrides={};let output=null,currentStep='files',busy=false;
