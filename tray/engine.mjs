@@ -67,8 +67,14 @@ export function convert({products,characteristics,tree}, options={}) {
     if(prev&&['PROD_COD_AGRUPAMENTO','CATEGORIA_TREEVIEW_ID','MARCA_NOME','LINHA_NOME','PROD_SKU'].some(k=>id(prev[k])!==id(r[k])))throw Error(`Produto ${pid}: metadados conflitantes nas características.`);
     meta.set(pid,r);
   }
+  const sourceGroups=new Map();
+  for(const p of products){const group=id(meta.get(id(p.ID))?.PROD_COD_AGRUPAMENTO);if(!group||group==='0')continue;if(!sourceGroups.has(group))sourceGroups.set(group,[]);sourceGroups.get(group).push(p);}
+  const skippedGroups=[...sourceGroups].filter(([group,items])=>!items.some(p=>id(p.ID)===group)).map(([group,items])=>({groupId:group,reason:'Produto pai ausente no lote',skus:items.map(p=>id(p['Código']))}));
+  const skippedIds=new Set(skippedGroups.map(g=>g.groupId));
+  for(const group of skippedGroups)warnings.push(`Grupo ${group.groupId}: pai ausente. ${group.skus.length} SKU(s) não incluídos: ${group.skus.join(', ')}. Inclua o pai nas duas exportações e gere esse grupo novamente.`);
   for(const p of products){
     const pid=id(p.ID),sku=id(p['Código']),m=meta.get(pid);
+    if(m&&skippedIds.has(id(m.PROD_COD_AGRUPAMENTO)))continue;
     let ean=id(p['Código barras']);
     if(!pid||!sku||seen.has(sku))throw Error(`SKU vazio ou duplicado: ${sku}`);seen.add(sku);
     if(!m)throw Error(`SKU ${sku}: sem características vinculadas ao ID ${pid}.`);
@@ -119,5 +125,5 @@ export function convert({products,characteristics,tree}, options={}) {
   // Preserva o modelo técnico já validado para o piloto.
   const pilotKeys=['Número de polos','Curva de Disparo','Tensão de Emprego','Frequência'];
   const order=fixedKeys.length===4&&pilotKeys.every(k=>allFixed.has(k))?pilotKeys:fixedKeys;
-  return {products:{headers:PRODUCT_FIELDS,rows:parentRows},variations:{headers:VARIATION_FIELDS,rows:variationRows},properties:{headers:['Referência produto',...order],rows:fixedRows.map(x=>[x.reference,...order.map(k=>x.fixed[k]??null)])},warnings,requirements,summary:{sourceProducts:products.length,parents:parentRows.length,variations:variationRows.length,photos:variationRows.reduce((n,r)=>n+r.slice(11).filter(Boolean).length,0)},models:{product:133271,variation:24682,property:order.join('|')===pilotKeys.join('|')?14874:null}};
+  return {products:{headers:PRODUCT_FIELDS,rows:parentRows},variations:{headers:VARIATION_FIELDS,rows:variationRows},properties:{headers:['Referência produto',...order],rows:fixedRows.map(x=>[x.reference,...order.map(k=>x.fixed[k]??null)])},warnings,requirements,skippedGroups,summary:{sourceProducts:products.length,exportedSkus:requirements.reduce((n,r)=>n+r.skus.length,0),skippedSkus:skippedGroups.reduce((n,g)=>n+g.skus.length,0),skippedGroups:skippedGroups.length,parents:parentRows.length,variations:variationRows.length,photos:variationRows.reduce((n,r)=>n+r.slice(11).filter(Boolean).length,0)},models:{product:133271,variation:24682,property:order.join('|')===pilotKeys.join('|')?14874:null}};
 }
