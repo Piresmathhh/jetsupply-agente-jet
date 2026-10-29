@@ -1,6 +1,8 @@
 // Motor puro: não consulta contas, não publica produtos e não utiliza IA.
 import {groupTitle} from './names.mjs';
-export const PRODUCT_FIELDS = ['Referência (código fornecedor)','Nome do produto','Exibir na loja','Exibir produto ativo','Nome da categoria - nível 1','Nome da categoria - nível 2','Nome da categoria - nível 3','HTML da descrição completa','Marca','Modelo','NCM do produto','Tempo de garantia','Peso do produto (gramas)','Altura (cm)','Largura (cm)','Comprimento (cm)','Preço de venda em reais','Estoque do produto','Endereço da imagem principal do produto',...Array.from({length:6},(_,i)=>`Endereço da imagem do produto ${i+2}`)];
+// IDs conferidos na árvore Tray. Nomes nunca criam vínculos automaticamente.
+export const CATEGORY_IDS = Object.freeze({'22':'5','23':'19','24':'15','25':'17','603':'25','604':'29'});
+export const PRODUCT_FIELDS = ['Referência (código fornecedor)','Nome do produto','Exibir na loja','Exibir produto ativo','Código da categoria principal (ID)','Reservado F - não importar','Reservado G - não importar','HTML da descrição completa','Marca','Modelo','NCM do produto','Tempo de garantia','Peso do produto (gramas)','Altura (cm)','Largura (cm)','Comprimento (cm)','Preço de venda em reais','Estoque do produto','Endereço da imagem principal do produto',...Array.from({length:6},(_,i)=>`Endereço da imagem do produto ${i+2}`)];
 export const VARIATION_FIELDS = ['Código de referência do produto','Referência da Variação','Código EAN/GTIN/UPC','Tipo da variação 1 (exemplo: Cor)','Nome da variação 1 (exemplo: Branco)','Peso da variação (gramas)','Altura (cm)','Largura (cm)','Comprimento (cm)','Preço de venda em reais','Estoque da variação','Endereço da imagem principal da variação',...Array.from({length:6},(_,i)=>`Endereço da imagem da variação ${i+2}`)];
 export const id = x => x == null ? '' : String(x).trim();
 export function occupiedRange(sheet,decodeCell) {
@@ -88,11 +90,13 @@ export function convert({products,characteristics,tree}, options={}) {
     const cat=cats.get(id(m.CATEGORIA_TREEVIEW_ID));
     if(!cat)throw Error(`SKU ${sku}: categoria não encontrada na árvore.`);
     if(cat.length>3)throw Error(`SKU ${sku}: categoria possui 4 níveis. Faça um de-para explícito para a Tray; não truncamos a árvore.`);
+    const trayCategoryId=CATEGORY_IDS[id(m.CATEGORIA_TREEVIEW_ID)];
+    if(!trayCategoryId)throw Error(`SKU ${sku}: categoria Signus ${id(m.CATEGORIA_TREEVIEW_ID)} sem vínculo cadastrado com a Tray. Cadastre o ID existente na Tray antes de exportar; nenhuma categoria será criada por nome.`);
     const commercial=options.commercialBySku?.[sku]||{};
     const price=number(commercial.price??options.price,`Preço do SKU ${sku}`,{positive:true});
     const stock=number(commercial.stock??options.stock,`Estoque do SKU ${sku}`,{integer:true});
     const dims=['Altura (cm)','Largura (cm)','Profundidade (cm)'].map(k=>{const n=number(p[k],`${k} do SKU ${sku}`,{positive:true});if(n!==Math.ceil(n))warnings.push(`SKU ${sku}: ${k} ${n} → ${Math.ceil(n)} cm, arredondado para cima para envio.`);return Math.ceil(n);});
-    const item={p,pid,sku,ean,m,group,cat,a:attrs.get(pid),price,stock,dims,weight:Math.round(number(p.Peso,`Peso do SKU ${sku}`,{positive:true})*1000),photos:photos(sku,names,base,warnings)};
+    const item={p,pid,sku,ean,m,group,cat,trayCategoryId,a:attrs.get(pid),price,stock,dims,weight:Math.round(number(p.Peso,`Peso do SKU ${sku}`,{positive:true})*1000),photos:photos(sku,names,base,warnings)};
     if(!groups.has(group))groups.set(group,[]);groups.get(group).push(item);
   }
   if(meta.size!==products.length)throw Error('Quantidade de IDs nas características difere dos produtos. Revise registros sem correspondência e IDs duplicados.');
@@ -102,8 +106,8 @@ export function convert({products,characteristics,tree}, options={}) {
     const first=items.find(x=>x.pid===group);
     if(!first)throw Error(`Grupo ${group}: produto pai ausente no lote. Inclua o produto cujo ID é igual ao código de agrupamento.`);
     const reference=first.sku;
-    for(const key of ['cat','brand','model','ncm']){
-      const values=items.map(x=>JSON.stringify(key==='cat'?x.cat:key==='brand'?x.p.Marca:key==='model'?x.p['Linha de produto']:x.p['Categoria fiscal']));
+    for(const key of ['trayCategoryId','cat','brand','model','ncm']){
+      const values=items.map(x=>JSON.stringify(key==='trayCategoryId'?x.trayCategoryId:key==='cat'?x.cat:key==='brand'?x.p.Marca:key==='model'?x.p['Linha de produto']:x.p['Categoria fiscal']));
       if(new Set(values).size!==1)throw Error(`Grupo ${group}: ${key} diverge entre SKUs. Revise o agrupamento.`);
     }
     const keys=new Set(items.flatMap(x=>[...x.a.keys()])),varying=[],fixed={};
@@ -113,18 +117,18 @@ export function convert({products,characteristics,tree}, options={}) {
     if(axis&&new Set(items.map(x=>x.a.get(axis))).size!==items.length)throw Error(`Grupo ${group}: duas referências têm o mesmo valor de ${axis}.`);
     const title=id(options.titles?.[reference]||options.titles?.[group]||groupTitle({name:first.p.Nome,brand:first.p.Marca,sku:first.sku,axisValue:axis?first.a.get(axis):'',axisValues:axis?items.map(x=>x.a.get(axis)):[],model:first.p['Linha de produto']}));
     if(!title||title.length>200)throw Error(`Grupo ${group}: título ausente ou maior que 200 caracteres.`);
-    const cat=[...first.cat];while(cat.length<3)cat.push(null);
+    const cat=[first.trayCategoryId,null,null];
     const model=id(first.p['Linha de produto']).split(/\s+-\s+/).filter(part=>part.toLowerCase()!==id(first.p.Marca).toLowerCase()).join(' - ');
     const description=`<p>${esc(title)}</p><ul>${Object.entries(fixed).map(([k,v])=>`<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>`;
     parentRows.push([reference,title,'Não','Não',...cat,description,id(first.p.Marca),model,id(first.p['Categoria fiscal']),`${number(first.p['Garantia (em dias)'],'Garantia',{integer:true})} dias`,first.weight,...first.dims,Math.min(...items.map(x=>x.price)),items.reduce((n,x)=>n+x.stock,0),...first.photos]);
     if(axis){items.sort((a,b)=>a.a.get(axis).localeCompare(b.a.get(axis),'pt-BR',{numeric:true}));for(const x of items)variationRows.push([reference,x.sku,x.ean,axis,x.a.get(axis),x.weight,...x.dims,x.price,x.stock,...x.photos]);}
     else warnings.push(`Grupo ${group}: produto simples; referência comercial mantida no relatório como SKU ${first.sku}.`);
     Object.keys(fixed).forEach(k=>allFixed.add(k));fixedRows.push({reference,fixed});
-    requirements.push({reference,groupId:group,parentId:first.pid,category:first.cat.join(' > '),attributes:fixed,variationAxis:axis||null,skus:items.map(x=>x.sku)});
+    requirements.push({reference,groupId:group,parentId:first.pid,category:first.cat.join(' > '),signusCategoryId:id(first.m.CATEGORIA_TREEVIEW_ID),trayCategoryId:first.trayCategoryId,attributes:fixed,variationAxis:axis||null,skus:items.map(x=>x.sku)});
   }
   const fixedKeys=[...allFixed].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   // Preserva o modelo técnico já validado para o piloto.
   const pilotKeys=['Número de polos','Curva de Disparo','Tensão de Emprego','Frequência'];
   const order=fixedKeys.length===4&&pilotKeys.every(k=>allFixed.has(k))?pilotKeys:fixedKeys;
-  return {products:{headers:PRODUCT_FIELDS,rows:parentRows},variations:{headers:VARIATION_FIELDS,rows:variationRows},properties:{headers:['Referência produto',...order],rows:order.length?fixedRows.filter(x=>Object.keys(x.fixed).length).map(x=>[x.reference,...order.map(k=>x.fixed[k]??null)]):[]},warnings,requirements,skippedGroups,summary:{sourceProducts:products.length,exportedSkus:requirements.reduce((n,r)=>n+r.skus.length,0),skippedSkus:skippedGroups.reduce((n,g)=>n+g.skus.length,0),skippedGroups:skippedGroups.length,parents:parentRows.length,variations:variationRows.length,photos:variationRows.reduce((n,r)=>n+r.slice(11).filter(Boolean).length,0)},models:{product:133271,variation:24682,property:order.join('|')===pilotKeys.join('|')?14874:null}};
+  return {products:{headers:PRODUCT_FIELDS,rows:parentRows},variations:{headers:VARIATION_FIELDS,rows:variationRows},properties:{headers:['Referência produto',...order],rows:order.length?fixedRows.filter(x=>Object.keys(x.fixed).length).map(x=>[x.reference,...order.map(k=>x.fixed[k]??null)]):[]},warnings,requirements,skippedGroups,summary:{sourceProducts:products.length,exportedSkus:requirements.reduce((n,r)=>n+r.skus.length,0),skippedSkus:skippedGroups.reduce((n,g)=>n+g.skus.length,0),skippedGroups:skippedGroups.length,parents:parentRows.length,variations:variationRows.length,photos:variationRows.reduce((n,r)=>n+r.slice(11).filter(Boolean).length,0)},models:{product:133457,variation:24682,property:order.join('|')===pilotKeys.join('|')?14874:null}};
 }

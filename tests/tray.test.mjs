@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {convert,categoryPaths,validEAN,occupiedRange} from '../tray/engine.mjs';
 function source(){return {
   products:[['001',1,'6A'],['002',2,'10A']].map(([sku,n])=>({ID:String(n),'Código':sku,'Código barras':'',Nome:`Disjuntor ${sku}`,Marca:'WEG','Linha de produto':'MDWH','Categoria fiscal':'85362000','Garantia (em dias)':365,Peso:.105,'Altura (cm)':8,'Largura (cm)':1.8,'Profundidade (cm)':6.5})),
-  characteristics:[['001',1,'6A'],['002',2,'10A']].flatMap(([sku,n,value])=>Object.entries({'Corrente Nominal':value,'Número de Polos':'1P Monopolar','Curva de Disparo':'B','Tensão de Emprego':'440VCA/250VCC','Frequência':'50/60Hz'}).map(([name,val])=>({PROD_ID:String(n),PROD_SKU:sku,PROD_COD_AGRUPAMENTO:'1',CATEGORIA_TREEVIEW_ID:'3',MARCA_NOME:'WEG',LINHA_NOME:'MDWH',CARACT_NOME:name,CARACT_VALOR:val}))),
-  tree:[{ID_PRIMEIRO_NIVEL:1,NOME_PRIMEIRO_NIVEL:'Elétricos',ID_SEGUNDO_NIVEL:2,NOME_SEGUNDO_NIVEL:'Disjuntores',ID_TERCEIRO_NIVEL:3,NOME_TERCEIRO_NIVEL:'1P'}]
+  characteristics:[['001',1,'6A'],['002',2,'10A']].flatMap(([sku,n,value])=>Object.entries({'Corrente Nominal':value,'Número de Polos':'1P Monopolar','Curva de Disparo':'B','Tensão de Emprego':'440VCA/250VCC','Frequência':'50/60Hz'}).map(([name,val])=>({PROD_ID:String(n),PROD_SKU:sku,PROD_COD_AGRUPAMENTO:'1',CATEGORIA_TREEVIEW_ID:'22',MARCA_NOME:'WEG',LINHA_NOME:'MDWH',CARACT_NOME:name,CARACT_VALOR:val}))),
+  tree:[{ID_PRIMEIRO_NIVEL:1,NOME_PRIMEIRO_NIVEL:'Elétricos',ID_SEGUNDO_NIVEL:2,NOME_SEGUNDO_NIVEL:'Disjuntores',ID_TERCEIRO_NIVEL:22,NOME_TERCEIRO_NIVEL:'1P'}]
 };}
 const options={price:999,stock:1,images:['001.jpg','001_1.jpg','002.png'],imageBase:'https://example.com/fotos/',titles:{1:'Disjuntor agrupado'}};
 
@@ -66,3 +66,13 @@ test('Tray: fonte com apenas eixo variável não gera linhas vazias de caracter�
 test('Tray: marca não é repetida no campo modelo e hífen técnico é preservado',()=>{
   for(const [input,expected] of [['WEG - MDWS','MDWS'],['WEG - MDW-63','MDW-63'],['MDWH','MDWH']]){const s=source();s.products.forEach(p=>p['Linha de produto']=input);const r=convert(s,options);assert.equal(r.products.rows[0][8],'WEG');assert.equal(r.products.rows[0][9],expected);}
 });
+
+test('Tray: categoria usa ID da Tray mesmo quando o nome Signus muda',()=>{
+ const s=source();s.tree[0].ID_TERCEIRO_NIVEL=22;s.characteristics.forEach(x=>x.CATEGORIA_TREEVIEW_ID='22');
+ const r=convert(s,options);assert.equal(r.products.headers[4],'Código da categoria principal (ID)');assert.deepEqual(r.products.rows[0].slice(4,7),['5',null,null]);
+ s.tree[0].NOME_TERCEIRO_NIVEL='Nome alterado';assert.equal(convert(s,options).products.rows[0][4],'5');
+});
+test('Tray: categoria sem vínculo não exporta nomes para criar categorias',()=>{
+ const s=source();s.tree[0].ID_TERCEIRO_NIVEL=999;s.characteristics.forEach(x=>x.CATEGORIA_TREEVIEW_ID='999');assert.throws(()=>convert(s,options),/999.*sem vínculo.*Tray/);
+});
+test('Tray: os seis vínculos usam o ID existente da categoria na Tray',()=>{for(const [signus,tray] of Object.entries({'22':'5','23':'19','24':'15','25':'17','603':'25','604':'29'})){const s=source();s.tree[0].ID_TERCEIRO_NIVEL=signus;s.characteristics.forEach(x=>x.CATEGORIA_TREEVIEW_ID=signus);const r=convert(s,options);assert.equal(r.products.rows[0][4],tray);assert.equal(r.requirements[0].trayCategoryId,tray);assert.ok(!r.products.headers.some(h=>h.startsWith('Nome da categoria')));}});
