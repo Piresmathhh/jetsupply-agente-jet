@@ -48,3 +48,10 @@ A coluna E contém o ID da categoria principal na Tray; F/G ficam vazias e são 
 |604|29|3P Tripolar + Neutro|
 
 Uma categoria Signus fora dessa lista bloqueia a geração e informa o SKU e o código pendente. Confira a categoria existente na Tray e cadastre o vínculo em `CATEGORY_IDS` antes de exportar. Não deduza o vínculo pelo nome e não reutilize os IDs Signus como IDs Tray. Se uma categoria for excluída/recriada, reconfira seu ID.
+
+
+## Imagens do servidor (30/10/2026)
+
+O importador consulta /imagens-servidor no Worker agente-jet-imagens, em lotes de dois SKUs. A consulta valida HEAD da imagem principal e _1 até _7, em jpg e png, sem parar em lacunas. Só 404 é ausência; timeout, redirecionamento ou resposta inesperada interrompem a consulta, sem cache de resultado parcial. Cache completo por SKU: 10 minutos. As rotas antigas /imagens e /tudo seguem consultando R2 para os demais recursos.
+
+O código implantado está em tray/worker.mjs; tray/server-images.mjs contém a consulta isolada testável. No Cloudflare, preservar a associação IMAGENS ao bucket existente. O modelo atual Tray exporta sete imagens no total; mais imagens encontradas exigem revisão, sem truncamento silencioso.

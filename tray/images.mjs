@@ -1,9 +1,8 @@
-// Reutiliza a consulta pública de nomes do Agente Jet. As URLs finais são
-// montadas pelo motor com a pasta do servidor, nunca com URLs do bucket.
-export const IMAGE_LOOKUP='https://agente-jet-imagens.marcos-rangel.workers.dev/imagens';
-export async function lookupImageNames(skus,{fetcher=fetch,timeoutMs=20000}={}){
+// Consulta somente arquivos verificados no servidor: principal até _7, JPG/PNG.
+export const IMAGE_LOOKUP='https://agente-jet-imagens.marcos-rangel.workers.dev/imagens-servidor';
+export async function lookupImageNames(skus,{fetcher=fetch,timeoutMs=30000}={}){
   const unique=[...new Set(skus.map(s=>String(s??'').trim()).filter(Boolean))];
-  const batches=[];for(let i=0;i<unique.length;i+=40)batches.push(unique.slice(i,i+40));
+  const batches=[];for(let i=0;i<unique.length;i+=2)batches.push(unique.slice(i,i+2));
   const names=new Set();let next=0;
   async function run(){
     while(next<batches.length){

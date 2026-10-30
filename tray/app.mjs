@@ -1,5 +1,5 @@
-import {convert,imageNames,id,occupiedRange} from './engine.mjs?v=20261029-categories-id';
-import {lookupImageNames} from './images.mjs?v=20261027-1';
+import {convert,imageNames,id,occupiedRange} from './engine.mjs?v=20261030-server-images';
+import {lookupImageNames} from './images.mjs?v=20261030-server-images';
 const $=id=>document.getElementById(id),steps=['files','settings','review'];
 const sources={},overrides={};let output=null,currentStep='files',busy=false;
 const say=(message='',error=false)=>{$('status').textContent=message;$('status').dataset.error=String(error);};
