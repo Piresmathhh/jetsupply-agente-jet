@@ -1,0 +1,6 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {probeServerImages} from '../tray/server-images.mjs';
+test('servidor: inclui _7 mesmo com lacunas e mantém zeros do SKU',async()=>{const seen=[];const result=await probeServerImages(['001'],{fetcher:async (url,options)=>{assert.equal(options.redirect,'manual');const name=url.split('/').at(-1);seen.push(name);return{status:['001.jpg','001_3.jpg','001_7.png'].includes(name)?200:404,ok:['001.jpg','001_3.jpg','001_7.png'].includes(name),headers:new Headers({'content-type':'image/jpeg'})};}});assert.deepEqual(result.names,['001.jpg','001_3.jpg','001_7.png']);assert.equal(seen.length,16);assert.ok(!seen.includes('001_8.jpg'));});
+test('servidor: timeout não é interpretado como foto inexistente',async()=>{await assert.rejects(probeServerImages(['1'],{fetcher:async()=>{throw Error('timeout');}}),/inconclusiva/);});
+test('servidor: resposta HTML não entra como imagem e SKU inválido é recusado',async()=>{await assert.rejects(probeServerImages(['../1']),/SKU inválido/);await assert.rejects(probeServerImages(['1'],{fetcher:async()=>({ok:true,status:200,headers:new Headers({'content-type':'text/html'})})}),/inconclusiva/);});

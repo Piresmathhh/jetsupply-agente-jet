@@ -8,7 +8,7 @@ test('imagens Tray: consulta SKUs sem perder zeros e retorna somente nomes reais
 });
 test('imagens Tray: divide lotes respeitando o limite do worker',async()=>{
   const sizes=[];await lookupImageNames(Array.from({length:85},(_,i)=>String(i)),{fetcher:async(url,o)=>{sizes.push(JSON.parse(o.body).skus.length);return{ok:true,json:async()=>({ok:true,imagens:{}})};}});
-  assert.deepEqual(sizes.sort((a,b)=>a-b),[5,40,40]);
+  assert.equal(sizes.length,43);assert.equal(sizes.filter(n=>n===2).length,42);assert.equal(sizes.filter(n=>n===1).length,1);
 });
 test('imagens Tray: falha parcial não vira inventário vazio silencioso',async()=>{
   await assert.rejects(lookupImageNames(['001'],{fetcher:async()=>({ok:false})}),/Não foi possível/);
