@@ -72,8 +72,14 @@ export function convert({products,characteristics,tree}, options={}) {
   const sourceGroups=new Map();
   for(const p of products){const group=id(meta.get(id(p.ID))?.PROD_COD_AGRUPAMENTO);if(!group||group==='0')continue;if(!sourceGroups.has(group))sourceGroups.set(group,[]);sourceGroups.get(group).push(p);}
   const skippedGroups=[...sourceGroups].filter(([group,items])=>!items.some(p=>id(p.ID)===group)).map(([group,items])=>({groupId:group,reason:'Produto pai ausente no lote',skus:items.map(p=>id(p['Código']))}));
+  const mappings=options.categoryIds||CATEGORY_IDS;
+  for(const [group,items] of sourceGroups){
+    if(skippedGroups.some(g=>g.groupId===group))continue;
+    const missing=[...new Set(items.map(p=>id(meta.get(id(p.ID))?.CATEGORIA_TREEVIEW_ID)).filter(code=>!cats.has(code)||!/^\d+$/.test(id(mappings[code]))||id(mappings[code])==='0'||cats.get(code).length>3))];
+    if(missing.length)skippedGroups.push({groupId:group,reason:'Categoria sem vínculo válido ou com quatro níveis',categories:missing,skus:items.map(p=>id(p['Código']))});
+  }
   const skippedIds=new Set(skippedGroups.map(g=>g.groupId));
-  for(const group of skippedGroups)warnings.push(`Grupo ${group.groupId}: pai ausente. ${group.skus.length} SKU(s) não incluídos: ${group.skus.join(', ')}. Inclua o pai nas duas exportações e gere esse grupo novamente.`);
+  for(const group of skippedGroups)warnings.push(`Grupo ${group.groupId}: ${group.reason}. ${group.skus.length} SKU(s) não incluídos: ${group.skus.join(', ')}${group.categories?'. Categorias Signus: '+group.categories.join(', '):''}.`);
   for(const p of products){
     const pid=id(p.ID),sku=id(p['Código']),m=meta.get(pid);
     if(m&&skippedIds.has(id(m.PROD_COD_AGRUPAMENTO)))continue;
@@ -90,7 +96,7 @@ export function convert({products,characteristics,tree}, options={}) {
     const cat=cats.get(id(m.CATEGORIA_TREEVIEW_ID));
     if(!cat)throw Error(`SKU ${sku}: categoria não encontrada na árvore.`);
     if(cat.length>3)throw Error(`SKU ${sku}: categoria possui 4 níveis. Faça um de-para explícito para a Tray; não truncamos a árvore.`);
-    const trayCategoryId=CATEGORY_IDS[id(m.CATEGORIA_TREEVIEW_ID)];
+    const trayCategoryId=mappings[id(m.CATEGORIA_TREEVIEW_ID)];
     if(!trayCategoryId)throw Error(`SKU ${sku}: categoria Signus ${id(m.CATEGORIA_TREEVIEW_ID)} sem vínculo cadastrado com a Tray. Cadastre o ID existente na Tray antes de exportar; nenhuma categoria será criada por nome.`);
     const commercial=options.commercialBySku?.[sku]||{};
     const price=number(commercial.price??options.price,`Preço do SKU ${sku}`,{positive:true});
