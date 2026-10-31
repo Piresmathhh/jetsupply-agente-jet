@@ -1,7 +1,11 @@
-import {convert,imageNames,id,occupiedRange} from './engine.mjs?v=20261030-server-images';
+import {convert,imageNames,id,occupiedRange,CATEGORY_IDS,categoryPaths} from './engine.mjs?v=20261030-categorias';
 import {lookupImageNames} from './images.mjs?v=20261030-server-images';
 const $=id=>document.getElementById(id),steps=['files','settings','review'];
 const sources={},overrides={};let output=null,currentStep='files',busy=false;
+const categoryStorage='topclick-tray-category-ids-v1';
+function getCategoryIds(){try{return {...CATEGORY_IDS,...JSON.parse(localStorage.getItem(categoryStorage)||'{}')};}catch{return {...CATEGORY_IDS};}}
+async function loadDefaultTree(){try{const r=await fetch('tray/treeview-salva.json');if(!r.ok)throw Error('Não foi possível carregar a árvore salva.');const data=await r.json();categoryPaths(data);sources.tree={name:'Árvore salva no agente',data};updateSources();}catch(error){say(error.message+' Selecione a TreeView.',true);updateSources();}}
+
 const say=(message='',error=false)=>{$('status').textContent=message;$('status').dataset.error=String(error);};
 const element=(tag,text,className)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,7 +13,7 @@ const required={products:['ID','Código','Nome','Peso'],characteristics:['PROD_I
 const ready=()=>Object.keys(required).every(k=>sources[k]);
 function showStep(step,focus=false){
   if(busy)return;
-  if(step==='settings'&&!ready()){say('Selecione as três planilhas antes de continuar.',true);step='files';}
+  if(step==='settings'&&!ready()){say('Selecione Produtos e Características; aguarde a árvore salva ou selecione uma TreeView.',true);step='files';}
   if(step==='review'&&!output){say('Prepare o lote em Ajustes para abrir a revisão.',true);step=ready()?'settings':'files';}
   currentStep=step;
   document.querySelectorAll('[data-pane]').forEach(n=>n.hidden=n.dataset.pane!==step);
@@ -37,7 +41,7 @@ async function readSheet(file,columns=[]){
 function updateSources(){
   const count=Object.keys(sources).length;
   for(const key of Object.keys(required))$(key+'-info').textContent=sources[key]?`${sources[key].name} · ${sources[key].data.length} registros`:'Nenhum arquivo';
-  $('continue').disabled=!ready();$('file-summary').textContent=ready()?`${sources.products.data.length} produtos de origem · arquivos prontos para conferir.`:`${count} de 3 arquivos selecionados`;
+  $('continue').disabled=!ready();$('file-summary').textContent=ready()?`${sources.products.data.length} produtos de origem · arquivos prontos para conferir.`:`${Number(Boolean(sources.products))+Number(Boolean(sources.characteristics))} de 2 planilhas do lote selecionadas`;
   $('drop').hidden=ready();
 }
 async function loadSources(files,expected){
@@ -59,7 +63,7 @@ $('photos').addEventListener('change',invalidate);
 $('no-images').addEventListener('change',()=>{invalidate();$('image-fields').hidden=$('no-images').checked;});
 $('pilot').addEventListener('change',()=>{invalidate();$('price').value=$('pilot').checked?'999':'';$('stock').value=$('pilot').checked?'1':'';});
 $('commercial-template').addEventListener('click',()=>{try{
-  if(!ready())throw Error('Carregue as três planilhas para gerar o modelo com os SKUs do lote.');
+  if(!ready())throw Error('Carregue Produtos e Características para gerar o modelo com os SKUs do lote.');
   const rows=sources.products.data.map(row=>[id(row['Código']),null,null]);
   const data=workbook({headers:['SKU','Preço','Estoque'],rows},'Preço e estoque');
   download(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Modelo_Preco_Estoque.xlsx');
@@ -76,9 +80,9 @@ function renderReview(){
   $('summary').textContent=`${output.summary.parents} produto(s) · ${output.summary.variations} variação(ões) · ${output.summary.exportedSkus} de ${output.summary.sourceProducts} SKUs incluídos`;
   const pending=output.skippedGroups||[];
   $('pending-groups').hidden=!pending.length;
-  $('pending-title').textContent=`${pending.length} grupo(s) não incluídos por falta do pai · ${output.summary.skippedSkus} SKUs pendentes`;
+  $('pending-title').textContent=`${pending.length} grupo(s) pendente(s) · ${output.summary.skippedSkus} SKUs pendentes`;
   $('pending-list').replaceChildren();
-  for(const group of pending)$('pending-list').append(element('li',`Pai ${group.groupId} ausente — SKUs não incluídos: ${group.skus.join(', ')}.`));
+  for(const group of pending)$('pending-list').append(element('li',`Grupo ${group.groupId}: ${group.reason}${group.categories?' ('+group.categories.join(', ')+')':''} — SKUs não incluídos: ${group.skus.join(', ')}.`));
   $('download-all').disabled=!output.products.rows.length;
   $('product-rows').replaceChildren();
   for(const row of output.products.rows){const tr=element('tr'),cell=element('td',undefined,'name-cell'),input=element('textarea',undefined,'product-title');input.value=row[1];input.rows=2;input.maxLength=200;input.setAttribute('aria-label',`Nome do produto ${row[0]}`);
@@ -95,7 +99,7 @@ function renderReview(){
   $('downloads').replaceChildren();for(const [filename,,label] of exportTables()){const button=element('button',label);button.type='button';button.addEventListener('click',()=>exportOne(filename));$('downloads').append(button);}
 }
 async function prepare(){
-  if(!ready()){showStep('files');say('Selecione as três planilhas.',true);return;}
+  if(!ready()){showStep('files');say('Selecione Produtos e Características e aguarde a árvore salva.',true);return;}
   busy=true;$('generate').disabled=true;invalidate();say('Preparando revisão…');
   try{
     for(const name of ['price','stock','image-base'])if(!$(name).checkValidity()){$(name).reportValidity();throw Error('Revise o campo indicado.');}
@@ -114,23 +118,27 @@ async function prepare(){
       }
     }
     if($('commercial').files[0]){const knownSkus=new Set(sources.products.data.map(row=>id(row['Código'])));for(const row of await readSheet($('commercial').files[0],['SKU','Preço','Estoque'])){const sku=id(row.SKU);if(!sku||commercialBySku[sku])throw Error(`Preço/estoque: SKU vazio ou duplicado (${sku}).`);if(!knownSkus.has(sku))throw Error(`Preço/estoque: SKU ${sku} não pertence ao lote. Preserve os códigos do modelo, inclusive zeros à esquerda.`);commercialBySku[sku]={price:row['Preço'],stock:row.Estoque};}}
-    output=convert(Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.data])),{price:$('price').value,stock:$('stock').value,commercialBySku,images,imageBase:$('image-base').value,titles:overrides});
+    output=convert(Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.data])),{price:$('price').value,stock:$('stock').value,commercialBySku,images,imageBase:$('image-base').value,titles:overrides,categoryIds:getCategoryIds()});
     output.imageSource={lookup:imageSource,base:$('image-base').value,names:images.length};
     $('image-summary').textContent=$('no-images').checked?'Sem imagens neste lote':`${images.length} nomes localizados · links de fotos do servidor. Confira os avisos de SKUs sem imagem.`;
     if($('pilot').checked)output.warnings.unshift('VALORES DE TESTE: substitua preço e estoque antes de comercializar.');renderReview();say();busy=false;showStep('review');
   }catch(error){output=null;say(error.message,true);}finally{busy=false;$('generate').disabled=false;}
 }
 $('generate').addEventListener('click',prepare);
+$('category-form').addEventListener('submit',event=>{event.preventDefault();const signus=$('category-signus').value.trim(),tray=$('category-tray').value.trim();if(!/^\d+$/.test(signus)||!/^\d+$/.test(tray)||Number(signus)===0||Number(tray)===0){say('Informe IDs numéricos válidos do Signus e da Tray.',true);return;}if(!sources.tree||!categoryPaths(sources.tree.data).has(signus)){say('ID Signus não encontrado na árvore. Atualize a TreeView antes de vincular.',true);return;}try{const values=getCategoryIds();values[signus]=tray;localStorage.setItem(categoryStorage,JSON.stringify(values));invalidate();renderCategoryLinks();say('Vínculo salvo neste navegador. Confira o ID na Tray.');}catch{say('Não foi possível salvar neste navegador.',true);}});
+function renderCategoryLinks(){const list=$('category-links');list.replaceChildren();const ids=getCategoryIds(),paths=sources.tree?categoryPaths(sources.tree.data):new Map();for(const [signus,tray] of Object.entries(ids).sort((a,b)=>Number(a[0])-Number(b[0]))){const li=element('li',`${signus} → ${tray} · ${(paths.get(signus)||['categoria não encontrada na árvore']).join(' > ')}`);list.append(li);}}
+$('category-manager').addEventListener('toggle',()=>{if($('category-manager').open)renderCategoryLinks();});
+loadDefaultTree();
 function exportTables(){return [['01_Produtos.xlsx',output.products,'Baixar produtos'],...(output.variations.rows.length?[['02_Variacoes.xlsx',output.variations,'Baixar variações']]:[]),...(output.properties.rows.length?[['03_Caracteristicas.xlsx',output.properties,'Baixar características']]:[])];}
 function validOutput(){
   if(!output)throw Error('Prepare o lote novamente.');
-  if(!output.products.rows.length)throw Error('Nenhum grupo pronto para exportar. Inclua os pais indicados nas planilhas de Produtos e Características e prepare o lote novamente.');
+  if(!output.products.rows.length)throw Error('Nenhum grupo pronto para exportar. Confira os pais e os vínculos de categoria pendentes.');
   const invalid=output.products.rows.find(r=>!r[1].trim()||r[1].length>200);if(invalid){$('product-rows').querySelectorAll('textarea')[[...output.products.rows].indexOf(invalid)].focus();throw Error(`Revise o nome do produto ${invalid[0]}.`);}
 }
 function workbook(table,name){
   const wb=XLSX.utils.book_new(),sheet=XLSX.utils.aoa_to_sheet([table.headers,...table.rows]);sheet['!cols']=table.headers.map(h=>({wch:Math.min(65,Math.max(18,h.length+2))}));sheet['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:table.rows.length,c:table.headers.length-1}})};XLSX.utils.book_append_sheet(wb,sheet,name);const data=XLSX.write(wb,{bookType:'xlsx',type:'array'});if(table.rows.length>15000||data.byteLength>1000000)throw Error(`${name}: divida o lote para respeitar o limite de 15.000 registros ou 1 MB.`);return data;
 }
-function reportText(){return [`Produtos: ${output.summary.parents} | Variações: ${output.summary.variations} | SKUs: ${output.summary.sourceProducts}`,'Produtos ocultos e inativos. Este pacote é de cadastro completo, não de atualização isolada de preço/estoque.','\nONDE IMPORTAR NA TRAY','Aplicativos → Meus aplicativos → Importação de Dados via Excel.','Alternativa: Produtos → Lista de produtos → Mais opções → Importar produtos do Excel.','Extraia o ZIP. Envie cada XLSX separadamente na ordem abaixo e aguarde a conclusão e a conferência de erros antes do próximo.',`1. 01_Produtos.xlsx → Produtos → Importar Produtos de um Modelo → modelo ${output.models.product}.`,...(output.variations.rows.length?[`2. 02_Variacoes.xlsx → Variações → Importar Variações de um Modelo → modelo ${output.models.variation}.`]:[]),...(output.properties.rows.length?[`3. 03_Caracteristicas.xlsx → Características → Importar Características de um Modelo → ${output.models.property||'criar modelo correspondente aos atributos e à ordem das colunas'}.`]:['Sem características fixas na origem: nenhum 03_Caracteristicas.xlsx foi gerado. Não envie um arquivo contendo apenas referências ao modelo do piloto.']),'Dados: linha 2, coluna A. Itens ausentes do arquivo: Nenhuma ação.','CATEGORIAS: use somente Produtos Signus v2 (133457). Coluna E = ID da categoria principal na Tray; F/G não importar. Nunca use o modelo v1 (133271) com estes arquivos. Gere novamente lotes antigos. Sem vínculo Signus → Tray a exportação é bloqueada.','Referência do pai: código comercial do produto cujo ID Signus coincide com o agrupamento. Se houver importação antiga com referência numérica do agrupamento, corrija o pai existente antes de reenviar; não crie outro produto. O piloto ID Tray 29 já foi corrigido de 54423 para 11422529.','Cadastre os atributos e vincule-os às categorias antes de importar características. O modelo 14874 só atende aos quatro atributos do piloto, na mesma ordem.','LEIA-ANTES.txt e relatorio.json são para consulta; não importar. Modelo_Preco_Estoque.xlsx deve ser preenchido e carregado no agente, não diretamente na Tray.','\nRASTREABILIDADE DO PAI',...output.requirements.map(r=>`Agrupamento Signus ${r.groupId} → referência comercial Tray ${r.reference}`),'\nGRUPOS NÃO INCLUÍDOS POR FALTA DO PAI',...(output.skippedGroups||[]).map(g=>`Pai ${g.groupId}: ${g.skus.length} SKUs não incluídos — ${g.skus.join(', ')}`),'\nNOMES',...output.products.rows.map(r=>`${r[0]}: ${r[1]}`),'\nAVISOS',...output.warnings,'\nCATEGORIAS E ATRIBUTOS',$('requirements').textContent].join('\n');}
+function reportText(){return [`Produtos: ${output.summary.parents} | Variações: ${output.summary.variations} | SKUs: ${output.summary.sourceProducts}`,'Produtos ocultos e inativos. Este pacote é de cadastro completo, não de atualização isolada de preço/estoque.','\nONDE IMPORTAR NA TRAY','Aplicativos → Meus aplicativos → Importação de Dados via Excel.','Alternativa: Produtos → Lista de produtos → Mais opções → Importar produtos do Excel.','Extraia o ZIP. Envie cada XLSX separadamente na ordem abaixo e aguarde a conclusão e a conferência de erros antes do próximo.',`1. 01_Produtos.xlsx → Produtos → Importar Produtos de um Modelo → modelo ${output.models.product}.`,...(output.variations.rows.length?[`2. 02_Variacoes.xlsx → Variações → Importar Variações de um Modelo → modelo ${output.models.variation}.`]:[]),...(output.properties.rows.length?[`3. 03_Caracteristicas.xlsx → Características → Importar Características de um Modelo → ${output.models.property||'criar modelo correspondente aos atributos e à ordem das colunas'}.`]:['Sem características fixas na origem: nenhum 03_Caracteristicas.xlsx foi gerado. Não envie um arquivo contendo apenas referências ao modelo do piloto.']),'Dados: linha 2, coluna A. Itens ausentes do arquivo: Nenhuma ação.','CATEGORIAS: use somente Produtos Signus v2 (133457). Coluna E = ID da categoria principal na Tray; F/G não importar. Nunca use o modelo v1 (133271) com estes arquivos. Gere novamente lotes antigos. Grupos sem vínculo Signus → Tray ficam pendentes; os demais podem ser exportados.','Referência do pai: código comercial do produto cujo ID Signus coincide com o agrupamento. Se houver importação antiga com referência numérica do agrupamento, corrija o pai existente antes de reenviar; não crie outro produto. O piloto ID Tray 29 já foi corrigido de 54423 para 11422529.','Cadastre os atributos e vincule-os às categorias antes de importar características. O modelo 14874 só atende aos quatro atributos do piloto, na mesma ordem.','LEIA-ANTES.txt e relatorio.json são para consulta; não importar. Modelo_Preco_Estoque.xlsx deve ser preenchido e carregado no agente, não diretamente na Tray.','\nRASTREABILIDADE DO PAI',...output.requirements.map(r=>`Agrupamento Signus ${r.groupId} → referência comercial Tray ${r.reference}`),'\nGRUPOS PENDENTES',...(output.skippedGroups||[]).map(g=>`Grupo ${g.groupId}: ${g.reason}; ${g.skus.length} SKUs não incluídos — ${g.skus.join(', ')}`),'\nNOMES',...output.products.rows.map(r=>`${r[0]}: ${r[1]}`),'\nAVISOS',...output.warnings,'\nCATEGORIAS E ATRIBUTOS',$('requirements').textContent].join('\n');}
 function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function exportOne(filename){try{validOutput();const [name,table]=exportTables().find(x=>x[0]===filename);download(new Blob([workbook(table,name.slice(3,-5))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),name);$('export-status').textContent='Arquivo preparado para download.';}catch(error){say(error.message,true);}}
 $('download-report').addEventListener('click',()=>{try{validOutput();download(new Blob([reportText()],{type:'text/plain;charset=utf-8'}),'Relatorio_Tray.txt');}catch(error){say(error.message,true);}});
